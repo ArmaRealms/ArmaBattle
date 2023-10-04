@@ -207,4 +207,27 @@ public class TBCommands extends BaseCommand {
         SoundUtils.playSound(SoundUtils.Type.WATCH, plugin.getConfig(), sender);
     }
 
+    @Subcommand("%status|status")
+    @CommandPermission("titansbattle.status")
+    @Conditions("happening")
+    @Description("{@@command.description.status}")
+    public void status(Player sender) {
+        plugin.debug(String.format("%s used /tb status", sender.getName()));
+        java.util.Optional<Game> currentGame = gameManager.getCurrentGame();
+        if (!currentGame.isPresent()) {
+            sender.sendMessage(plugin.getLang("not-starting-or-started"));
+            return;
+        }
+
+        Game game = currentGame.get();
+        if (game.getConfig().isGroupMode()) {
+            game.getGroupParticipants().forEach((group, warriors) ->
+                    sender.sendMessage(MessageFormat.format(plugin.getLang("status_group", game),
+                            group.getId().toUpperCase(), warriors)));
+        } else {
+            sender.sendMessage(MessageFormat.format(plugin.getLang("status", game),
+                    game.getParticipants().size()));
+        }
+    }
+
 }
