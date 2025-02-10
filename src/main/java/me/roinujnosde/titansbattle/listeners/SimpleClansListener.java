@@ -22,7 +22,7 @@ public class SimpleClansListener extends TBListener {
         this.gm = plugin.getGameManager();
     }
 
-    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.HIGHEST)
     public void onPrePlayerKickedClan(PrePlayerKickedClanEvent event) {
         plugin.getLogger().info("PrePlayerKickedClanEvent");
         gm.getCurrentGame().ifPresent(game -> {
@@ -39,7 +39,7 @@ public class SimpleClansListener extends TBListener {
         });
     }
 
-    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.HIGHEST)
     public void onPrePlayerLeaveClan(PrePlayerLeaveClanEvent event) {
         plugin.getLogger().info("PrePlayerLeaveClanEvent");
         gm.getCurrentGame().ifPresent(game -> {
@@ -56,7 +56,7 @@ public class SimpleClansListener extends TBListener {
         });
     }
 
-    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.HIGHEST)
     public void onPreDisbandClan(PreDisbandClanEvent event) {
         plugin.getLogger().info("PreDisbandClanEvent");
         gm.getCurrentGame().ifPresent(game -> {
