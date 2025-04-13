@@ -110,7 +110,7 @@ public class EliminationTournamentGame extends Game {
         if (getConfig().isGroupMode()) {
             if (lost(warrior)) {
                 Group group = getGroup(warrior);
-                groupDuelists.forEach(d -> d.isDuelist(group));
+                groupDuelists.forEach(d -> d.remove(group));
                 groupDuelists.removeIf(d -> d.getDuelists().isEmpty());
             }
         } else {
@@ -127,12 +127,12 @@ public class EliminationTournamentGame extends Game {
         }
 
         if (lost(warrior)) {
-            battle = false;
-            List<Warrior> duelWinners = getDuelWinners(warrior);
-            heal(duelWinners);
-            runCommandsAfterBattle(duelWinners);
-
             if (isCurrentDuelist(warrior)) {
+                battle = false;
+                List<Warrior> duelWinners = getDuelWinners(warrior);
+                healAndClearEffects(duelWinners);
+                runCommandsAfterBattle(duelWinners);
+
                 //third place battle needs to go first, getDuelsCount would also return 1
                 if (thirdPlaceBattle) {
                     thirdPlaceWinners = duelWinners;
@@ -152,21 +152,25 @@ public class EliminationTournamentGame extends Game {
                     }
                     teleport(duelWinners, getConfig().getLobby());
                 }
+
+                //delaying the next duel, so there is time for other players to respawn
+                Bukkit.getScheduler().runTaskLater(plugin, this::startNextDuel, 20L);
             }
 
-            //delaying the next duel, so there is time for other players to respawn
-            Bukkit.getScheduler().runTaskLater(plugin, this::startNextDuel, 20L);
-        }
-
-        //died during semi-finals, goes for third place
-        if (getDuelsCount() == 2) {
-            waitingThirdPlace.add(warrior);
-            Bukkit.getScheduler().runTaskLater(plugin, () -> {
-                //disconnected
-                if (warrior.toOnlinePlayer() == null) {
-                    waitingThirdPlace.remove(warrior);
+            //died during semi-finals, goes for third place
+            if (getDuelsCount() == 2) {
+                if (config.isGroupMode()) {
+                    Group group = getGroup(warrior);
+                    //noinspection DataFlowIssue
+                    casualties.stream().filter(p -> isMember(group, p)).forEach(waitingThirdPlace::add);
+                } else {
+                    waitingThirdPlace.add(warrior);
                 }
-            }, 5L);
+                Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                    //disconnected
+                    waitingThirdPlace.removeIf(w -> w.toOnlinePlayer() == null);
+                }, 5L);
+            }
         }
 
         removeDuelist(warrior);
