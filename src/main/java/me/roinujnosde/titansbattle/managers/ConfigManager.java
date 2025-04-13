@@ -194,7 +194,7 @@ public final class ConfigManager {
     }
 
     public List<Integer> getBlockedProtocols() {
-        return config.getStringList("blocked-protocols").stream()
+        return config.getStringList("viaversion.block-protocols").stream()
                 .map(Integer::parseInt)
                 .toList();
     }
