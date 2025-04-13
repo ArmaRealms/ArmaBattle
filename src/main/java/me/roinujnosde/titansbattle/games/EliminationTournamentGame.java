@@ -13,8 +13,6 @@ import me.roinujnosde.titansbattle.utils.Helper;
 import me.roinujnosde.titansbattle.utils.MessageUtils;
 import me.roinujnosde.titansbattle.utils.SoundUtils;
 import org.bukkit.Bukkit;
-import org.bukkit.attribute.Attribute;
-import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.jetbrains.annotations.NotNull;
@@ -172,18 +170,6 @@ public class EliminationTournamentGame extends Game {
         }
 
         removeDuelist(warrior);
-    }
-
-    private void heal(@NotNull List<Warrior> warriors) {
-        for (Warrior warrior : warriors) {
-            Player player = warrior.toOnlinePlayer();
-            if (player == null) continue;
-            plugin.debug("Healing in EliminationTournamentGame for %s".formatted(player.getName()));
-            AttributeInstance attribute = player.getAttribute(Attribute.GENERIC_MAX_HEALTH);
-            if (attribute != null) player.setHealth(attribute.getDefaultValue());
-            player.setFoodLevel(20);
-            player.setFireTicks(0);
-        }
     }
 
     private boolean lost(@NotNull Warrior warrior) {
