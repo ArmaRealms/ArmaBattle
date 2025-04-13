@@ -78,7 +78,7 @@ public class ConfigUtils {
             return path.value();
         }
         String name = field.getName();
-        for (int i = 0; i < name.toCharArray().length; i++) {
+        for (int i = 0; i < name.length(); i++) {
             char c = name.charAt(i);
             if (Character.isUpperCase(c)) {
                 name = name.replaceFirst(String.valueOf(c), "_" + Character.toLowerCase(c));

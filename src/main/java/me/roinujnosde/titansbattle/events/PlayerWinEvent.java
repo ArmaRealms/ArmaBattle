@@ -33,7 +33,6 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- *
  * @author RoinujNosde
  */
 public class PlayerWinEvent extends Event {
@@ -47,12 +46,18 @@ public class PlayerWinEvent extends Event {
         this.players = players;
     }
 
+    @SuppressWarnings("unused")
+    public static HandlerList getHandlerList() {
+        return HANDLERS;
+    }
+
     public @NotNull BaseGame getGame() {
         return game;
     }
 
     /**
      * Returns the winner of the event (or the first of the list, if there are more than one winner)
+     *
      * @return the winner of the event
      */
     public Warrior getPlayer() {
@@ -61,6 +66,7 @@ public class PlayerWinEvent extends Event {
 
     /**
      * Returns an Unmodifiable List of the Winners
+     *
      * @return an Unmodifiable List of the Winners
      */
     public List<Warrior> getPlayers() {
@@ -69,11 +75,6 @@ public class PlayerWinEvent extends Event {
 
     @Override
     public HandlerList getHandlers() {
-        return HANDLERS;
-    }
-
-    @SuppressWarnings("unused")
-    public static HandlerList getHandlerList() {
         return HANDLERS;
     }
 }

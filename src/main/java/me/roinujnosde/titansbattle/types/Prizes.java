@@ -60,6 +60,11 @@ public class Prizes implements ConfigurationSerializable {
         ConfigUtils.deserialize(this, data);
     }
 
+    public static Map<Player, Collection<ItemStack>> getPlayersWithItemsToReceive() {
+        ITEMS_NOT_GIVEN.keySet().removeIf(p -> !p.isOnline());
+        return ITEMS_NOT_GIVEN;
+    }
+
     @Override
     public Map<String, Object> serialize() {
         return ConfigUtils.serialize(this);
@@ -117,10 +122,5 @@ public class Prizes implements ConfigurationSerializable {
                 CommandManager.dispatchCommand(Bukkit.getConsoleSender(), command);
             }
         }
-    }
-
-    public static Map<Player, Collection<ItemStack>> getPlayersWithItemsToReceive() {
-        ITEMS_NOT_GIVEN.keySet().removeIf(p -> !p.isOnline());
-        return ITEMS_NOT_GIVEN;
     }
 }

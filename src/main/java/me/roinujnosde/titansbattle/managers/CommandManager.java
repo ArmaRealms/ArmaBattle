@@ -70,17 +70,17 @@ public class CommandManager extends PaperCommandManager {
         registerCommands();
     }
 
-    @Override
-    public TitansBattle getPlugin() {
-        return (TitansBattle) plugin;
-    }
-
     public static void dispatchCommand(@NotNull CommandSender sender, @NotNull String commandLine) {
         try {
             Bukkit.dispatchCommand(sender, commandLine);
         } catch (Exception exception) {
             TitansBattle.getInstance().getLogger().log(Level.SEVERE, String.format("Error executing command: %s", commandLine), exception);
         }
+    }
+
+    @Override
+    public TitansBattle getPlugin() {
+        return (TitansBattle) plugin;
     }
 
     private void setDefaultLocale() {

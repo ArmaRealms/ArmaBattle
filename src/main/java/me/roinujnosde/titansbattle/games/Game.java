@@ -110,14 +110,6 @@ public abstract class Game extends BaseGame {
 
     protected abstract @NotNull String getGameInfoMessage();
 
-    protected class ArenaAnnouncementTask extends BukkitRunnable {
-
-        @Override
-        public void run() {
-            broadcast(getGameInfoMessage(), Game.this);
-        }
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -134,5 +126,13 @@ public abstract class Game extends BaseGame {
         int result = super.hashCode();
         result = 31 * result + (databaseManager != null ? databaseManager.hashCode() : 0);
         return result;
+    }
+
+    protected class ArenaAnnouncementTask extends BukkitRunnable {
+
+        @Override
+        public void run() {
+            broadcast(getGameInfoMessage(), Game.this);
+        }
     }
 }

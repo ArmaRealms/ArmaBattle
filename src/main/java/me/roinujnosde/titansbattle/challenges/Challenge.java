@@ -21,7 +21,7 @@ public class Challenge extends BaseGame {
     private Group winnerGroup;
     private List<Warrior> winners = new ArrayList<>();
     private Warrior lastCasualty;
-    
+
     public Challenge(@NotNull TitansBattle plugin, @NotNull ArenaConfiguration config) {
         super(plugin, config);
     }
@@ -47,7 +47,7 @@ public class Challenge extends BaseGame {
 
     @Override
     protected void processRemainingPlayers(@NotNull Warrior warrior) {
-    	lastCasualty = warrior;
+        lastCasualty = warrior;
         if (getConfig().isGroupMode()) {
             if (getGroupParticipants().size() == 1) {
                 getGroupParticipants().keySet().stream().findAny().ifPresent(g -> {
@@ -127,7 +127,7 @@ public class Challenge extends BaseGame {
         if (!getConfig().isGroupMode()) {
             return lastCasualty.getName();
         }
-        
+
         return Objects.requireNonNull(getGroup(lastCasualty)).getName();
     }
 

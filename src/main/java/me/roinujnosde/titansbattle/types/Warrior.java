@@ -43,10 +43,10 @@ public class Warrior {
 
     private final Supplier<GroupManager> groupManager;
     private final OfflinePlayer offlinePlayer;
-    private @Nullable WeakReference<Player> playerReference;
     private final Map<String, Integer> kills;
     private final Map<String, Integer> deaths;
     private final Map<String, Integer> victories;
+    private @Nullable WeakReference<Player> playerReference;
     private boolean isModified;
 
     public Warrior(@NotNull OfflinePlayer offlinePlayer, @NotNull Supplier<GroupManager> groupManager) {
@@ -101,9 +101,9 @@ public class Warrior {
     @Override
     public String toString() {
         return "Warrior{" +
-               "name=" + offlinePlayer.getName() +
-               ", uuid=" + offlinePlayer.getUniqueId() +
-               '}';
+                "name=" + offlinePlayer.getName() +
+                ", uuid=" + offlinePlayer.getUniqueId() +
+                '}';
     }
 
     @Nullable

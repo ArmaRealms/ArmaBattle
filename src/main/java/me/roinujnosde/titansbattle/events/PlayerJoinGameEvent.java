@@ -33,25 +33,30 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.NotNull;
 
 /**
- *
  * @author RoinujNosde
  */
 public class PlayerJoinGameEvent extends Event implements Cancellable {
 
     private static final HandlerList HANDLERS = new HandlerList();
-    private boolean cancelled = false;
     private final Warrior warrior;
     private final Player player;
     private final BaseGame game;
+    private boolean cancelled = false;
 
     public PlayerJoinGameEvent(@NotNull Warrior warrior, @NotNull Player player, @NotNull BaseGame game) {
         this.warrior = warrior;
         this.player = player;
         this.game = game;
     }
-    
+
+    @SuppressWarnings("unused")
+    public static HandlerList getHandlerList() {
+        return HANDLERS;
+    }
+
     /**
      * Returns the Game
+     *
      * @return the Game
      */
     public BaseGame getGame() {
@@ -69,12 +74,13 @@ public class PlayerJoinGameEvent extends Event implements Cancellable {
 
     /**
      * Returns the Player
+     *
      * @return the Player
      */
     public Player getPlayer() {
         return player;
     }
-    
+
     @Override
     public HandlerList getHandlers() {
         return HANDLERS;
@@ -87,6 +93,7 @@ public class PlayerJoinGameEvent extends Event implements Cancellable {
 
     /**
      * Prevents the player from joining the Game
+     *
      * @param cancel should the player be prevented from joining?
      */
     @Override
@@ -95,10 +102,5 @@ public class PlayerJoinGameEvent extends Event implements Cancellable {
             Thread.dumpStack();
         }
         cancelled = cancel;
-    }
-
-    @SuppressWarnings("unused")
-    public static HandlerList getHandlerList() {
-        return HANDLERS;
     }
 }

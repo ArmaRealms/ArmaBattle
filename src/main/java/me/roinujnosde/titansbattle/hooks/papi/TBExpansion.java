@@ -26,8 +26,6 @@ import static java.lang.String.valueOf;
 
 public class TBExpansion extends PlaceholderExpansion {
 
-    private final TitansBattle plugin;
-
     private static final List<String> PLACEHOLDERS;
     private static final Pattern PARTICIPANTS_SIZE;
     private static final Pattern GROUPS_SIZE;
@@ -43,10 +41,12 @@ public class TBExpansion extends PlaceholderExpansion {
         LAST_WINNER_GROUP_PATTERN = Pattern.compile("last_winner_group_(?<game>\\S+)");
         LAST_WINNER_KILLER_PATTERN = Pattern.compile("last_(?<type>winner|killer)_(?<game>\\S+)");
         PREFIX_PATTERN = Pattern.compile("(?<game>^\\S+)_(?<type>winner|killer)_prefix");
-        PLACEHOLDERS = Arrays.asList("%titansbattle_groups_size%" ,"%titansbattle_participants_size%" ,"%titansbattle_arena_in_use_<arena>%", "%titansbattle_last_winner_group_<game>%",
+        PLACEHOLDERS = Arrays.asList("%titansbattle_groups_size%", "%titansbattle_participants_size%", "%titansbattle_arena_in_use_<arena>%", "%titansbattle_last_winner_group_<game>%",
                 "%titansbattle_last_<killer|winner>_<game>%", "%titansbattle_<game>_<killer|winner>_prefix%",
                 "%titansbattle_group_total_victories%", "%titansbattle_total_kills%", "%titansbattle_total_deaths%");
     }
+
+    private final TitansBattle plugin;
 
     public TBExpansion(TitansBattle plugin) {
         this.plugin = plugin;

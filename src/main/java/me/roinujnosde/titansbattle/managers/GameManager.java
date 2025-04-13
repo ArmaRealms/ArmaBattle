@@ -94,7 +94,8 @@ public class GameManager {
     private Class<?> getGameClass(String className) throws GameTypeNotFoundException {
         try {
             return Class.forName("me.roinujnosde.titansbattle.games." + className);
-        } catch (ClassNotFoundException ignored) {}
+        } catch (ClassNotFoundException ignored) {
+        }
         try {
             return Class.forName(className);
         } catch (ClassNotFoundException ex) {

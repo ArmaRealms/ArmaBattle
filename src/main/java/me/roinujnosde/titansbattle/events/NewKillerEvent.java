@@ -30,7 +30,6 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.NotNull;
 
 /**
- *
  * @author RoinujNosde
  */
 public class NewKillerEvent extends Event {
@@ -44,8 +43,13 @@ public class NewKillerEvent extends Event {
         this.oldKiller = oldKiller;
     }
 
+    public static HandlerList getHandlerList() {
+        return HANDLERS;
+    }
+
     /**
      * Returns the new Killer
+     *
      * @return the new Killer
      */
     @NotNull
@@ -55,6 +59,7 @@ public class NewKillerEvent extends Event {
 
     /**
      * Returns the old Killer, may be null
+     *
      * @return the old Killer
      */
     public OfflinePlayer getOldKiller() {
@@ -63,10 +68,6 @@ public class NewKillerEvent extends Event {
 
     @Override
     public HandlerList getHandlers() {
-        return HANDLERS;
-    }
-
-    public static HandlerList getHandlerList() {
         return HANDLERS;
     }
 }

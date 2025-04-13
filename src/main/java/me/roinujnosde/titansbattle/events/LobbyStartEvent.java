@@ -30,22 +30,27 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.NotNull;
 
 /**
- *
  * @author RoinujNosde
  */
 public class LobbyStartEvent extends Event implements Cancellable {
 
     private static final HandlerList HANDLERS = new HandlerList();
-    private boolean cancelled = false;
     private final BaseGame game;
-    
+    private boolean cancelled = false;
+
 
     public LobbyStartEvent(@NotNull BaseGame game) {
         this.game = game;
     }
-    
+
+    @SuppressWarnings("unused")
+    public static HandlerList getHandlerList() {
+        return HANDLERS;
+    }
+
     /**
      * Returns the Game
+     *
      * @return the Game
      */
     public BaseGame getGame() {
@@ -64,15 +69,11 @@ public class LobbyStartEvent extends Event implements Cancellable {
 
     /**
      * Cancels the starting game
+     *
      * @param cancel should the game be cancelled?
      */
     @Override
     public void setCancelled(boolean cancel) {
         cancelled = cancel;
-    }
-
-    @SuppressWarnings("unused")
-    public static HandlerList getHandlerList() {
-        return HANDLERS;
     }
 }

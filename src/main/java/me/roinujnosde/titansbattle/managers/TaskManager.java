@@ -49,9 +49,8 @@ import java.util.TimerTask;
 public class TaskManager {
 
     private final TitansBattle plugin = TitansBattle.getInstance();
-
-    private Timer schedulerTimer;
     BukkitTask giveItemsTask;
+    private Timer schedulerTimer;
 
     public void setupScheduler() {
         if (schedulerTimer != null) {

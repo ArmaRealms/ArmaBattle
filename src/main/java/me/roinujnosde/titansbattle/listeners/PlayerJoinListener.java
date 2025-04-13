@@ -39,7 +39,6 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- *
  * @author RoinujNosde
  */
 public class PlayerJoinListener extends TBListener {

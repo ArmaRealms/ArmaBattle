@@ -20,7 +20,6 @@ public abstract class Group {
     }
 
     /**
-     *
      * @return the {@link Group}'s name
      */
     public abstract @NotNull String getName();
@@ -35,7 +34,6 @@ public abstract class Group {
     }
 
     /**
-     *
      * @return the {@link Group}'s ID (unique)
      */
     public abstract @NotNull String getId();
@@ -47,6 +45,7 @@ public abstract class Group {
 
     /**
      * Checks whether a {@link Player} belongs in this {@link Group}
+     *
      * @param uuid the {@link Player}'s UUID
      * @return true if the {@link Player} is a member
      */
@@ -54,6 +53,7 @@ public abstract class Group {
 
     /**
      * Checks whether a {@link Warrior} belongs in this {@link Group}
+     *
      * @param warrior the Warrior
      * @return true if member
      */
@@ -63,6 +63,7 @@ public abstract class Group {
 
     /**
      * Checks whether a {@link Player} is a Leader, Officer or equivalent in this {@link Group}
+     *
      * @param uuid the {@link Player}'s UUID
      * @return true if the {@link Player} is a Leader
      */
@@ -70,6 +71,7 @@ public abstract class Group {
 
     /**
      * Gets this {@link Group}'s data
+     *
      * @return the GroupData
      */
     public GroupData getData() {

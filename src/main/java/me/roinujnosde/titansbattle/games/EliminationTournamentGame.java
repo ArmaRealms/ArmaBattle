@@ -46,13 +46,11 @@ public class EliminationTournamentGame extends Game {
     private final List<Duel<Warrior>> playerDuelists = new ArrayList<>();
     private final List<Duel<Group>> groupDuelists = new ArrayList<>();
     private final List<Warrior> waitingThirdPlace = new ArrayList<>();
+    private final Map<UUID, Integer> hitsCount = new HashMap<>();
     private boolean thirdPlaceBattle = false;
-
     private @NotNull List<Warrior> firstPlaceWinners = new ArrayList<>();
     private @Nullable List<Warrior> secondPlaceWinners;
     private @Nullable List<Warrior> thirdPlaceWinners;
-
-    private final Map<UUID, Integer> hitsCount = new HashMap<>();
 
     public EliminationTournamentGame(TitansBattle plugin, GameConfiguration config) {
         super(plugin, config);

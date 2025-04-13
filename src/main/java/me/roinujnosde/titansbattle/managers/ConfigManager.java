@@ -46,9 +46,8 @@ import static java.lang.String.format;
 public final class ConfigManager {
 
     private final TitansBattle plugin = TitansBattle.getInstance();
-    private FileConfiguration config;
-
     private final List<Event> events = new ArrayList<>();
+    private FileConfiguration config;
     private List<UUID> respawn = new ArrayList<>();
     private List<UUID> clearInventory = new ArrayList<>();
 
@@ -88,10 +87,6 @@ public final class ConfigManager {
         respawn = Helper.stringListToUuidList(config.getStringList("data.respawn"));
     }
 
-    public void setGeneralExit(Location generalExit) {
-        config.set("destinations.general_exit", generalExit);
-    }
-
     public boolean isDebug() {
         return config.getBoolean("debug");
     }
@@ -111,6 +106,10 @@ public final class ConfigManager {
 
     public Location getGeneralExit() {
         return (Location) config.get("destinations.general_exit");
+    }
+
+    public void setGeneralExit(Location generalExit) {
+        config.set("destinations.general_exit", generalExit);
     }
 
     public List<String> getBlockedCommandsEveryone() {

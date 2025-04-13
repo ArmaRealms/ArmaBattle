@@ -23,13 +23,8 @@ import java.util.logging.Logger;
 @SuppressWarnings("FieldMayBeFinal")
 public abstract class BaseGameConfiguration implements ConfigurationSerializable {
 
-    public enum Destination {
-        EXIT, LOBBY, WATCHROOM, BORDER_CENTER
-    }
-
     protected transient File file;
     protected transient FileConfiguration fileConfiguration;
-
     protected String name;
     protected Boolean groupMode = false;
     protected Boolean clearItemsOnDeath = false;
@@ -40,9 +35,6 @@ public abstract class BaseGameConfiguration implements ConfigurationSerializable
     protected List<String> whitelistedItems;
     @Path("items.blacklist")
     protected List<String> blacklistedItems;
-    @Path("prizes")
-    private Map<String, Prizes> prizesMap = createPrizesMap();
-
     protected Boolean pvp = true;
     @Path("boxing")
     protected Boolean boxing = false;
@@ -56,12 +48,10 @@ public abstract class BaseGameConfiguration implements ConfigurationSerializable
     protected Integer minimumPlayers = 2;
     @Path("maximum.players")
     protected Integer maximumPlayers = 100;
-
     @Path("announcement.starting.times")
     protected Integer announcementStartingTimes = 5;
     @Path("announcement.starting.interval")
     protected Integer announcementStartingInterval = 20;
-
     @Path("destination.watchroom")
     protected Location watchroom;
     @Path("destination.exit")
@@ -72,17 +62,14 @@ public abstract class BaseGameConfiguration implements ConfigurationSerializable
     protected Map<Integer, Location> arenaEntrances = new HashMap<>();
     @Path("destination.border_center")
     protected Location borderCenter;
-
     @Path("time.preparation")
     protected Integer preparationTime = 30;
     @Path("time.expiration")
     protected Integer expirationTime = 3600;
-
     @Path("run_commands.before_battle")
     protected @Nullable List<String> commandsBeforeBattle;
     @Path("run_commands.after_battle")
     protected @Nullable List<String> commandsAfterBattle;
-
     @Path("worldborder.enable")
     protected Boolean worldBorder = false;
     @Path("worldborder.initial_size")
@@ -99,6 +86,8 @@ public abstract class BaseGameConfiguration implements ConfigurationSerializable
     protected Boolean cancelBlockInteract = true;
     @Path("minimum.playtime")
     protected int minimunPlaytime = 86400;
+    @Path("prizes")
+    private Map<String, Prizes> prizesMap = createPrizesMap();
 
     public @NotNull FileConfiguration getFileConfiguration() {
         if (fileConfiguration == null) {
@@ -167,16 +156,16 @@ public abstract class BaseGameConfiguration implements ConfigurationSerializable
         return kit;
     }
 
+    public void setKit(Kit kit) {
+        this.kit = kit;
+    }
+
     public @Nullable List<String> getWhitelistedItems() {
         return whitelistedItems;
     }
 
     public List<String> getBlacklistedItems() {
         return blacklistedItems;
-    }
-
-    public void setKit(Kit kit) {
-        this.kit = kit;
     }
 
     public Boolean isPvP() {
@@ -219,12 +208,24 @@ public abstract class BaseGameConfiguration implements ConfigurationSerializable
         return watchroom;
     }
 
+    public void setWatchroom(Location watchroom) {
+        this.watchroom = watchroom;
+    }
+
     public Location getExit() {
         return exit;
     }
 
+    public void setExit(Location exit) {
+        this.exit = exit;
+    }
+
     public Location getLobby() {
         return lobby;
+    }
+
+    public void setLobby(Location lobby) {
+        this.lobby = lobby;
     }
 
     public Map<Integer, Location> getArenaEntrances() {
@@ -235,24 +236,12 @@ public abstract class BaseGameConfiguration implements ConfigurationSerializable
         return borderCenter;
     }
 
-    public void setExit(Location exit) {
-        this.exit = exit;
-    }
-
-    public void setLobby(Location lobby) {
-        this.lobby = lobby;
+    public void setBorderCenter(Location borderCenter) {
+        this.borderCenter = borderCenter;
     }
 
     public void setArenaEntrance(int index, Location entrance) {
         arenaEntrances.put(index, entrance);
-    }
-
-    public void setWatchroom(Location watchroom) {
-        this.watchroom = watchroom;
-    }
-
-    public void setBorderCenter(Location borderCenter) {
-        this.borderCenter = borderCenter;
     }
 
     public Integer getPreparationTime() {
@@ -318,6 +307,10 @@ public abstract class BaseGameConfiguration implements ConfigurationSerializable
 
     public int getMinimumPlaytimeInSeconds() {
         return minimunPlaytime;
+    }
+
+    public enum Destination {
+        EXIT, LOBBY, WATCHROOM, BORDER_CENTER
     }
 
     public enum Prize implements ConfigurationSerializable {

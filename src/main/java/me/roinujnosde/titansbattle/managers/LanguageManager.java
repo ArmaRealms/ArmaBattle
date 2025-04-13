@@ -21,7 +21,7 @@ public class LanguageManager {
     public void setup() {
         TitansBattle plugin = TitansBattle.getInstance();
         ConfigManager cm = plugin.getConfigManager();
-        
+
         fileName = "language-" + cm.getLanguage() + ".yml";
         file = new File(plugin.getDataFolder(), fileName);
         if (!file.exists()) {

@@ -65,20 +65,10 @@ import java.util.UUID;
 public class DatabaseManager {
 
     private final TitansBattle plugin = TitansBattle.getInstance();
-
-    private Connection connection;
-
     private final Map<String, GroupData> groups = new HashMap<>();
     private final Map<UUID, Warrior> warriors = new HashMap<>();
     private final List<Winners> winners = new ArrayList<>();
-
-    private enum CountType {
-        KILLS, DEATHS, VICTORIES, DEFEATS
-    }
-
-    private enum WinnerType {
-        KILLER, WINNER_GROUP, PLAYER_WINNER
-    }
+    private Connection connection;
 
     public void setup() {
         try (Statement statement = getConnection().createStatement()) {
@@ -577,5 +567,13 @@ public class DatabaseManager {
             plugin.debug("Invalid date! " + ex.getMessage(), false);
             return null;
         }
+    }
+
+    private enum CountType {
+        KILLS, DEATHS, VICTORIES, DEFEATS
+    }
+
+    private enum WinnerType {
+        KILLER, WINNER_GROUP, PLAYER_WINNER
     }
 }

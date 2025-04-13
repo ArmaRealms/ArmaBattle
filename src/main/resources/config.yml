@@ -2,14 +2,14 @@
 
 #SQL database settings
 sql:
-    #Set this as false if you want to use a flat-file instead.
-    use-mysql: false
-    database: "titansbattle"
-    mysql:
-        hostname: "localhost"
-        port: 3306
-        username: "titansbattle"
-        password: ""
+  #Set this as false if you want to use a flat-file instead.
+  use-mysql: false
+  database: "titansbattle"
+  mysql:
+    hostname: "localhost"
+    port: 3306
+    username: "titansbattle"
+    password: ""
 
 #Language used in plugin's message
 language: en
@@ -19,41 +19,41 @@ debug: false
 
 #Change the commands
 commands:
-    titansbattle: "titansbattle"
-    create: "create"
-    join: "join"
-    kick: "kick"
-    exit: "exit"
-    start: "start"
-    cancel: "cancel"
-    setdestination: "setdestination"
-    setinventory: "setinventory"
-    setkit: "setkit"
-    setprize: "setprize"
-    help: "help"
-    reload: "reload"
-    watch: "watch"
-    winners: "winners"
-    ranking: "ranking"
-    edit: "edit"
-    prize: "prize"
-    game: "game"
-    members: "members"
-    leaders: "leaders"
-    killer: "killer"
-    groups: "groups"
-    players: "players"
-    challenge: "challenge"
-    group: "group"
-    player: "player"
-    accept: "accept"
-    deny: "deny"
-    info: "info"
-    setwinner: "setwinner"
-    config: "config"
-    x1clan: "x1clan"
-    spec: "spec"
-    getkit: "getkit"
+  titansbattle: "titansbattle"
+  create: "create"
+  join: "join"
+  kick: "kick"
+  exit: "exit"
+  start: "start"
+  cancel: "cancel"
+  setdestination: "setdestination"
+  setinventory: "setinventory"
+  setkit: "setkit"
+  setprize: "setprize"
+  help: "help"
+  reload: "reload"
+  watch: "watch"
+  winners: "winners"
+  ranking: "ranking"
+  edit: "edit"
+  prize: "prize"
+  game: "game"
+  members: "members"
+  leaders: "leaders"
+  killer: "killer"
+  groups: "groups"
+  players: "players"
+  challenge: "challenge"
+  group: "group"
+  player: "player"
+  accept: "accept"
+  deny: "deny"
+  info: "info"
+  setwinner: "setwinner"
+  config: "config"
+  x1clan: "x1clan"
+  spec: "spec"
+  getkit: "getkit"
 
 #Sounds used in games, to disable one leave it ""
 sounds:
@@ -71,11 +71,11 @@ date-format: "dd/MM/yyyy"
 
 #Set how many lines should be displayed on those commands
 page-limit:
-    help: 7
-    ranking: 10
+  help: 7
+  ranking: 10
 
 #List here commands that the plugin will not block in battle phase
-allowed_commands: ["/tb exit", "/tb winners"]
+allowed_commands: [ "/tb exit", "/tb winners" ]
 #Commands that NO ONE will be able to use, not even players who didn't join the game
 blocked_commands_everyone:
   - "/clan disband"
@@ -89,7 +89,7 @@ discord_webhook_url: ""
 
 #Destinations
 destinations:
-    general_exit:
+  general_exit:
 
 #Will the game begin automatically? Which game? When?
 #Game: the name of the game file
@@ -125,5 +125,5 @@ scheduler:
 
 #Data used by the plugin, don't edit it.
 data:
-    respawn: []
-    clear_inv: []
+  respawn: [ ]
+  clear_inv: [ ]

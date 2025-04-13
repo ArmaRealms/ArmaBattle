@@ -1,7 +1,12 @@
 package me.roinujnosde.titansbattle;
 
 import me.roinujnosde.titansbattle.BaseGameConfiguration.Prize;
-import me.roinujnosde.titansbattle.events.*;
+import me.roinujnosde.titansbattle.events.GameStartEvent;
+import me.roinujnosde.titansbattle.events.GroupDefeatedEvent;
+import me.roinujnosde.titansbattle.events.LobbyStartEvent;
+import me.roinujnosde.titansbattle.events.ParticipantDeathEvent;
+import me.roinujnosde.titansbattle.events.PlayerExitGameEvent;
+import me.roinujnosde.titansbattle.events.PlayerJoinGameEvent;
 import me.roinujnosde.titansbattle.exceptions.CommandNotSupportedException;
 import me.roinujnosde.titansbattle.hooks.papi.PlaceholderHook;
 import me.roinujnosde.titansbattle.managers.CommandManager;
@@ -44,26 +49,31 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.stream.Stream;
 
-import static me.roinujnosde.titansbattle.utils.SoundUtils.Type.*;
-import static org.bukkit.ChatColor.*;
+import static me.roinujnosde.titansbattle.utils.SoundUtils.Type.ALLY_DEATH;
+import static me.roinujnosde.titansbattle.utils.SoundUtils.Type.BORDER;
+import static me.roinujnosde.titansbattle.utils.SoundUtils.Type.ENEMY_DEATH;
+import static me.roinujnosde.titansbattle.utils.SoundUtils.Type.JOIN_GAME;
+import static me.roinujnosde.titansbattle.utils.SoundUtils.Type.LEAVE_GAME;
+import static me.roinujnosde.titansbattle.utils.SoundUtils.Type.TELEPORT;
+import static org.bukkit.ChatColor.GREEN;
+import static org.bukkit.ChatColor.RED;
+import static org.bukkit.ChatColor.YELLOW;
 
 public abstract class BaseGame {
 
     protected final TitansBattle plugin;
     protected final GroupManager groupManager;
     protected final GameManager gameManager;
-
-    protected BaseGameConfiguration config;
-    protected boolean lobby;
-    protected boolean preparation;
-    protected boolean battle;
     protected final List<Warrior> participants = new ArrayList<>();
     protected final Map<Warrior, Group> groups = new HashMap<>();
     protected final HashMap<Warrior, Integer> killsCount = new HashMap<>();
     protected final Set<Warrior> casualties = new HashSet<>();
     protected final Set<Warrior> casualtiesWatching = new HashSet<>();
-
     private final List<BukkitTask> tasks = new ArrayList<>();
+    protected BaseGameConfiguration config;
+    protected boolean lobby;
+    protected boolean preparation;
+    protected boolean battle;
     private LobbyAnnouncementTask lobbyTask;
 
     protected BaseGame(@NotNull TitansBattle plugin, BaseGameConfiguration config) {
@@ -153,7 +163,7 @@ public abstract class BaseGame {
         healAndClearEffects(warrior);
         broadcastKey("player_joined", warrior.getName());
         player.sendMessage(getLang("objective"));
-        
+
         if (participants.size() == getConfig().getMaximumPlayers() && lobbyTask != null) {
             lobbyTask.processEnd();
         }
@@ -665,8 +675,8 @@ public abstract class BaseGame {
     }
 
     public class LobbyAnnouncementTask extends BukkitRunnable {
-        private int times;
         private final long interval;
+        private int times;
 
         public LobbyAnnouncementTask(int times, long interval) {
             this.times = times + 1;
@@ -760,7 +770,7 @@ public abstract class BaseGame {
             broadcastKey("preparation_over");
             runCommandsBeforeBattle(getCurrentFighters());
             battle = true;
-            
+
             if (getConfig().isWorldBorder()) {
                 long borderInterval = getConfig().getBorderInterval() * 20L;
                 WorldBorder worldBorder = getConfig().getBorderCenter().getWorld().getWorldBorder();

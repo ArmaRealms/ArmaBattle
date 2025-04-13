@@ -74,6 +74,10 @@ public final class TitansBattle extends JavaPlugin {
     private ConfigurationDao configurationDao;
     private PlaceholderHook placeholderHook;
 
+    public static TitansBattle getInstance() {
+        return instance;
+    }
+
     @Override
     public void onEnable() {
         setupConfig();
@@ -128,10 +132,6 @@ public final class TitansBattle extends JavaPlugin {
         challengeManager.getChallenges().forEach(c -> c.cancel(Bukkit.getConsoleSender()));
         gameManager.getCurrentGame().ifPresent(g -> g.cancel(Bukkit.getConsoleSender()));
         databaseManager.close();
-    }
-
-    public static TitansBattle getInstance() {
-        return instance;
     }
 
     public @Nullable GroupManager getGroupManager() {

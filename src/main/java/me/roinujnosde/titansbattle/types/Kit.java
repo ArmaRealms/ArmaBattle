@@ -1,6 +1,7 @@
 package me.roinujnosde.titansbattle.types;
 
 import de.tr7zw.changeme.nbtapi.NBT;
+import de.tr7zw.changeme.nbtapi.iface.ReadWriteItemNBT;
 import org.bukkit.Material;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.configuration.serialization.SerializableAs;
@@ -12,6 +13,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.function.Consumer;
 
 @SerializableAs("kit")
 public class Kit implements ConfigurationSerializable {
@@ -39,14 +41,6 @@ public class Kit implements ConfigurationSerializable {
         clone(invContents, contents);
     }
 
-    private void clone(ItemStack @NotNull [] source, ItemStack[] destination) {
-        for (int i = 0; i < source.length; i++) {
-            ItemStack itemStack = source[i];
-            destination[i] = itemStack != null ? itemStack.clone() : null;
-        }
-        setNBTTag(destination);
-    }
-
     public Kit(@NotNull Map<String, Object> data) {
         int size = data.keySet().stream().mapToInt(s -> {
             try {
@@ -69,31 +63,6 @@ public class Kit implements ConfigurationSerializable {
         this.boots = getItem(data.get(BOOTS_KEY));
 
         setNBTTag(contents);
-    }
-
-    @Override
-    public Map<String, Object> serialize() {
-        TreeMap<String, Object> data = new TreeMap<>();
-        for (int i = 0; i < contents.length; i++) {
-            ItemStack item = contents[i];
-            if (item != null) {
-                data.put(String.valueOf(i), item);
-            }
-        }
-        data.put(HELMET_KEY, helmet);
-        data.put(CHESTPLATE_KEY, chestplate);
-        data.put(LEGGINGS_KEY, leggings);
-        data.put(BOOTS_KEY, boots);
-        return data;
-    }
-
-    public void set(@NotNull Player player) {
-        PlayerInventory inventory = player.getInventory();
-        inventory.setHelmet(helmet);
-        inventory.setChestplate(chestplate);
-        inventory.setLeggings(leggings);
-        inventory.setBoots(boots);
-        inventory.setContents(contents);
     }
 
     public static boolean inventoryHasItems(@NotNull Player player) {
@@ -130,10 +99,6 @@ public class Kit implements ConfigurationSerializable {
         player.getInventory().setBoots(null);
     }
 
-    private ItemStack getItem(Object object) {
-        return clone((ItemStack) object);
-    }
-
     public static void applyNBTTag(@NotNull ItemStack item) {
         if (item.getType() == Material.AIR) {
             return;
@@ -148,6 +113,43 @@ public class Kit implements ConfigurationSerializable {
             return false;
         }
         return NBT.get(item, n -> (boolean) n.getBoolean(Kit.NBT_TAG));
+    }
+
+    private void clone(ItemStack @NotNull [] source, ItemStack[] destination) {
+        for (int i = 0; i < source.length; i++) {
+            ItemStack itemStack = source[i];
+            destination[i] = itemStack != null ? itemStack.clone() : null;
+        }
+        setNBTTag(destination);
+    }
+
+    @Override
+    public @NotNull Map<String, Object> serialize() {
+        TreeMap<String, Object> data = new TreeMap<>();
+        for (int i = 0; i < contents.length; i++) {
+            ItemStack item = contents[i];
+            if (item != null) {
+                data.put(String.valueOf(i), item);
+            }
+        }
+        data.put(HELMET_KEY, helmet);
+        data.put(CHESTPLATE_KEY, chestplate);
+        data.put(LEGGINGS_KEY, leggings);
+        data.put(BOOTS_KEY, boots);
+        return data;
+    }
+
+    public void set(@NotNull Player player) {
+        PlayerInventory inventory = player.getInventory();
+        inventory.setHelmet(helmet);
+        inventory.setChestplate(chestplate);
+        inventory.setLeggings(leggings);
+        inventory.setBoots(boots);
+        inventory.setContents(contents);
+    }
+
+    private ItemStack getItem(Object object) {
+        return clone((ItemStack) object);
     }
 
     private void removeNBTTag(ItemStack item) {

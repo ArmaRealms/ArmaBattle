@@ -40,7 +40,7 @@ public class SoundUtils {
         if (soundName.isEmpty()) return;
         Sound sound = null;
         try {
-             sound = getSound(soundName.toUpperCase(Locale.ROOT));
+            sound = getSound(soundName.toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException e) {
             LOGGER.warning(String.format("Invalid sound: %s", soundName));
         }

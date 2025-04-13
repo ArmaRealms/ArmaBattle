@@ -10,7 +10,7 @@ import me.roinujnosde.titansbattle.BaseGame;
 import me.roinujnosde.titansbattle.TitansBattle;
 import org.jetbrains.annotations.NotNull;
 
-public class PlayerParticipantCondition extends AbstractParameterCondition<OnlinePlayer>{
+public class PlayerParticipantCondition extends AbstractParameterCondition<OnlinePlayer> {
     public PlayerParticipantCondition(TitansBattle plugin) {
         super(plugin);
     }

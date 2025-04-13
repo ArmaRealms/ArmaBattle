@@ -35,7 +35,6 @@ import org.jetbrains.annotations.NotNull;
 import java.text.MessageFormat;
 
 /**
- *
  * @author RoinujNosde
  */
 public class PlayerCommandPreprocessListener extends TBListener {
