@@ -769,6 +769,7 @@ public abstract class BaseGame {
         public void run() {
             broadcastKey("preparation_over");
             runCommandsBeforeBattle(getCurrentFighters());
+            preparation = false;
             battle = true;
 
             if (getConfig().isWorldBorder()) {
