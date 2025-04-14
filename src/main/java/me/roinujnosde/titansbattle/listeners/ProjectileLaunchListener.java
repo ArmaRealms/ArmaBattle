@@ -22,14 +22,14 @@ public class ProjectileLaunchListener extends TBListener {
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
-    public void onBreak(ProjectileLaunchEvent event) {
+    public void onProjectileLaunch(ProjectileLaunchEvent event) {
         if (event.getEntity().getShooter() instanceof Player player) {
             cancel(player, event);
         }
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
-    public void onPlace(ProjectileHitEvent event) {
+    public void onProjectileHit(ProjectileHitEvent event) {
         if (event.getEntity().getShooter() instanceof Player player) {
             cancel(player, event);
         }
