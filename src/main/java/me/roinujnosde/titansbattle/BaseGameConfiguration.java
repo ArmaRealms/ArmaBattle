@@ -88,6 +88,8 @@ public abstract class BaseGameConfiguration implements ConfigurationSerializable
     private Map<String, Prizes> prizesMap = createPrizesMap();
     @Path("minimum.playtime")
     protected int minimunPlaytime = 86400;
+    @Path("viaversion.blocked-versions")
+    protected List<Integer> blockedVersions;
 
     public @NotNull FileConfiguration getFileConfiguration() {
         if (fileConfiguration == null) {
@@ -307,6 +309,10 @@ public abstract class BaseGameConfiguration implements ConfigurationSerializable
 
     public int getMinimumPlaytimeInSeconds() {
         return minimunPlaytime;
+    }
+
+    public List<Integer> getBlockedVersions() {
+        return blockedVersions;
     }
 
     public enum Destination {

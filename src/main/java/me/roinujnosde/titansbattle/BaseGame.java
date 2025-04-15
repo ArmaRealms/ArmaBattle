@@ -152,9 +152,15 @@ public abstract class BaseGame {
         }
 
         ViaVersionHook viaVersionHook = plugin.getViaVersionHook();
-        if (viaVersionHook != null && viaVersionHook.isPlayerVersionBlocked(player)) {
-            player.sendMessage(getLang("blocked.version"));
-            return;
+        if (viaVersionHook != null) {
+            if (viaVersionHook.isPlayerVersionBlocked(player)) {
+                player.sendMessage(getLang("blocked.version"));
+                return;
+            }
+            if (viaVersionHook.isPlayerVersionBlocked(player, getConfig())) {
+                player.sendMessage(getLang("blocked.version"));
+                return;
+            }
         }
 
         if (!teleport(warrior, getConfig().getLobby())) {
