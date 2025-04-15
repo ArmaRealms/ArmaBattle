@@ -88,8 +88,8 @@ public abstract class BaseGameConfiguration implements ConfigurationSerializable
     private Map<String, Prizes> prizesMap = createPrizesMap();
     @Path("minimum.playtime")
     protected int minimunPlaytime = 86400;
-    @Path("viaversion.blocked-versions")
-    protected List<Integer> blockedVersions;
+    @Path("viaversion.block-protocols")
+    protected List<Integer> blockedProtocols;
 
     public @NotNull FileConfiguration getFileConfiguration() {
         if (fileConfiguration == null) {
@@ -311,8 +311,8 @@ public abstract class BaseGameConfiguration implements ConfigurationSerializable
         return minimunPlaytime;
     }
 
-    public List<Integer> getBlockedVersions() {
-        return blockedVersions;
+    public List<Integer> getBlockedProtocols() {
+        return blockedProtocols;
     }
 
     public enum Destination {
