@@ -128,6 +128,10 @@
             <id>codemc-repo</id>
             <url>https://repo.codemc.io/repository/maven-public/</url>
         </repository>
+        <repository>
+            <id>viaversion-repo</id>
+            <url>https://repo.viaversion.com</url>
+        </repository>
     </repositories>
     <dependencies>
         <dependency>
@@ -203,6 +207,12 @@
             <artifactId>mockito-core</artifactId>
             <version>5.14.2</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.viaversion</groupId>
+            <artifactId>viaversion-api</artifactId>
+            <version>5.3.1</version>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
     <name>TitansBattle</name>

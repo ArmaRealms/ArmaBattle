@@ -10,6 +10,7 @@ softdepend:
   - "PlaceholderAPI"
   - "Essentials"
   - "Multiverse-Core"
+  - "ViaVersion"
 permissions:
   titansbattle.admin:
     description: "Gives access to administrator commands"

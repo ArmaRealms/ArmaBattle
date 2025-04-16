@@ -7,6 +7,7 @@ import com.google.gson.JsonSyntaxException;
 import javax.net.ssl.HttpsURLConnection;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.URI;
 import java.net.URL;
 
 /**
@@ -40,7 +41,7 @@ public class DiscordWebhook {
             json.addProperty("content", content);
         }
 
-        URL url = new URL(this.urlString);
+        URL url = URI.create(this.urlString).toURL();
         HttpsURLConnection connection = (HttpsURLConnection) url.openConnection();
         connection.setRequestMethod("POST");
         connection.addRequestProperty("Content-Type", "application/json");

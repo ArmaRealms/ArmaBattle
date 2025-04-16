@@ -104,6 +104,7 @@ public abstract class Game extends BaseGame {
         }
     }
 
+    @Override
     public @NotNull GameConfiguration getConfig() {
         return (GameConfiguration) config;
     }

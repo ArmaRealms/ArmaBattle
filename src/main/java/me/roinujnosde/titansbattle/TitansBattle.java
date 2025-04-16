@@ -27,6 +27,7 @@ import me.roinujnosde.titansbattle.dao.ConfigurationDao;
 import me.roinujnosde.titansbattle.games.Game;
 import me.roinujnosde.titansbattle.hooks.discord.DiscordWebhook;
 import me.roinujnosde.titansbattle.hooks.papi.PlaceholderHook;
+import me.roinujnosde.titansbattle.hooks.viaversion.ViaVersionHook;
 import me.roinujnosde.titansbattle.managers.ChallengeManager;
 import me.roinujnosde.titansbattle.managers.CommandManager;
 import me.roinujnosde.titansbattle.managers.ConfigManager;
@@ -73,6 +74,7 @@ public final class TitansBattle extends JavaPlugin {
     private ListenerManager listenerManager;
     private ConfigurationDao configurationDao;
     private PlaceholderHook placeholderHook;
+    private ViaVersionHook viaVersionHook;
 
     public static TitansBattle getInstance() {
         return instance;
@@ -103,6 +105,9 @@ public final class TitansBattle extends JavaPlugin {
         databaseManager.loadDataToMemory();
         taskManager.setupScheduler();
         placeholderHook = new PlaceholderHook(this);
+        if (Bukkit.getPluginManager().isPluginEnabled("ViaVersion")) {
+            viaVersionHook = new ViaVersionHook(this);
+        }
         new Metrics(this, 14875);
     }
 
@@ -178,6 +183,10 @@ public final class TitansBattle extends JavaPlugin {
 
     public PlaceholderHook getPlaceholderHook() {
         return placeholderHook;
+    }
+
+    public ViaVersionHook getViaVersionHook() {
+        return viaVersionHook;
     }
 
     /**

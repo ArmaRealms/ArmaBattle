@@ -9,6 +9,7 @@ import me.roinujnosde.titansbattle.events.PlayerExitGameEvent;
 import me.roinujnosde.titansbattle.events.PlayerJoinGameEvent;
 import me.roinujnosde.titansbattle.exceptions.CommandNotSupportedException;
 import me.roinujnosde.titansbattle.hooks.papi.PlaceholderHook;
+import me.roinujnosde.titansbattle.hooks.viaversion.ViaVersionHook;
 import me.roinujnosde.titansbattle.managers.CommandManager;
 import me.roinujnosde.titansbattle.managers.GameManager;
 import me.roinujnosde.titansbattle.managers.GroupManager;
@@ -148,6 +149,18 @@ public abstract class BaseGame {
             StringBuilder formattedTime = getFormattedTime(minimumPlaytimeInSeconds, playtimeInSeconds);
             player.sendMessage(getLang("not.enough.playtime", formattedTime.toString()));
             return;
+        }
+
+        ViaVersionHook viaVersionHook = plugin.getViaVersionHook();
+        if (viaVersionHook != null) {
+            if (viaVersionHook.isPlayerVersionBlocked(player)) {
+                player.sendMessage(getLang("blocked.version"));
+                return;
+            }
+            if (viaVersionHook.isPlayerVersionBlocked(player, getConfig())) {
+                player.sendMessage(getLang("blocked.version"));
+                return;
+            }
         }
 
         if (!teleport(warrior, getConfig().getLobby())) {

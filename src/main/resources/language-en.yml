@@ -142,6 +142,7 @@ discord_who_won_killer: "» Game over! Killer is: {0} Kills: {1}."
 wait_for_third_place_fight: "&b» Wait, you'll be fighting for third place!"
 boxing_hit_count: "&cHits: &e{0}&7/&c{1}"
 not.enough.playtime: "&c» You don't have enough playtime to join this game! You need to play more {0} to join."
+blocked.version: "&c» You are using a blocked version of the game. Please update to the latest version."
 players-ranking:
   victories-title: "V"
   kills-title: "K"

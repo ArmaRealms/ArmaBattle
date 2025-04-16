@@ -113,11 +113,7 @@ public final class ConfigManager {
     }
 
     public List<String> getBlockedCommandsEveryone() {
-        List<String> blockedCommandsEveryone = config.getStringList("blocked_commands_everyone");
-        if (blockedCommandsEveryone == null) {
-            blockedCommandsEveryone = new ArrayList<>();
-        }
-        return blockedCommandsEveryone;
+        return config.getStringList("blocked_commands_everyone");
     }
 
     /**
@@ -126,11 +122,7 @@ public final class ConfigManager {
      * @return the allowed commands
      */
     public List<String> getAllowedCommands() {
-        List<String> allowedCommands = config.getStringList("allowed_commands");
-        if (allowedCommands == null) {
-            allowedCommands = new ArrayList<>();
-        }
-        return allowedCommands;
+        return config.getStringList("allowed_commands");
     }
 
     /**
@@ -199,5 +191,11 @@ public final class ConfigManager {
 
     public String getDateFormat() {
         return config.getString("date-format");
+    }
+
+    public List<Integer> getBlockedProtocols() {
+        return config.getStringList("viaversion.block-protocols").stream()
+                .map(Integer::parseInt)
+                .toList();
     }
 }

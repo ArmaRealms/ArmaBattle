@@ -23,8 +23,8 @@ import java.util.logging.Logger;
 @SuppressWarnings("FieldMayBeFinal")
 public abstract class BaseGameConfiguration implements ConfigurationSerializable {
 
-    protected transient File file;
-    protected transient FileConfiguration fileConfiguration;
+    protected File file;
+    protected FileConfiguration fileConfiguration;
     protected String name;
     protected Boolean groupMode = false;
     protected Boolean clearItemsOnDeath = false;
@@ -84,10 +84,12 @@ public abstract class BaseGameConfiguration implements ConfigurationSerializable
     protected Double borderDamage = 5.0;
     @Path("cancel-block-interact")
     protected Boolean cancelBlockInteract = true;
-    @Path("minimum.playtime")
-    protected int minimunPlaytime = 86400;
     @Path("prizes")
     private Map<String, Prizes> prizesMap = createPrizesMap();
+    @Path("minimum.playtime")
+    protected int minimunPlaytime = 86400;
+    @Path("viaversion.block-protocols")
+    protected List<Integer> blockedProtocols;
 
     public @NotNull FileConfiguration getFileConfiguration() {
         if (fileConfiguration == null) {
@@ -307,6 +309,10 @@ public abstract class BaseGameConfiguration implements ConfigurationSerializable
 
     public int getMinimumPlaytimeInSeconds() {
         return minimunPlaytime;
+    }
+
+    public List<Integer> getBlockedProtocols() {
+        return blockedProtocols;
     }
 
     public enum Destination {
