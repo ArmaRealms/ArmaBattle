@@ -73,8 +73,7 @@ public class SpectateListener extends TBListener {
 
     @EventHandler(ignoreCancelled = true)
     public void onPlayerTeleport(final PlayerTeleportEvent event) {
-        final Player player = event.getPlayer();
-        if (!spectateManager.isSpectating(player)) {
+        if (!spectateManager.isSpectating(event.getPlayer())) {
             return;
         }
 

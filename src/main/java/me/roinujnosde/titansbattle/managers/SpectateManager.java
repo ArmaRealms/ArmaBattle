@@ -41,18 +41,20 @@ public class SpectateManager {
         config = (arena == null) ? game.getConfig() : arena;
 
         Location watchroom = config.getWatchroom();
-        spectators.add(player.getUniqueId());
-        if (player.teleport(watchroom)) {
-            SoundUtils.playSound(SoundUtils.Type.WATCH, plugin.getConfig(), player);
-            player.hidePlayer(plugin, player);
-            player.setGameMode(GameMode.ADVENTURE);
-            player.setAllowFlight(true);
-            player.setFlying(true);
-            player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, Integer.MAX_VALUE, 1, false, false));
-        } else {
+        if (!player.teleport(watchroom)) {
             player.sendMessage(plugin.getLang("teleport-failed"));
             plugin.debug(String.format("Failed to teleport player %s to watchroom location.", player.getName()));
+            return;
         }
+
+        spectators.add(player.getUniqueId());
+        SoundUtils.playSound(SoundUtils.Type.WATCH, plugin.getConfig(), player);
+        player.hidePlayer(plugin, player);
+        player.setGameMode(GameMode.ADVENTURE);
+        player.setAllowFlight(true);
+        player.setFlying(true);
+        player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, Integer.MAX_VALUE, 1, false, false));
+        player.sendMessage(plugin.getLang("spectator-enter"));
     }
 
     public void removeSpectator(final Player player) {
@@ -61,18 +63,19 @@ public class SpectateManager {
             return;
         }
 
-        Location generalExit = configManager.getGeneralExit();
         spectators.remove(player.getUniqueId());
-        if (player.teleport(generalExit)) {
-            player.showPlayer(plugin, player);
-            player.setGameMode(GameMode.SURVIVAL);
-            player.setAllowFlight(false);
-            player.setFlying(false);
-            player.removePotionEffect(PotionEffectType.INVISIBILITY);
-        } else {
+        Location generalExit = configManager.getGeneralExit();
+        if (!player.teleport(generalExit)) {
             player.sendMessage(plugin.getLang("teleport-failed"));
             plugin.debug(String.format("Failed to teleport player %s to exit location after spectating.", player.getName()));
         }
+
+        player.showPlayer(plugin, player);
+        player.setGameMode(GameMode.SURVIVAL);
+        player.setAllowFlight(false);
+        player.setFlying(false);
+        player.removePotionEffect(PotionEffectType.INVISIBILITY);
+        player.sendMessage(plugin.getLang("spectator-exit"));
     }
 
     public void removeAllSpectators() {
