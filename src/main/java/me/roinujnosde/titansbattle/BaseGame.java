@@ -1,6 +1,7 @@
 package me.roinujnosde.titansbattle;
 
 import me.roinujnosde.titansbattle.BaseGameConfiguration.Prize;
+import me.roinujnosde.titansbattle.events.GameFinishEvent;
 import me.roinujnosde.titansbattle.events.GameStartEvent;
 import me.roinujnosde.titansbattle.events.GroupDefeatedEvent;
 import me.roinujnosde.titansbattle.events.LobbyStartEvent;
@@ -35,6 +36,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Unmodifiable;
 
 import java.text.MessageFormat;
 import java.time.Duration;
@@ -77,6 +79,11 @@ public abstract class BaseGame {
     protected boolean battle;
     private LobbyAnnouncementTask lobbyTask;
 
+    private static final double DEFAULT_MAX_HEALTH = 20.0D;
+    private static final float DEFAULT_EXHAUSTION = 0.0F;
+    private static final float DEFAULT_SATURATION = 5.0F;
+    private static final int DEFAULT_MAX_FOOD_LEVEL = 20;
+
     protected BaseGame(@NotNull TitansBattle plugin, BaseGameConfiguration config) {
         this.plugin = plugin;
         this.groupManager = plugin.getGroupManager();
@@ -108,6 +115,7 @@ public abstract class BaseGame {
     }
 
     public void finish(boolean cancelled) {
+        new GameFinishEvent(this).callEvent();
         teleportAll(getConfig().getExit());
         killTasks();
         runCommandsAfterBattle(getParticipants());
@@ -135,12 +143,12 @@ public abstract class BaseGame {
             plugin.debug(String.format("Warrior %s can't join", warrior.getName()));
             return;
         }
+
         Player player = warrior.toOnlinePlayer();
         if (player == null) {
             plugin.debug(String.format("onJoin() -> player %s %s == null", warrior.getName(), warrior.getUniqueId()));
             return;
         }
-
 
         int playtimeInSeconds = player.getStatistic(Statistic.PLAY_ONE_MINUTE) / 20;
         int minimumPlaytimeInSeconds = getConfig().getMinimumPlaytimeInSeconds();
@@ -303,7 +311,7 @@ public abstract class BaseGame {
 
     public abstract boolean shouldKeepInventoryOnDeath(@NotNull Warrior warrior);
 
-    public @NotNull List<Warrior> getParticipants() {
+    public @Unmodifiable @NotNull List<Warrior> getParticipants() {
         return Collections.unmodifiableList(participants);
     }
 
@@ -367,13 +375,13 @@ public abstract class BaseGame {
         Player player = warrior.toOnlinePlayer();
         if (player == null) return;
 
-        player.setHealth(player.getMaxHealth());
-        player.setFoodLevel(20);
+        player.setHealth(DEFAULT_MAX_HEALTH);
+        player.setExhaustion(DEFAULT_EXHAUSTION);
+        player.setSaturation(DEFAULT_SATURATION);
+        player.setFoodLevel(DEFAULT_MAX_FOOD_LEVEL);
         player.setFireTicks(0);
 
-        for (PotionEffect effect : player.getActivePotionEffects()) {
-            player.removePotionEffect(effect.getType());
-        }
+        player.getActivePotionEffects().forEach(effect -> player.removePotionEffect(effect.getType()));
     }
 
     @Override
@@ -394,10 +402,8 @@ public abstract class BaseGame {
     }
 
     protected boolean teleport(@Nullable Warrior warrior, @NotNull Location destination) {
-//        plugin.debug(String.format("teleport() -> destination %s", destination));
         Player player = warrior != null ? warrior.toOnlinePlayer() : null;
         if (player == null) {
-//            plugin.debug(String.format("teleport() -> warrior %s", warrior));
             return false;
         }
         SoundUtils.playSound(TELEPORT, plugin.getConfig(), player);
