@@ -70,7 +70,7 @@ public class EliminationTournamentGame extends Game {
         }
     }
 
-    private List<Warrior> getDuelLosers(@NotNull Warrior defeated) {
+    private @Unmodifiable List<Warrior> getDuelLosers(@NotNull Warrior defeated) {
         Group group = getGroup(defeated);
         if (group != null && getConfig().isGroupMode()) {
             return casualties.stream().filter(p -> isMember(group, p)).toList();
@@ -78,8 +78,8 @@ public class EliminationTournamentGame extends Game {
         return Collections.singletonList(defeated);
     }
 
-    private List<Warrior> getDuelWinners(@NotNull Warrior defeated) {
         List<Warrior> list = new ArrayList<>();
+    private @Unmodifiable List<Warrior> getDuelWinners(@NotNull Warrior warrior) {
         if (getConfig().isGroupMode()) {
             Optional<Duel<Group>> firstGroupDuel = getFirstGroupDuel();
             if (firstGroupDuel.isPresent()) {
