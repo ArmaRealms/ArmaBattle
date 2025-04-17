@@ -13,6 +13,7 @@ import me.roinujnosde.titansbattle.listeners.PlayerRespawnListener;
 import me.roinujnosde.titansbattle.listeners.PlayerTeleportListener;
 import me.roinujnosde.titansbattle.listeners.ProjectileLaunchListener;
 import me.roinujnosde.titansbattle.listeners.SimpleClansListener;
+import me.roinujnosde.titansbattle.listeners.SpectateListener;
 import me.roinujnosde.titansbattle.listeners.TBListener;
 import org.bukkit.Bukkit;
 import org.bukkit.event.HandlerList;
@@ -36,6 +37,7 @@ public class ListenerManager {
     }
 
     public void registerBattleListeners() {
+        registerListener(new SpectateListener(plugin));
         registerListener(new PlayerRespawnListener(plugin));
         registerListener(new PlayerCommandPreprocessListener(plugin));
         registerListener(new PlayerDeathListener(plugin));
