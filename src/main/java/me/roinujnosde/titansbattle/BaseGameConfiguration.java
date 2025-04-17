@@ -84,12 +84,12 @@ public abstract class BaseGameConfiguration implements ConfigurationSerializable
     protected Double borderDamage = 5.0;
     @Path("cancel-block-interact")
     protected Boolean cancelBlockInteract = true;
-    @Path("prizes")
-    private Map<String, Prizes> prizesMap = createPrizesMap();
     @Path("minimum.playtime")
     protected int minimunPlaytime = 86400;
     @Path("viaversion.block-protocols")
     protected List<Integer> blockedProtocols;
+    @Path("prizes")
+    private Map<String, Prizes> prizesMap = createPrizesMap();
 
     public @NotNull FileConfiguration getFileConfiguration() {
         if (fileConfiguration == null) {

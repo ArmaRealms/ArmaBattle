@@ -31,7 +31,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.potion.PotionEffect;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.jetbrains.annotations.NotNull;
@@ -64,6 +63,10 @@ import static org.bukkit.ChatColor.YELLOW;
 
 public abstract class BaseGame {
 
+    private static final double DEFAULT_MAX_HEALTH = 20.0D;
+    private static final float DEFAULT_EXHAUSTION = 0.0F;
+    private static final float DEFAULT_SATURATION = 5.0F;
+    private static final int DEFAULT_MAX_FOOD_LEVEL = 20;
     protected final TitansBattle plugin;
     protected final GroupManager groupManager;
     protected final GameManager gameManager;
@@ -78,11 +81,6 @@ public abstract class BaseGame {
     protected boolean preparation;
     protected boolean battle;
     private LobbyAnnouncementTask lobbyTask;
-
-    private static final double DEFAULT_MAX_HEALTH = 20.0D;
-    private static final float DEFAULT_EXHAUSTION = 0.0F;
-    private static final float DEFAULT_SATURATION = 5.0F;
-    private static final int DEFAULT_MAX_FOOD_LEVEL = 20;
 
     protected BaseGame(@NotNull TitansBattle plugin, BaseGameConfiguration config) {
         this.plugin = plugin;
