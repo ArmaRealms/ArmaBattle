@@ -91,6 +91,7 @@ config-creation-error: "&b» There was a problem creating the file. Check your c
 winners: "&b--- TB Winners ---\n &b\nDate: {0}\nKiller: {1}\nGroup: {2}\nGroup members: {3}"
 player-command: "&b» Only a player can use this command!"
 command-blocked-for-everyone: "&b» You cannot use the command {0} while a game is happening!"
+command-not-allowed-in-spectator: "&b» You cannot use the command {0} while in spectator mode!"
 command-not-allowed: "&b» You can not use {0} while in battle!"
 invalid-destination: "&b» You have inserted an invalid destination!"
 already-joined: "&b» You have already joined the game!"

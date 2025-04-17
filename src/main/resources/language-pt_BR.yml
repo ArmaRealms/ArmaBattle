@@ -82,6 +82,7 @@ config-creation-error: "&b» Ocorreu um problema ao criar o arquivo. Verifique s
 winners: "&b--- TB Vencedores ---\n &b\nData: {0}\nMatador: {1}\nGrupo: {2}\nMembros do grupo: {3}"
 player-command: "&b» Somente jogadores podem usar este comando!"
 command-blocked-for-everyone: "&b» Você não pode usar o comando {0} enquanto um jogo está em andamento!"
+command-not-allowed-in-spectator: "&b» Você não pode usar o comando {0} enquanto estiver no modo espectador!"
 command-not-allowed: "&b» Você não pode usar {0} em batalha!"
 invalid-destination: "&b» Você inseriu um destino inválido!"
 already-joined: "&b» Você já entrou no jogo!"
