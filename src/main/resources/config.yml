@@ -54,6 +54,7 @@ commands:
   x1clan: "x1clan"
   spec: "spec"
   getkit: "getkit"
+  teleport: "teleport"
 
 #Sounds used in games, to disable one leave it ""
 sounds:

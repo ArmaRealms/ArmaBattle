@@ -94,7 +94,6 @@ public class ChallengeCommand extends BaseCommand {
     @Description("{@@command.description.challenge.exit}")
     public void leave(Player sender) {
         Warrior warrior = databaseManager.getWarrior(sender);
-        //noinspection ConstantConditions
         sender.getActivePotionEffects().forEach(e -> sender.removePotionEffect(e.getType()));
         plugin.getBaseGameFrom(sender).onLeave(warrior);
     }
