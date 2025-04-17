@@ -76,6 +76,10 @@ page-limit:
 
 #List here commands that the plugin will not block in battle phase
 allowed_commands: [ "/tb exit", "/tb winners" ]
+
+#List here commands that the plugin will not block in spectator phase
+allowed_commands_in_spectator: [ "/tb watchroom", "/tb watch", "/tb spec" ]
+
 #Commands that NO ONE will be able to use, not even players who didn't join the game
 blocked_commands_everyone:
   - "/clan disband"

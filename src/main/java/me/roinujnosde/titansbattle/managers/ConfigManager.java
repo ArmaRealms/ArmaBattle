@@ -126,6 +126,15 @@ public final class ConfigManager {
     }
 
     /**
+     * Gets the commands allowed in battle
+     *
+     * @return the allowed commands
+     */
+    public List<String> getAllowedCommandsInSpectator() {
+        return config.getStringList("allowed_commands_in_spectator");
+    }
+
+    /**
      * Sets the commands allowed in battle
      *
      * @param allowedCommands the allowed commands
