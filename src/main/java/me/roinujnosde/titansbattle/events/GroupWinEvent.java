@@ -26,6 +26,7 @@ package me.roinujnosde.titansbattle.events;
 import me.roinujnosde.titansbattle.types.Group;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author RoinujNosde
@@ -56,7 +57,7 @@ public class GroupWinEvent extends Event {
     }
 
     @Override
-    public HandlerList getHandlers() {
+    public @NotNull HandlerList getHandlers() {
         return HANDLERS;
     }
 }

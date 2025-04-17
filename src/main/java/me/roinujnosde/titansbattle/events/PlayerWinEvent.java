@@ -61,7 +61,7 @@ public class PlayerWinEvent extends Event {
      * @return the winner of the event
      */
     public Warrior getPlayer() {
-        return players.get(0);
+        return players.getFirst();
     }
 
     /**
@@ -74,7 +74,7 @@ public class PlayerWinEvent extends Event {
     }
 
     @Override
-    public HandlerList getHandlers() {
+    public @NotNull HandlerList getHandlers() {
         return HANDLERS;
     }
 }
