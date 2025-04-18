@@ -86,6 +86,7 @@ public class SpectateManager {
         if (!player.teleport(configManager.getGeneralExit(), PlayerTeleportEvent.TeleportCause.PLUGIN)) {
             plugin.debug(String.format("Failed to teleport player %s to exit location after spectating.", player.getName()));
             player.sendMessage(plugin.getLang("teleport-failed"));
+            spectators.add(player.getUniqueId());
         }
         SoundUtils.playSound(LEAVE_GAME, plugin.getConfig(), player);
 
