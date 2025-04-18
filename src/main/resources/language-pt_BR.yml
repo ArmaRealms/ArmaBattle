@@ -135,6 +135,7 @@ teleport-failed: "&c» Desculpe, não consegui teleportar você. Tente novamente
 spectator-enter: "&b» Você está agora no modo espectador. Use /tb exit para sair."
 spectator-exit: "&b» Você saiu do modo espectador."
 no-entrance: "&c» Entrada do evento não encontrada!"
+clear-your-inventory-before-spectating: "&b» Limpe seu inventário antes de assistir esse jogo!"
 players-ranking:
   victories-title: "V"
   kills-title: "A"

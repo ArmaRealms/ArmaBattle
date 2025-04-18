@@ -43,7 +43,7 @@ public class SpectateManager {
 
     public void addSpectator(final Player player, Game game, @Optional ArenaConfiguration arena) {
         if (Kit.inventoryHasItems(player)) {
-            player.sendMessage(plugin.getLang("clear-your-inventory"));
+            player.sendMessage(plugin.getLang("clear-your-inventory-before-spectating"));
             return;
         }
 

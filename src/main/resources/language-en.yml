@@ -150,6 +150,7 @@ teleport-failed: "&c» Teleportation failed. Please try again."
 spectator-enter: "&b» You are now a spectator. Use /tb watch to leave."
 spectator-exit: "&b» You are no longer a spectator."
 no-entrance: "&c» No entrance found!"
+clear-your-inventory-before-spectating: "&b» Clear your inventory before you watch a game!"
 players-ranking:
   victories-title: "V"
   kills-title: "K"
