@@ -11,7 +11,7 @@ public abstract class ChallengeRequest<T> {
     protected final T challenger;
     protected final T challenged;
 
-    public ChallengeRequest(Challenge challenge, @NotNull T challenger, @NotNull T challenged) {
+    protected ChallengeRequest(Challenge challenge, @NotNull T challenger, @NotNull T challenged) {
         this.challenge = challenge;
         this.challenger = challenger;
         this.challenged = challenged;

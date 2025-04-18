@@ -23,6 +23,7 @@ import me.roinujnosde.titansbattle.challenges.GroupChallengeRequest;
 import me.roinujnosde.titansbattle.dao.ConfigurationDao;
 import me.roinujnosde.titansbattle.managers.ChallengeManager;
 import me.roinujnosde.titansbattle.managers.DatabaseManager;
+import me.roinujnosde.titansbattle.managers.SpectateManager;
 import me.roinujnosde.titansbattle.types.Group;
 import me.roinujnosde.titansbattle.types.Warrior;
 import me.roinujnosde.titansbattle.utils.SoundUtils;
@@ -41,6 +42,8 @@ public class ChallengeCommand extends BaseCommand {
     private ChallengeManager challengeManager;
     @Dependency
     private DatabaseManager databaseManager;
+    @Dependency
+    private SpectateManager spectateManager;
     @Dependency
     private ConfigurationDao configDao;
 
@@ -103,9 +106,7 @@ public class ChallengeCommand extends BaseCommand {
     @CommandCompletion("@arenas:in_use=true")
     @Description("{@@command.description.challenge.watch}")
     public void watch(Player sender, @Conditions("can_spectate") ArenaConfiguration arena) {
-        sender.teleport(arena.getWatchroom());
-        sender.sendMessage(plugin.getLang("challenge.teleport-watchroom"));
-        SoundUtils.playSound(SoundUtils.Type.WATCH, plugin.getConfig(), sender);
+        spectateManager.addSpectator(sender, null, arena);
     }
 
     @CatchUnknown

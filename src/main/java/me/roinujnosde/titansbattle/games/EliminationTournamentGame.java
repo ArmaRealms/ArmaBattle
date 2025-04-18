@@ -4,6 +4,7 @@ import me.roinujnosde.titansbattle.TitansBattle;
 import me.roinujnosde.titansbattle.events.GroupWinEvent;
 import me.roinujnosde.titansbattle.events.PlayerWinEvent;
 import me.roinujnosde.titansbattle.exceptions.CommandNotSupportedException;
+import me.roinujnosde.titansbattle.managers.SpectateManager;
 import me.roinujnosde.titansbattle.types.GameConfiguration;
 import me.roinujnosde.titansbattle.types.Group;
 import me.roinujnosde.titansbattle.types.Kit;
@@ -42,6 +43,7 @@ import static me.roinujnosde.titansbattle.BaseGameConfiguration.Prize.THIRD;
 
 public class EliminationTournamentGame extends Game {
 
+    protected final SpectateManager spectateManager;
     private final List<Duel<Warrior>> playerDuelists = new ArrayList<>();
     private final List<Duel<Group>> groupDuelists = new ArrayList<>();
     private final List<Warrior> waitingThirdPlace = new ArrayList<>();
@@ -53,6 +55,7 @@ public class EliminationTournamentGame extends Game {
 
     public EliminationTournamentGame(TitansBattle plugin, GameConfiguration config) {
         super(plugin, config);
+        this.spectateManager = plugin.getSpectateManager();
     }
 
     @Override
@@ -137,7 +140,7 @@ public class EliminationTournamentGame extends Game {
                 if (thirdPlaceBattle) {
                     thirdPlaceWinners = duelWinners;
                     thirdPlaceBattle = false;
-                    teleport(duelWinners, getConfig().getWatchroom());
+                    spectateManager.addSpectator(duelWinners, this, null);
                     participants.removeIf(thirdPlaceWinners::contains);
                     if (getConfig().isUseKits()) {
                         thirdPlaceWinners.forEach(Kit::clearInventory);
@@ -166,10 +169,7 @@ public class EliminationTournamentGame extends Game {
                 } else {
                     waitingThirdPlace.add(warrior);
                 }
-                Bukkit.getScheduler().runTaskLater(plugin, () -> {
-                    //disconnected
-                    waitingThirdPlace.removeIf(w -> w.toOnlinePlayer() == null);
-                }, 5L);
+                Bukkit.getScheduler().runTaskLater(plugin, () -> waitingThirdPlace.removeIf(w -> w.toOnlinePlayer() == null), 5L);
             }
         }
 
@@ -262,7 +262,7 @@ public class EliminationTournamentGame extends Game {
                 .map(Warrior::toOnlinePlayer)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
-        teleport(warriors, getConfig().getWatchroom());
+        spectateManager.addSpectator(warriors, this, null);
         players.forEach(player -> {
             player.sendMessage(getLang("kicked_to_adjust_duels"));
             if (getConfig().isUseKits()) {

@@ -301,7 +301,7 @@ public abstract class BaseGame {
         plugin.debug(String.format("onRespawn() -> warrior %s", warrior.getName()));
         if (casualties.contains(warrior) && !casualtiesWatching.contains(warrior)) {
             casualtiesWatching.add(warrior);
-            event.setRespawnLocation(getConfig().getWatchroom());
+            event.setRespawnLocation(getConfig().getExit());
         }
     }
 
@@ -612,7 +612,7 @@ public abstract class BaseGame {
     protected void teleportToArena(List<Warrior> warriors) {
         List<Location> arenaEntrances = new ArrayList<>(getConfig().getArenaEntrances().values());
         if (arenaEntrances.size() == 1) {
-            teleport(warriors, arenaEntrances.get(0));
+            teleport(warriors, arenaEntrances.getFirst());
             return;
         }
 
