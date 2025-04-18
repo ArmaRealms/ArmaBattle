@@ -113,4 +113,12 @@ public class SpectateManager {
     public boolean isSpectating(Player player) {
         return spectators.contains(player.getUniqueId());
     }
+
+    public void remove(Player player) {
+        if (!isSpectating(player)) {
+            plugin.debug(String.format("Player %s is not a spectator, cannot remove.", player.getName()));
+            return;
+        }
+        spectators.remove(player.getUniqueId());
+    }
 }

@@ -23,6 +23,7 @@ public class PlayerSpawnLocationListener extends TBListener {
         final Player player = event.getPlayer();
         if (spectateManager.isSpectating(player)) {
             event.setSpawnLocation(configManager.getGeneralExit());
+            spectateManager.remove(player);
             plugin.debug(String.format("Player %s move to lobby.", player.getName()));
         }
     }
