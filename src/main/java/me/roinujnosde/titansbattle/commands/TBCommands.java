@@ -204,8 +204,10 @@ public class TBCommands extends BaseCommand {
     public void watch(Player sender, Game game, @Optional ArenaConfiguration arena) {
         if (spectateManager.isSpectating(sender)) {
             spectateManager.removeSpectator(sender);
+            plugin.debug(String.format("Player %s is already spectating. Removing from spectator list.", sender.getName()));
         } else {
             spectateManager.addSpectator(sender, game, arena);
+            plugin.debug(String.format("Player %s is now spectating.", sender.getName()));
         }
     }
 

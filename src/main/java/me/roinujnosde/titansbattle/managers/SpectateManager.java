@@ -11,6 +11,7 @@ import me.roinujnosde.titansbattle.utils.SoundUtils;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
+import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
@@ -18,6 +19,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+
+import static me.roinujnosde.titansbattle.utils.SoundUtils.Type.LEAVE_GAME;
 
 public class SpectateManager {
     private final TitansBattle plugin;
@@ -73,17 +76,26 @@ public class SpectateManager {
     }
 
     public void removeSpectator(final Player player) {
-        if (!isSpectating(player)) {
-            player.sendMessage(plugin.getLang("not-spectating"));
+        if (player == null) {
+            plugin.debug("Player is null, cannot remove spectator.");
             return;
         }
-
-        spectators.remove(player.getUniqueId());
+        if (!isSpectating(player)) {
+            player.sendMessage(plugin.getLang("not-spectating"));
+            plugin.debug(String.format("Player %s is not a spectator, cannot remove.", player.getName()));
+            return;
+        }
+        boolean removed = spectators.remove(player.getUniqueId());
+        if (!removed) {
+            plugin.debug(String.format("Player %s was not removed from spectators list.", player.getName()));
+            return;
+        }
         Location generalExit = configManager.getGeneralExit();
-        if (!player.teleport(generalExit)) {
+        if (!player.teleport(generalExit, PlayerTeleportEvent.TeleportCause.PLUGIN)) {
             player.sendMessage(plugin.getLang("teleport-failed"));
             plugin.debug(String.format("Failed to teleport player %s to exit location after spectating.", player.getName()));
         }
+        SoundUtils.playSound(LEAVE_GAME, plugin.getConfig(), player);
 
         player.showPlayer(plugin, player);
         player.setGameMode(GameMode.SURVIVAL);
