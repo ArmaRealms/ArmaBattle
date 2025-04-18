@@ -66,7 +66,7 @@ public class Prizes implements ConfigurationSerializable {
     }
 
     @Override
-    public Map<String, Object> serialize() {
+    public @NotNull Map<String, Object> serialize() {
         return ConfigUtils.serialize(this);
     }
 

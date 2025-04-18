@@ -20,11 +20,6 @@ public class ArenaConfiguration extends BaseGameConfiguration {
     }
 
     @Override
-    public @NotNull Map<String, Object> serialize() {
-        return ConfigUtils.serialize(this);
-    }
-
-    @Override
     public Integer getMinimumGroups() {
         if (isGroupMode()) {
             return 2;

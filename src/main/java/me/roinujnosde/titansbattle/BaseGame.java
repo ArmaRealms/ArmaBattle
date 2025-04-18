@@ -1,6 +1,7 @@
 package me.roinujnosde.titansbattle;
 
 import me.roinujnosde.titansbattle.BaseGameConfiguration.Prize;
+import me.roinujnosde.titansbattle.events.GameFinishEvent;
 import me.roinujnosde.titansbattle.events.GameStartEvent;
 import me.roinujnosde.titansbattle.events.GroupDefeatedEvent;
 import me.roinujnosde.titansbattle.events.LobbyStartEvent;
@@ -30,11 +31,11 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.potion.PotionEffect;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Unmodifiable;
 
 import java.text.MessageFormat;
 import java.time.Duration;
@@ -62,6 +63,10 @@ import static org.bukkit.ChatColor.YELLOW;
 
 public abstract class BaseGame {
 
+    private static final double DEFAULT_MAX_HEALTH = 20.0D;
+    private static final float DEFAULT_EXHAUSTION = 0.0F;
+    private static final float DEFAULT_SATURATION = 5.0F;
+    private static final int DEFAULT_MAX_FOOD_LEVEL = 20;
     protected final TitansBattle plugin;
     protected final GroupManager groupManager;
     protected final GameManager gameManager;
@@ -108,6 +113,7 @@ public abstract class BaseGame {
     }
 
     public void finish(boolean cancelled) {
+        new GameFinishEvent(this).callEvent();
         teleportAll(getConfig().getExit());
         killTasks();
         runCommandsAfterBattle(getParticipants());
@@ -135,12 +141,12 @@ public abstract class BaseGame {
             plugin.debug(String.format("Warrior %s can't join", warrior.getName()));
             return;
         }
+
         Player player = warrior.toOnlinePlayer();
         if (player == null) {
             plugin.debug(String.format("onJoin() -> player %s %s == null", warrior.getName(), warrior.getUniqueId()));
             return;
         }
-
 
         int playtimeInSeconds = player.getStatistic(Statistic.PLAY_ONE_MINUTE) / 20;
         int minimumPlaytimeInSeconds = getConfig().getMinimumPlaytimeInSeconds();
@@ -295,7 +301,7 @@ public abstract class BaseGame {
         plugin.debug(String.format("onRespawn() -> warrior %s", warrior.getName()));
         if (casualties.contains(warrior) && !casualtiesWatching.contains(warrior)) {
             casualtiesWatching.add(warrior);
-            event.setRespawnLocation(getConfig().getWatchroom());
+            event.setRespawnLocation(getConfig().getExit());
         }
     }
 
@@ -303,7 +309,7 @@ public abstract class BaseGame {
 
     public abstract boolean shouldKeepInventoryOnDeath(@NotNull Warrior warrior);
 
-    public @NotNull List<Warrior> getParticipants() {
+    public @Unmodifiable @NotNull List<Warrior> getParticipants() {
         return Collections.unmodifiableList(participants);
     }
 
@@ -367,13 +373,13 @@ public abstract class BaseGame {
         Player player = warrior.toOnlinePlayer();
         if (player == null) return;
 
-        player.setHealth(player.getMaxHealth());
-        player.setFoodLevel(20);
+        player.setHealth(DEFAULT_MAX_HEALTH);
+        player.setExhaustion(DEFAULT_EXHAUSTION);
+        player.setSaturation(DEFAULT_SATURATION);
+        player.setFoodLevel(DEFAULT_MAX_FOOD_LEVEL);
         player.setFireTicks(0);
 
-        for (PotionEffect effect : player.getActivePotionEffects()) {
-            player.removePotionEffect(effect.getType());
-        }
+        player.getActivePotionEffects().forEach(effect -> player.removePotionEffect(effect.getType()));
     }
 
     @Override
@@ -394,10 +400,8 @@ public abstract class BaseGame {
     }
 
     protected boolean teleport(@Nullable Warrior warrior, @NotNull Location destination) {
-//        plugin.debug(String.format("teleport() -> destination %s", destination));
         Player player = warrior != null ? warrior.toOnlinePlayer() : null;
         if (player == null) {
-//            plugin.debug(String.format("teleport() -> warrior %s", warrior));
             return false;
         }
         SoundUtils.playSound(TELEPORT, plugin.getConfig(), player);
@@ -608,7 +612,7 @@ public abstract class BaseGame {
     protected void teleportToArena(List<Warrior> warriors) {
         List<Location> arenaEntrances = new ArrayList<>(getConfig().getArenaEntrances().values());
         if (arenaEntrances.size() == 1) {
-            teleport(warriors, arenaEntrances.get(0));
+            teleport(warriors, arenaEntrances.getFirst());
             return;
         }
 
@@ -764,13 +768,19 @@ public abstract class BaseGame {
 
             if (getConfig().getBorderFinalSize() > newSize) {
                 this.cancel();
-                return;
+                shrinkSize = currentSize - getConfig().getBorderFinalSize();
+                if (shrinkSize <= 0) {
+                    return;
+                }
+                newSize = getConfig().getBorderFinalSize();
             }
-            worldBorder.setSize(newSize, shrinkSize);
+
             getPlayerParticipantsStream().forEach(player -> {
                 player.sendTitle(getLang("border.title"), getLang("border.subtitle"));
                 SoundUtils.playSound(BORDER, getConfig().getFileConfiguration(), player);
             });
+
+            worldBorder.setSize(newSize, shrinkSize);
             currentSize = newSize;
         }
 

@@ -23,24 +23,18 @@
  */
 package me.roinujnosde.titansbattle.events;
 
-import me.roinujnosde.titansbattle.types.Group;
+import me.roinujnosde.titansbattle.BaseGame;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * @author RoinujNosde
- */
-public class GroupWinEvent extends Event {
+public class GameFinishEvent extends Event {
 
     private static final HandlerList HANDLERS = new HandlerList();
-    private final Group group;
+    private final BaseGame game;
 
-    public GroupWinEvent(Group group) {
-        if (group == null) {
-            throw new IllegalArgumentException("Group must not be null.");
-        }
-        this.group = group;
+    public GameFinishEvent(@NotNull BaseGame game) {
+        this.game = game;
     }
 
     public static HandlerList getHandlerList() {
@@ -48,12 +42,10 @@ public class GroupWinEvent extends Event {
     }
 
     /**
-     * Returns the Group
-     *
-     * @return the Group
+     * @return the Game
      */
-    public Group getGroup() {
-        return group;
+    public BaseGame getGame() {
+        return game;
     }
 
     @Override

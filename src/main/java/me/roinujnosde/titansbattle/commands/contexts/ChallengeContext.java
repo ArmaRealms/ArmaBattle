@@ -6,7 +6,6 @@ import me.roinujnosde.titansbattle.TitansBattle;
 import me.roinujnosde.titansbattle.challenges.Challenge;
 import org.jetbrains.annotations.NotNull;
 
-@SuppressWarnings("rawtypes")
 public class ChallengeContext extends AbstractContextResolver<Challenge> {
 
     public ChallengeContext(@NotNull TitansBattle plugin) {

@@ -10,9 +10,11 @@ import me.roinujnosde.titansbattle.listeners.PlayerJoinListener;
 import me.roinujnosde.titansbattle.listeners.PlayerMoveListener;
 import me.roinujnosde.titansbattle.listeners.PlayerQuitListener;
 import me.roinujnosde.titansbattle.listeners.PlayerRespawnListener;
+import me.roinujnosde.titansbattle.listeners.PlayerSpawnLocationListener;
 import me.roinujnosde.titansbattle.listeners.PlayerTeleportListener;
 import me.roinujnosde.titansbattle.listeners.ProjectileLaunchListener;
 import me.roinujnosde.titansbattle.listeners.SimpleClansListener;
+import me.roinujnosde.titansbattle.listeners.SpectateListener;
 import me.roinujnosde.titansbattle.listeners.TBListener;
 import org.bukkit.Bukkit;
 import org.bukkit.event.HandlerList;
@@ -33,9 +35,11 @@ public class ListenerManager {
         registerListener(new PlayerQuitListener(plugin), true);
         registerListener(new PlayerJoinListener(plugin), true);
         registerListener(new ItemsProtectionListener(plugin), true);
+        registerListener(new PlayerSpawnLocationListener(plugin), true);
     }
 
     public void registerBattleListeners() {
+        registerListener(new SpectateListener(plugin));
         registerListener(new PlayerRespawnListener(plugin));
         registerListener(new PlayerCommandPreprocessListener(plugin));
         registerListener(new PlayerDeathListener(plugin));

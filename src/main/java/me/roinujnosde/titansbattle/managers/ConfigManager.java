@@ -136,6 +136,15 @@ public final class ConfigManager {
     }
 
     /**
+     * Gets the commands allowed in spectator
+     *
+     * @return the allowed commands in spectator
+     */
+    public List<String> getAllowedCommandsInSpectator() {
+        return config.getStringList("allowed_commands_in_spectator");
+    }
+
+    /**
      * Checks if the scheduler feature is enabled
      *
      * @return if scheduler is enabled

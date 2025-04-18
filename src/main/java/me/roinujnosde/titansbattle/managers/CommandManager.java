@@ -85,7 +85,7 @@ public class CommandManager extends PaperCommandManager {
 
     private void setDefaultLocale() {
         BukkitLocales locales = getLocales();
-        Locale defaultLocale = new Locale(getPlugin().getConfigManager().getLanguage().split("_")[0]);
+        Locale defaultLocale = Locale.of(getPlugin().getConfigManager().getLanguage().split("_")[0]);
         locales.setDefaultLocale(defaultLocale);
 
         LanguageManager languageManager = getPlugin().getLanguageManager();
@@ -100,6 +100,7 @@ public class CommandManager extends PaperCommandManager {
         registerDependency(DatabaseManager.class, getPlugin().getDatabaseManager());
         registerDependency(ChallengeManager.class, getPlugin().getChallengeManager());
         registerDependency(TaskManager.class, getPlugin().getTaskManager());
+        registerDependency(SpectateManager.class, getPlugin().getSpectateManager());
     }
 
     private void registerCompletions() {
