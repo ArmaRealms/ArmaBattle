@@ -20,6 +20,7 @@ import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.player.PlayerAttemptPickupItemEvent;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerPickupArrowEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.projectiles.ProjectileSource;
@@ -57,6 +58,7 @@ public class SpectateListener extends TBListener {
     public void onPlayerQuit(final PlayerQuitEvent event) {
         final Player player = event.getPlayer();
         if (spectateManager.isSpectating(player)) {
+            plugin.debug(String.format("Player %s quit while spectating. Removing from spectator list.", player.getName()));
             spectateManager.removeSpectator(player);
         }
     }
@@ -142,7 +144,6 @@ public class SpectateListener extends TBListener {
 
     @EventHandler
     public void onFoodLevelChange(FoodLevelChangeEvent event) {
-        // Se for um jogador, cancela a mudança de food level
         if (event.getEntity() instanceof Player player && spectateManager.isSpectating(player)) {
             event.setCancelled(true);
         }
@@ -151,6 +152,13 @@ public class SpectateListener extends TBListener {
     @EventHandler(ignoreCancelled = true)
     public void onEntityCombust(EntityCombustEvent event) {
         if (event.getEntity() instanceof Player player && spectateManager.isSpectating(player)) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onPlayerPickupArrow(PlayerPickupArrowEvent event) {
+        if (spectateManager.isSpectating(event.getPlayer())) {
             event.setCancelled(true);
         }
     }
