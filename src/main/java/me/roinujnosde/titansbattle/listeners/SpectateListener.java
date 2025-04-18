@@ -7,9 +7,13 @@ import me.roinujnosde.titansbattle.events.PlayerWinEvent;
 import me.roinujnosde.titansbattle.managers.ConfigManager;
 import me.roinujnosde.titansbattle.managers.SpectateManager;
 import org.bukkit.Location;
+import org.bukkit.entity.AbstractArrow;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
+import org.bukkit.entity.ThrowableProjectile;
+import org.bukkit.entity.ThrownPotion;
+import org.bukkit.entity.Trident;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.entity.EntityCombustEvent;
@@ -23,8 +27,7 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerPickupArrowEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
-import org.bukkit.projectiles.ProjectileSource;
-import org.bukkit.util.Vector;
+import org.bukkit.persistence.PersistentDataContainer;
 
 import java.text.MessageFormat;
 
@@ -130,15 +133,12 @@ public class SpectateListener extends TBListener {
         Projectile proj = event.getEntity();
         if (event.getHitEntity() instanceof Player player && spectateManager.isSpectating(player)) {
             Location loc = proj.getLocation();
-            Vector vel = proj.getVelocity();
-            ProjectileSource shooter = proj.getShooter();
             EntityType type = proj.getType();
 
             proj.remove();
 
             Projectile copy = (Projectile) loc.getWorld().spawnEntity(loc, type);
-            copy.setVelocity(vel);
-            copy.setShooter(shooter);
+            cloneProjectileData(proj, copy);
         }
     }
 
@@ -166,6 +166,43 @@ public class SpectateListener extends TBListener {
     private boolean canBypassCommandRestrictions(Player player) {
         return player.hasPermission("titansbattle.command-bypass");
     }
+
+    private void cloneProjectileData(Projectile src, Projectile dst) {
+        dst.setVelocity(src.getVelocity());
+        dst.setShooter(src.getShooter());
+        dst.setFireTicks(src.getFireTicks());
+        dst.setGravity(src.hasGravity());
+        dst.setSilent(src.isSilent());
+        dst.setPersistent(src.isPersistent());
+        dst.getScoreboardTags().addAll(src.getScoreboardTags());
+
+        PersistentDataContainer from = src.getPersistentDataContainer();
+        PersistentDataContainer to = dst.getPersistentDataContainer();
+        from.copyTo(to, true);
+
+        if (src instanceof AbstractArrow a && dst instanceof AbstractArrow b) {
+            b.setCritical(a.isCritical());
+            b.setDamage(a.getDamage());
+            b.setPierceLevel(a.getPierceLevel());
+            b.setKnockbackStrength(a.getKnockbackStrength());
+            b.setPickupStatus(a.getPickupStatus());
+        }
+
+        if (src instanceof Trident t && dst instanceof Trident c) {
+            c.setLoyaltyLevel(t.getLoyaltyLevel());
+            c.setGlint(t.hasGlint());
+            c.setHasDealtDamage(t.hasDealtDamage());
+        }
+
+        if (src instanceof ThrownPotion p && dst instanceof ThrownPotion q) {
+            q.setItem(p.getItem());
+        }
+
+        if (src instanceof ThrowableProjectile tp && dst instanceof ThrowableProjectile tq) {
+            tq.setItem(tp.getItem());
+        }
+    }
+
 }
 
 
