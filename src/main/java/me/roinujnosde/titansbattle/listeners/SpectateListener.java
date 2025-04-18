@@ -86,7 +86,11 @@ public class SpectateListener extends TBListener {
 
     @EventHandler(ignoreCancelled = true)
     public void onPlayerTeleport(final PlayerTeleportEvent event) {
-        if (spectateManager.isSpectating(event.getPlayer())) {
+        if (event.getCause() != PlayerTeleportEvent.TeleportCause.COMMAND) {
+            return;
+        }
+        final Player player = event.getPlayer();
+        if (spectateManager.isSpectating(player) && !player.hasPermission("titansbattle.teleport-bypass")) {
             plugin.debug(String.format("Player %s tried to teleport while spectating. Teleport cancelled.", event.getPlayer().getName()));
             event.setCancelled(true);
         }

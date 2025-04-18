@@ -9,8 +9,6 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.logging.Level;
 
-import static org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
-
 public class PlayerTeleportListener extends TBListener {
 
     public PlayerTeleportListener(@NotNull TitansBattle plugin) {
@@ -19,13 +17,12 @@ public class PlayerTeleportListener extends TBListener {
 
     @EventHandler(ignoreCancelled = true)
     public void onCommandTeleport(PlayerTeleportEvent event) {
-        if (event.getCause() != TeleportCause.COMMAND) {
+        if (event.getCause() != PlayerTeleportEvent.TeleportCause.COMMAND) {
             return;
         }
         final Player player = event.getPlayer();
-
         BaseGame game = plugin.getBaseGameFrom(player);
-        if (game != null) {
+        if (game != null && !player.hasPermission("titansbattle.teleport-bypass")) {
             plugin.getLogger().log(Level.INFO, "Cancelled a teleport started via command for %s", player.getName());
             event.setCancelled(true);
         }
