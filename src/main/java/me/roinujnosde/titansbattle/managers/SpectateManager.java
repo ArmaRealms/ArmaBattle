@@ -9,7 +9,6 @@ import me.roinujnosde.titansbattle.types.Kit;
 import me.roinujnosde.titansbattle.types.Warrior;
 import me.roinujnosde.titansbattle.utils.SoundUtils;
 import org.bukkit.GameMode;
-import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.potion.PotionEffect;
@@ -32,12 +31,6 @@ public class SpectateManager {
         this.configManager = plugin.getConfigManager();
     }
 
-    public void addSpectator(final List<Warrior> warriors, Game game, ArenaConfiguration arena) {
-        warriors.stream()
-                .map(Warrior::toOnlinePlayer)
-                .forEach(player -> addSpectator(player, game, arena));
-    }
-
     public void addSpectator(final Set<Warrior> warriors, Game game, ArenaConfiguration arena) {
         warriors.stream()
                 .map(Warrior::toOnlinePlayer)
@@ -57,8 +50,7 @@ public class SpectateManager {
         }
         config = (arena == null) ? game.getConfig() : arena;
 
-        Location watchroom = config.getWatchroom();
-        if (!player.teleport(watchroom)) {
+        if (!player.teleport(config.getWatchroom())) {
             player.sendMessage(plugin.getLang("teleport-failed"));
             plugin.debug(String.format("Failed to teleport player %s to watchroom location.", player.getName()));
             return;
@@ -73,6 +65,7 @@ public class SpectateManager {
         player.setCollidable(false);
         player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, Integer.MAX_VALUE, 1, false, false));
         player.sendMessage(plugin.getLang("spectator-enter"));
+        plugin.debug(String.format("Player %s has entered spectator mode and was teleported to the watchroom.", player.getName()));
     }
 
     public void removeSpectator(final Player player) {
@@ -90,8 +83,7 @@ public class SpectateManager {
             plugin.debug(String.format("Player %s was not removed from spectators list.", player.getName()));
             return;
         }
-        Location generalExit = configManager.getGeneralExit();
-        if (!player.teleport(generalExit, PlayerTeleportEvent.TeleportCause.PLUGIN)) {
+        if (!player.teleport(configManager.getGeneralExit(), PlayerTeleportEvent.TeleportCause.PLUGIN)) {
             plugin.debug(String.format("Failed to teleport player %s to exit location after spectating.", player.getName()));
             player.sendMessage(plugin.getLang("teleport-failed"));
         }
@@ -104,6 +96,7 @@ public class SpectateManager {
         player.setCollidable(true);
         player.removePotionEffect(PotionEffectType.INVISIBILITY);
         player.sendMessage(plugin.getLang("spectator-exit"));
+        plugin.debug(String.format("Player %s has exited spectator mode and was teleported to the exit location.", player.getName()));
     }
 
     public void removeAllSpectators() {
@@ -116,7 +109,6 @@ public class SpectateManager {
         }
         spectators.clear();
     }
-
 
     public boolean isSpectating(Player player) {
         return spectators.contains(player.getUniqueId());
