@@ -140,7 +140,7 @@ public class EliminationTournamentGame extends Game {
                 if (thirdPlaceBattle) {
                     thirdPlaceWinners = duelWinners;
                     thirdPlaceBattle = false;
-                    spectateManager.addSpectator(duelWinners, this, null);
+                    teleport(duelWinners, getConfig().getExit());
                     participants.removeIf(thirdPlaceWinners::contains);
                     if (getConfig().isUseKits()) {
                         thirdPlaceWinners.forEach(Kit::clearInventory);
