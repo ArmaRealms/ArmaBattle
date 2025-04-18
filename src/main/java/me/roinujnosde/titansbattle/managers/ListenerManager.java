@@ -10,6 +10,7 @@ import me.roinujnosde.titansbattle.listeners.PlayerJoinListener;
 import me.roinujnosde.titansbattle.listeners.PlayerMoveListener;
 import me.roinujnosde.titansbattle.listeners.PlayerQuitListener;
 import me.roinujnosde.titansbattle.listeners.PlayerRespawnListener;
+import me.roinujnosde.titansbattle.listeners.PlayerSpawnLocationListener;
 import me.roinujnosde.titansbattle.listeners.PlayerTeleportListener;
 import me.roinujnosde.titansbattle.listeners.ProjectileLaunchListener;
 import me.roinujnosde.titansbattle.listeners.SimpleClansListener;
@@ -34,6 +35,7 @@ public class ListenerManager {
         registerListener(new PlayerQuitListener(plugin), true);
         registerListener(new PlayerJoinListener(plugin), true);
         registerListener(new ItemsProtectionListener(plugin), true);
+        registerListener(new PlayerSpawnLocationListener(plugin), true);
     }
 
     public void registerBattleListeners() {

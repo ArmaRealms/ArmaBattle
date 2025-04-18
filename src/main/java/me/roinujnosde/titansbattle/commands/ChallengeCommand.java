@@ -26,7 +26,6 @@ import me.roinujnosde.titansbattle.managers.DatabaseManager;
 import me.roinujnosde.titansbattle.managers.SpectateManager;
 import me.roinujnosde.titansbattle.types.Group;
 import me.roinujnosde.titansbattle.types.Warrior;
-import me.roinujnosde.titansbattle.utils.SoundUtils;
 import org.bukkit.entity.Player;
 
 import java.util.List;
