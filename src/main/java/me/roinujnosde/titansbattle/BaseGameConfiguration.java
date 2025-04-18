@@ -23,8 +23,8 @@ import java.util.logging.Logger;
 @SuppressWarnings("FieldMayBeFinal")
 public abstract class BaseGameConfiguration implements ConfigurationSerializable {
 
-    protected File file;
-    protected FileConfiguration fileConfiguration;
+    protected transient File file;
+    protected transient FileConfiguration fileConfiguration;
     protected String name;
     protected Boolean groupMode = false;
     protected Boolean clearItemsOnDeath = false;
