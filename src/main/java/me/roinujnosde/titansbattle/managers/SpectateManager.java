@@ -107,7 +107,6 @@ public class SpectateManager {
                 removeSpectator(player);
             }
         }
-        spectators.clear();
     }
 
     public boolean isSpectating(Player player) {

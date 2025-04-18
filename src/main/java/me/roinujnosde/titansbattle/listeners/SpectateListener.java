@@ -28,6 +28,7 @@ import org.bukkit.event.player.PlayerPickupArrowEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.persistence.PersistentDataContainer;
+import org.spigotmc.event.player.PlayerSpawnLocationEvent;
 
 import java.text.MessageFormat;
 
@@ -160,6 +161,15 @@ public class SpectateListener extends TBListener {
     public void onPlayerPickupArrow(PlayerPickupArrowEvent event) {
         if (spectateManager.isSpectating(event.getPlayer())) {
             event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onPlayerSpawnLocation(PlayerSpawnLocationEvent event) {
+        final Player player = event.getPlayer();
+        if (spectateManager.isSpectating(player)) {
+            event.setSpawnLocation(configManager.getGeneralExit());
+            plugin.debug(String.format("Player %s move to lobby.", player.getName()));
         }
     }
 
