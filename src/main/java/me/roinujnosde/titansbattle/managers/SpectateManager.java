@@ -95,7 +95,8 @@ public class SpectateManager {
     }
 
     public void removeAllSpectators() {
-        for (UUID uuid : spectators) {
+        List<UUID> copy = new ArrayList<>(spectators);
+        for (UUID uuid : copy) {
             Player player = plugin.getServer().getPlayer(uuid);
             if (player != null) {
                 removeSpectator(player);
@@ -103,6 +104,7 @@ public class SpectateManager {
         }
         spectators.clear();
     }
+
 
     public boolean isSpectating(Player player) {
         return spectators.contains(player.getUniqueId());
