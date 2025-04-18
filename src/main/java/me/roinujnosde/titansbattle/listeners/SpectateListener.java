@@ -6,16 +6,23 @@ import me.roinujnosde.titansbattle.events.GroupWinEvent;
 import me.roinujnosde.titansbattle.events.PlayerWinEvent;
 import me.roinujnosde.titansbattle.managers.ConfigManager;
 import me.roinujnosde.titansbattle.managers.SpectateManager;
+import org.bukkit.Location;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.entity.EntityCombustEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.FoodLevelChangeEvent;
+import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.player.PlayerAttemptPickupItemEvent;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
+import org.bukkit.projectiles.ProjectileSource;
+import org.bukkit.util.Vector;
 
 import java.text.MessageFormat;
 
@@ -59,7 +66,6 @@ public class SpectateListener extends TBListener {
         if (!spectateManager.isSpectating(player)) {
             return;
         }
-
         for (String command : configManager.getAllowedCommandsInSpectator()) {
             if (event.getMessage().startsWith(command)) {
                 return;
@@ -73,35 +79,28 @@ public class SpectateListener extends TBListener {
 
     @EventHandler(ignoreCancelled = true)
     public void onPlayerTeleport(final PlayerTeleportEvent event) {
-        if (!spectateManager.isSpectating(event.getPlayer())) {
-            return;
+        if (spectateManager.isSpectating(event.getPlayer())) {
+            event.setCancelled(true);
         }
-
-        event.setCancelled(true);
     }
 
     @EventHandler(ignoreCancelled = true)
     public void onPlayerInteract(final PlayerInteractEvent event) {
-        if (!spectateManager.isSpectating(event.getPlayer())) {
-            return;
+        if (spectateManager.isSpectating(event.getPlayer())) {
+            event.setCancelled(true);
         }
-
-        event.setCancelled(true);
     }
 
     @EventHandler(ignoreCancelled = true)
     public void onPlayerAttemptPickupItem(final PlayerAttemptPickupItemEvent event) {
-        if (!spectateManager.isSpectating(event.getPlayer())) {
-            return;
+        if (spectateManager.isSpectating(event.getPlayer())) {
+            event.setCancelled(true);
         }
-
-        event.setCancelled(true);
     }
 
     @EventHandler(ignoreCancelled = true)
     public void onEntityDamageByEntity(final EntityDamageByEntityEvent event) {
         final Player player;
-
         if (event.getDamager() instanceof Player damager) {
             player = damager;
         } else if (event.getDamager() instanceof Projectile projectile && projectile.getShooter() instanceof Player shooter) {
@@ -109,21 +108,49 @@ public class SpectateListener extends TBListener {
         } else {
             return;
         }
-
-        if (!spectateManager.isSpectating(player)) {
-            return;
+        if (spectateManager.isSpectating(player)) {
+            event.setCancelled(true);
         }
-
-        event.setCancelled(true);
     }
 
     @EventHandler(ignoreCancelled = true)
     public void onEntityDamage(final EntityDamageEvent event) {
-        if (!(event.getEntity() instanceof Player player) || !spectateManager.isSpectating(player)) {
-            return;
+        if (event.getEntity() instanceof Player player && spectateManager.isSpectating(player)) {
+            player.setFireTicks(0);
+            event.setCancelled(true);
         }
+    }
 
-        event.setCancelled(true);
+    @EventHandler
+    public void onProjectileHit(ProjectileHitEvent event) {
+        Projectile proj = event.getEntity();
+        if (event.getHitEntity() instanceof Player player && spectateManager.isSpectating(player)) {
+            Location loc = proj.getLocation();
+            Vector vel = proj.getVelocity();
+            ProjectileSource shooter = proj.getShooter();
+            EntityType type = proj.getType();
+
+            proj.remove();
+
+            Projectile copy = (Projectile) loc.getWorld().spawnEntity(loc, type);
+            copy.setVelocity(vel);
+            copy.setShooter(shooter);
+        }
+    }
+
+    @EventHandler
+    public void onFoodLevelChange(FoodLevelChangeEvent event) {
+        // Se for um jogador, cancela a mudança de food level
+        if (event.getEntity() instanceof Player player && spectateManager.isSpectating(player)) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onEntityCombust(EntityCombustEvent event) {
+        if (event.getEntity() instanceof Player player && spectateManager.isSpectating(player)) {
+            event.setCancelled(true);
+        }
     }
 
     private boolean canBypassCommandRestrictions(Player player) {
