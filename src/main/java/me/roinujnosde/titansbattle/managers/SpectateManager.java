@@ -6,6 +6,7 @@ import me.roinujnosde.titansbattle.TitansBattle;
 import me.roinujnosde.titansbattle.challenges.ArenaConfiguration;
 import me.roinujnosde.titansbattle.games.Game;
 import me.roinujnosde.titansbattle.types.Kit;
+import me.roinujnosde.titansbattle.types.Warrior;
 import me.roinujnosde.titansbattle.utils.SoundUtils;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -15,6 +16,7 @@ import org.bukkit.potion.PotionEffectType;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 public class SpectateManager {
@@ -25,6 +27,18 @@ public class SpectateManager {
     public SpectateManager(TitansBattle plugin) {
         this.plugin = plugin;
         this.configManager = plugin.getConfigManager();
+    }
+
+    public void addSpectator(final List<Warrior> warriors, Game game, ArenaConfiguration arena) {
+        warriors.stream()
+                .map(Warrior::toOnlinePlayer)
+                .forEach(player -> addSpectator(player, game, arena));
+    }
+
+    public void addSpectator(final Set<Warrior> warriors, Game game, ArenaConfiguration arena) {
+        warriors.stream()
+                .map(Warrior::toOnlinePlayer)
+                .forEach(player -> addSpectator(player, game, arena));
     }
 
     public void addSpectator(final Player player, Game game, @Optional ArenaConfiguration arena) {
@@ -53,6 +67,7 @@ public class SpectateManager {
         player.setGameMode(GameMode.ADVENTURE);
         player.setAllowFlight(true);
         player.setFlying(true);
+        player.setCollidable(false);
         player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, Integer.MAX_VALUE, 1, false, false));
         player.sendMessage(plugin.getLang("spectator-enter"));
     }
@@ -74,6 +89,7 @@ public class SpectateManager {
         player.setGameMode(GameMode.SURVIVAL);
         player.setAllowFlight(false);
         player.setFlying(false);
+        player.setCollidable(true);
         player.removePotionEffect(PotionEffectType.INVISIBILITY);
         player.sendMessage(plugin.getLang("spectator-exit"));
     }
