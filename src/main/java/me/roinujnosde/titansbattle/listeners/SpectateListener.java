@@ -11,6 +11,7 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.entity.EntityCombustEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
@@ -80,6 +81,7 @@ public class SpectateListener extends TBListener {
     @EventHandler(ignoreCancelled = true)
     public void onPlayerTeleport(final PlayerTeleportEvent event) {
         if (spectateManager.isSpectating(event.getPlayer())) {
+            plugin.debug(String.format("Player %s tried to teleport while spectating. Teleport cancelled.", event.getPlayer().getName()));
             event.setCancelled(true);
         }
     }
@@ -98,7 +100,7 @@ public class SpectateListener extends TBListener {
         }
     }
 
-    @EventHandler(ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onEntityDamageByEntity(final EntityDamageByEntityEvent event) {
         final Player player;
         if (event.getDamager() instanceof Player damager) {
@@ -113,7 +115,7 @@ public class SpectateListener extends TBListener {
         }
     }
 
-    @EventHandler(ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onEntityDamage(final EntityDamageEvent event) {
         if (event.getEntity() instanceof Player player && spectateManager.isSpectating(player)) {
             player.setFireTicks(0);
@@ -121,7 +123,7 @@ public class SpectateListener extends TBListener {
         }
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onProjectileHit(ProjectileHitEvent event) {
         Projectile proj = event.getEntity();
         if (event.getHitEntity() instanceof Player player && spectateManager.isSpectating(player)) {
