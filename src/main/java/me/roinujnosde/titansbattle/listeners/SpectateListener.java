@@ -1,5 +1,6 @@
 package me.roinujnosde.titansbattle.listeners;
 
+import com.destroystokyo.paper.event.player.PlayerPickupExperienceEvent;
 import me.roinujnosde.titansbattle.TitansBattle;
 import me.roinujnosde.titansbattle.events.GameFinishEvent;
 import me.roinujnosde.titansbattle.events.GroupWinEvent;
@@ -162,6 +163,13 @@ public class SpectateListener extends TBListener {
 
     @EventHandler(ignoreCancelled = true)
     public void onPlayerPickupArrow(PlayerPickupArrowEvent event) {
+        if (spectateManager.isSpectating(event.getPlayer())) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onPlayerPickupExperience(PlayerPickupExperienceEvent event) {
         if (spectateManager.isSpectating(event.getPlayer())) {
             event.setCancelled(true);
         }
