@@ -15,6 +15,7 @@ import org.bukkit.entity.Projectile;
 import org.bukkit.entity.ThrowableProjectile;
 import org.bukkit.entity.ThrownPotion;
 import org.bukkit.entity.Trident;
+import org.bukkit.event.Cancellable;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.entity.EntityCombustEvent;
@@ -98,16 +99,12 @@ public class SpectateListener extends TBListener {
 
     @EventHandler(ignoreCancelled = true)
     public void onPlayerInteract(final PlayerInteractEvent event) {
-        if (spectateManager.isSpectating(event.getPlayer())) {
-            event.setCancelled(true);
-        }
+        cancelSpectatorAction(event, event.getPlayer());
     }
 
     @EventHandler(ignoreCancelled = true)
     public void onPlayerAttemptPickupItem(final PlayerAttemptPickupItemEvent event) {
-        if (spectateManager.isSpectating(event.getPlayer())) {
-            event.setCancelled(true);
-        }
+        cancelSpectatorAction(event, event.getPlayer());
     }
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
@@ -120,9 +117,7 @@ public class SpectateListener extends TBListener {
         } else {
             return;
         }
-        if (spectateManager.isSpectating(player)) {
-            event.setCancelled(true);
-        }
+        cancelSpectatorAction(event, player);
     }
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
@@ -149,28 +144,30 @@ public class SpectateListener extends TBListener {
 
     @EventHandler
     public void onFoodLevelChange(FoodLevelChangeEvent event) {
-        if (event.getEntity() instanceof Player player && spectateManager.isSpectating(player)) {
-            event.setCancelled(true);
+        if (event.getEntity() instanceof Player player) {
+            cancelSpectatorAction(event, player);
         }
     }
 
     @EventHandler(ignoreCancelled = true)
     public void onEntityCombust(EntityCombustEvent event) {
-        if (event.getEntity() instanceof Player player && spectateManager.isSpectating(player)) {
-            event.setCancelled(true);
+        if (event.getEntity() instanceof Player player) {
+            cancelSpectatorAction(event, player);
         }
     }
 
     @EventHandler(ignoreCancelled = true)
     public void onPlayerPickupArrow(PlayerPickupArrowEvent event) {
-        if (spectateManager.isSpectating(event.getPlayer())) {
-            event.setCancelled(true);
-        }
+        cancelSpectatorAction(event, event.getPlayer());
     }
 
     @EventHandler(ignoreCancelled = true)
     public void onPlayerPickupExperience(PlayerPickupExperienceEvent event) {
-        if (spectateManager.isSpectating(event.getPlayer())) {
+        cancelSpectatorAction(event, event.getPlayer());
+    }
+
+    private void cancelSpectatorAction(Cancellable event, Player player) {
+        if (spectateManager.isSpectating(player)) {
             event.setCancelled(true);
         }
     }
