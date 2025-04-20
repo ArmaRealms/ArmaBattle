@@ -331,6 +331,7 @@ public class ConfigCommands extends BaseCommand {
         @Description("{@@command.description.challenge.setdestination}")
         public void setArenaEntrance(Player player,
                                      @Values("@arenas") ArenaConfiguration arena,
+                                     @Values("ARENA_ENTRANCE") String destination,
                                      @Values("@range:1-2") int index) {
             ConfigCommands.this.setArenaEntrance(player, arena, index);
         }
