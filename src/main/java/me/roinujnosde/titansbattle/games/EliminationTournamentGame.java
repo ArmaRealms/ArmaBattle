@@ -18,7 +18,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.Unmodifiable;
 
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -74,34 +73,38 @@ public class EliminationTournamentGame extends Game {
         }
     }
 
-    private @Unmodifiable List<Warrior> getDuelLosers(@NotNull Warrior defeated) {
+    private List<Warrior> getDuelLosers(@NotNull Warrior defeated) {
         Group group = getGroup(defeated);
         if (group != null && getConfig().isGroupMode()) {
-            return casualties.stream().filter(p -> isMember(group, p)).toList();
+            return casualties.stream().filter(p -> isMember(group, p)).collect(Collectors.toCollection(ArrayList::new));
         }
-        return List.of(defeated);
+        List<Warrior> single = new ArrayList<>();
+        single.add(defeated);
+        return single;
     }
 
-    private @Unmodifiable List<Warrior> getDuelWinners(@NotNull Warrior warrior) {
+    private List<Warrior> getDuelWinners(@NotNull Warrior warrior) {
         if (getConfig().isGroupMode()) {
             Optional<Duel<Group>> firstGroupDuel = getFirstGroupDuel();
             if (firstGroupDuel.isPresent()) {
                 Group winnerGroup = Objects.requireNonNull(firstGroupDuel.get().getOther(getGroup(warrior)));
                 return getParticipants().stream()
                         .filter(p -> isMember(winnerGroup, p))
-                        .toList();
+                        .collect(Collectors.toCollection(ArrayList::new));
             }
         } else {
             Optional<Duel<Warrior>> firstWarriorDuel = getFirstWarriorDuel();
             if (firstWarriorDuel.isPresent()) {
                 Warrior other = firstWarriorDuel.get().getOther(warrior);
                 if (other == null) {
-                    return List.of();
+                    return new ArrayList<>();
                 }
-                return List.of(other);
+                List<Warrior> single = new ArrayList<>();
+                single.add(other);
+                return single;
             }
         }
-        return List.of();
+        return new ArrayList<>();
     }
 
     @Override
@@ -272,18 +275,15 @@ public class EliminationTournamentGame extends Game {
     }
 
     private long getWaitingThirdPlaceCount() {
-        long count;
         if (getConfig().isGroupMode()) {
-            count = getWaitingThirdPlaceGroups().size();
-        } else {
-            count = waitingThirdPlace.size();
+            return getWaitingThirdPlaceGroups().size();
         }
-        return count;
+        return waitingThirdPlace.size();
     }
 
     @NotNull
     private List<Group> getWaitingThirdPlaceGroups() {
-        return new ArrayList<>(waitingThirdPlace.stream().map(this::getGroup).distinct().toList());
+        return waitingThirdPlace.stream().map(this::getGroup).distinct().collect(Collectors.toCollection(ArrayList::new));
     }
 
     private void generateDuelists() {
@@ -347,8 +347,7 @@ public class EliminationTournamentGame extends Game {
     }
 
     private int getDuelsCount() {
-        List<? extends Duel<?>> duels = getConfig().isGroupMode() ? groupDuelists : playerDuelists;
-        return duels.size();
+        return getConfig().isGroupMode() ? groupDuelists.size() : playerDuelists.size();
     }
 
     private boolean isNextDuelReady() {
@@ -376,7 +375,9 @@ public class EliminationTournamentGame extends Game {
 
     @Override
     public @NotNull Collection<Warrior> getCurrentFighters() {
-        return getParticipants().stream().filter(this::isCurrentDuelist).toList();
+        return getParticipants().stream()
+                .filter(this::isCurrentDuelist)
+                .collect(Collectors.toCollection(ArrayList::new));
     }
 
     private void informOtherDuelists() {
@@ -432,7 +433,7 @@ public class EliminationTournamentGame extends Game {
 
         if (getConfig().isGroupMode() && firstGroup != null) {
             casualties.stream().filter(p -> isMember(firstGroup, p)).forEach(firstPlaceWinners::add);
-            firstPlaceWinners = new ArrayList<>(firstPlaceWinners.stream().distinct().toList());
+            firstPlaceWinners = firstPlaceWinners.stream().distinct().collect(Collectors.toCollection(ArrayList::new));
             todayWinners.setWinnerGroup(getConfig().getName(), firstGroup.getName());
             GroupWinEvent event = new GroupWinEvent(firstGroup);
             Bukkit.getPluginManager().callEvent(event);
