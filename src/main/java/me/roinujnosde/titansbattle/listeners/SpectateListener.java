@@ -10,6 +10,7 @@ import me.roinujnosde.titansbattle.managers.SpectateManager;
 import org.bukkit.Location;
 import org.bukkit.entity.AbstractArrow;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
 import org.bukkit.entity.ThrowableProjectile;
@@ -21,7 +22,9 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.entity.EntityCombustEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityPotionEffectEvent;
 import org.bukkit.event.entity.FoodLevelChangeEvent;
+import org.bukkit.event.entity.PotionSplashEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.player.PlayerAttemptPickupItemEvent;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
@@ -109,15 +112,11 @@ public class SpectateListener extends TBListener {
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onEntityDamageByEntity(final EntityDamageByEntityEvent event) {
-        final Player player;
         if (event.getDamager() instanceof Player damager) {
-            player = damager;
+            cancelSpectatorAction(event, damager);
         } else if (event.getDamager() instanceof Projectile projectile && projectile.getShooter() instanceof Player shooter) {
-            player = shooter;
-        } else {
-            return;
+            cancelSpectatorAction(event, shooter);
         }
-        cancelSpectatorAction(event, player);
     }
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
@@ -164,6 +163,25 @@ public class SpectateListener extends TBListener {
     @EventHandler(ignoreCancelled = true)
     public void onPlayerPickupExperience(PlayerPickupExperienceEvent event) {
         cancelSpectatorAction(event, event.getPlayer());
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onPotionSplash(PotionSplashEvent event) {
+        for (LivingEntity ent : event.getAffectedEntities()) {
+            if (ent instanceof Player player && spectateManager.isSpectating(player)) {
+                // Define a intensidade só para este jogador como zero
+                event.setIntensity(ent, 0.0);
+            }
+        }
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onEntityPotionEffect(EntityPotionEffectEvent event) {
+        if (event.getEntity() instanceof Player player
+                && event.getCause() != EntityPotionEffectEvent.Cause.PLUGIN
+                && event.getAction() == EntityPotionEffectEvent.Action.ADDED) {
+            cancelSpectatorAction(event, player);
+        }
     }
 
     private void cancelSpectatorAction(Cancellable event, Player player) {
