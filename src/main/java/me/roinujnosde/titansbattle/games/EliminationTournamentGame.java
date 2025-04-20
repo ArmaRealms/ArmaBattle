@@ -375,9 +375,7 @@ public class EliminationTournamentGame extends Game {
 
     @Override
     public @NotNull Collection<Warrior> getCurrentFighters() {
-        return getParticipants().stream()
-                .filter(this::isCurrentDuelist)
-                .collect(Collectors.toCollection(ArrayList::new));
+        return getParticipants().stream().filter(this::isCurrentDuelist).collect(Collectors.toCollection(ArrayList::new));
     }
 
     private void informOtherDuelists() {
