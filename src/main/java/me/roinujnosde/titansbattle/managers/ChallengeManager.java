@@ -6,6 +6,7 @@ import me.roinujnosde.titansbattle.challenges.ChallengeRequest;
 import me.roinujnosde.titansbattle.types.Warrior;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Unmodifiable;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -23,7 +24,7 @@ public class ChallengeManager {
         this.plugin = plugin;
     }
 
-    public Set<Challenge> getChallenges() {
+    public @Unmodifiable Set<Challenge> getChallenges() {
         return Collections.unmodifiableSet(challenges);
     }
 

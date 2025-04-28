@@ -37,6 +37,7 @@ import me.roinujnosde.titansbattle.managers.GroupManager;
 import me.roinujnosde.titansbattle.managers.LanguageManager;
 import me.roinujnosde.titansbattle.managers.ListenerManager;
 import me.roinujnosde.titansbattle.managers.SimpleClansGroupManager;
+import me.roinujnosde.titansbattle.managers.SpectateManager;
 import me.roinujnosde.titansbattle.managers.TaskManager;
 import me.roinujnosde.titansbattle.types.GameConfiguration;
 import me.roinujnosde.titansbattle.types.Kit;
@@ -75,6 +76,7 @@ public final class TitansBattle extends JavaPlugin {
     private ConfigurationDao configurationDao;
     private PlaceholderHook placeholderHook;
     private ViaVersionHook viaVersionHook;
+    private SpectateManager spectateManager;
 
     public static TitansBattle getInstance() {
         return instance;
@@ -93,6 +95,7 @@ public final class TitansBattle extends JavaPlugin {
         challengeManager = new ChallengeManager(this);
         listenerManager = new ListenerManager(this);
         configurationDao = new ConfigurationDao(getDataFolder());
+        spectateManager = new SpectateManager(this);
 
         configManager.load();
         languageManager.setup();
@@ -187,6 +190,10 @@ public final class TitansBattle extends JavaPlugin {
 
     public ViaVersionHook getViaVersionHook() {
         return viaVersionHook;
+    }
+
+    public SpectateManager getSpectateManager() {
+        return spectateManager;
     }
 
     /**
@@ -285,5 +292,4 @@ public final class TitansBattle extends JavaPlugin {
             }
         });
     }
-
 }

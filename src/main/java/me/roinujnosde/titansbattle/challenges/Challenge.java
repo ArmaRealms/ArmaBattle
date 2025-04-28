@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class Challenge extends BaseGame {
 
@@ -111,7 +112,7 @@ public class Challenge extends BaseGame {
         }
         if (getConfig().isGroupMode()) {
             winnerGroup = getGroup(warrior);
-            winners = getParticipants().stream().filter(p -> winnerGroup.isMember(p.getUniqueId())).toList();
+            winners = getParticipants().stream().filter(p -> winnerGroup.isMember(p.getUniqueId())).collect(Collectors.toCollection(ArrayList::new));
         } else {
             winners.add(warrior);
         }

@@ -14,7 +14,7 @@ public class HappeningCondition extends AbstractCommandCondition {
 
     @Override
     public void validateCondition(ConditionContext<BukkitCommandIssuer> context) throws InvalidCommandArgument {
-        if (!getGameManager().getCurrentGame().isPresent()) {
+        if (getGameManager().getCurrentGame().isEmpty()) {
             context.getIssuer().sendMessage(plugin.getLang("not-starting-or-started"));
             throw new ConditionFailedException();
         }

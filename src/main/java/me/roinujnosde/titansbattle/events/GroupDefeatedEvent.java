@@ -27,13 +27,14 @@ import me.roinujnosde.titansbattle.types.Group;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author RoinujNosde
  */
 public class GroupDefeatedEvent extends Event {
 
-    private final static HandlerList HANDLERS = new HandlerList();
+    private static final HandlerList HANDLERS = new HandlerList();
     private final Group group;
     private final Player lastParticipant;
 
@@ -71,7 +72,7 @@ public class GroupDefeatedEvent extends Event {
     }
 
     @Override
-    public HandlerList getHandlers() {
+    public @NotNull HandlerList getHandlers() {
         return HANDLERS;
     }
 

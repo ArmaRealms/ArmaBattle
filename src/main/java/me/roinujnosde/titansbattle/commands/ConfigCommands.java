@@ -144,6 +144,21 @@ public class ConfigCommands extends BaseCommand {
         player.sendMessage(plugin.getLang("destination_set", destination));
     }
 
+    private void teleportPlayer(Player player, BaseGameConfiguration baseconfig, Destination destination) {
+        Location location = null;
+        switch (destination) {
+            case EXIT -> location = baseconfig.getExit();
+            case LOBBY -> location = baseconfig.getLobby();
+            case WATCHROOM -> location = baseconfig.getWatchroom();
+            case BORDER_CENTER -> location = baseconfig.getBorderCenter();
+        }
+        if (location == null) {
+            player.sendMessage(plugin.getLang("no-entrance"));
+            return;
+        }
+        player.teleport(location);
+    }
+
     public enum PrizeReceiver {
         LEADERS, MEMBERS
     }
@@ -212,7 +227,9 @@ public class ConfigCommands extends BaseCommand {
         @CommandPermission("titansbattle.setdestination")
         @CommandCompletion("@games @destinations|ARENA_ENTRANCE")
         @Description("{@@command.description.setdestination.game}")
-        public void setDestination(Player player, @Values("@games") GameConfiguration game, @Values("@destinations") Destination destination) {
+        public void setDestination(Player player,
+                                   @Values("@games") GameConfiguration game,
+                                   @Values("@destinations") Destination destination) {
             ConfigCommands.this.setDestination(player, game, destination);
         }
 
@@ -227,6 +244,15 @@ public class ConfigCommands extends BaseCommand {
             ConfigCommands.this.setArenaEntrance(player, game, index);
         }
 
+        @Subcommand("%teleport|teleport")
+        @CommandPermission("titansbattle.teleport")
+        @CommandCompletion("@games @destinations|ARENA_ENTRANCE")
+        @Description("{@@command.description.teleport}")
+        public void teleport(Player player,
+                             @Values("@games") GameConfiguration game,
+                             @Values("@destinations") Destination destination) {
+            ConfigCommands.this.teleportPlayer(player, game, destination);
+        }
     }
 
     @Subcommand("%challenge|challenge")
@@ -305,6 +331,7 @@ public class ConfigCommands extends BaseCommand {
         @Description("{@@command.description.challenge.setdestination}")
         public void setArenaEntrance(Player player,
                                      @Values("@arenas") ArenaConfiguration arena,
+                                     @Values("ARENA_ENTRANCE") String destination,
                                      @Values("@range:1-2") int index) {
             ConfigCommands.this.setArenaEntrance(player, arena, index);
         }
@@ -316,6 +343,16 @@ public class ConfigCommands extends BaseCommand {
         @CommandCompletion("@challenge")
         public void cancel(CommandSender sender, @Values("@challenge") @NotNull Challenge challenge) {
             challenge.cancel(sender);
+        }
+
+        @Subcommand("%teleport|teleport")
+        @CommandPermission("titansbattle.teleport")
+        @CommandCompletion("@arenas")
+        @Description("{@@command.description.challenge.teleport}")
+        public void teleportArena(Player player,
+                                  @Values("@arenas") ArenaConfiguration arena,
+                                  @Values("@destinations") Destination destination) {
+            ConfigCommands.this.teleportPlayer(player, arena, destination);
         }
     }
 }

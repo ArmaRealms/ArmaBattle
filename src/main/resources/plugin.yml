@@ -70,6 +70,9 @@ permissions:
   titansbattle.command-bypass:
     default: false
     description: Bypasses command restrictions in games
+  titansbattle.teleport-bypass:
+    default: false
+    description: Bypasses teleport restrictions in games
   titansbattle.winners:
     default: false
   titansbattle.setinventory:

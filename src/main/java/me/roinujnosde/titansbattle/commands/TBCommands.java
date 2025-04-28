@@ -15,7 +15,6 @@ import co.aikar.commands.annotation.Subcommand;
 import co.aikar.commands.annotation.Syntax;
 import co.aikar.commands.annotation.Values;
 import co.aikar.commands.bukkit.contexts.OnlinePlayer;
-import me.roinujnosde.titansbattle.BaseGameConfiguration;
 import me.roinujnosde.titansbattle.TitansBattle;
 import me.roinujnosde.titansbattle.challenges.ArenaConfiguration;
 import me.roinujnosde.titansbattle.dao.ConfigurationDao;
@@ -25,14 +24,13 @@ import me.roinujnosde.titansbattle.managers.ChallengeManager;
 import me.roinujnosde.titansbattle.managers.ConfigManager;
 import me.roinujnosde.titansbattle.managers.DatabaseManager;
 import me.roinujnosde.titansbattle.managers.GameManager;
+import me.roinujnosde.titansbattle.managers.SpectateManager;
 import me.roinujnosde.titansbattle.managers.TaskManager;
 import me.roinujnosde.titansbattle.types.GameConfiguration;
 import me.roinujnosde.titansbattle.types.Warrior;
 import me.roinujnosde.titansbattle.types.Winners;
 import me.roinujnosde.titansbattle.utils.Helper;
-import me.roinujnosde.titansbattle.utils.SoundUtils;
 import org.bukkit.Bukkit;
-import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
@@ -61,6 +59,8 @@ public class TBCommands extends BaseCommand {
     private DatabaseManager databaseManager;
     @Dependency
     private ConfigurationDao configDao;
+    @Dependency
+    private SpectateManager spectateManager;
 
     @Subcommand("%start|start")
     @CommandPermission("titansbattle.start")
@@ -198,19 +198,17 @@ public class TBCommands extends BaseCommand {
     @CommandAlias("%watch")
     @Subcommand("%watch|watch")
     @CommandPermission("titansbattle.watch")
+    @Conditions("happening")
     @CommandCompletion("@arenas:in_use")
     @Description("{@@command.description.watch}")
     public void watch(Player sender, Game game, @Optional ArenaConfiguration arena) {
-        BaseGameConfiguration config;
-        if (arena == null && game == null) {
-            sender.sendMessage(plugin.getLang("not-starting-or-started"));
-            return;
+        if (spectateManager.isSpectating(sender)) {
+            spectateManager.removeSpectator(sender);
+            plugin.debug(String.format("Player %s is already spectating. Removing from spectator list.", sender.getName()));
+        } else {
+            spectateManager.addSpectator(sender, game, arena);
+            plugin.debug(String.format("Player %s is now spectating.", sender.getName()));
         }
-        config = (arena == null) ? game.getConfig() : arena;
-
-        Location watchroom = config.getWatchroom();
-        sender.teleport(watchroom);
-        SoundUtils.playSound(SoundUtils.Type.WATCH, plugin.getConfig(), sender);
     }
 
 }
