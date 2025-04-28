@@ -28,6 +28,7 @@ import me.roinujnosde.titansbattle.types.Warrior;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Unmodifiable;
 
 import java.util.Collections;
 import java.util.List;
@@ -69,7 +70,7 @@ public class PlayerWinEvent extends Event {
      *
      * @return an Unmodifiable List of the Winners
      */
-    public List<Warrior> getPlayers() {
+    public @Unmodifiable List<Warrior> getPlayers() {
         return Collections.unmodifiableList(players);
     }
 
