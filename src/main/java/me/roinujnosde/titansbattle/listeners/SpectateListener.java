@@ -7,6 +7,7 @@ import me.roinujnosde.titansbattle.events.GroupWinEvent;
 import me.roinujnosde.titansbattle.events.PlayerWinEvent;
 import me.roinujnosde.titansbattle.managers.ConfigManager;
 import me.roinujnosde.titansbattle.managers.SpectateManager;
+import me.roinujnosde.titansbattle.utils.Helper;
 import org.bukkit.Location;
 import org.bukkit.entity.AbstractArrow;
 import org.bukkit.entity.EntityType;
@@ -112,10 +113,9 @@ public class SpectateListener extends TBListener {
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onEntityDamageByEntity(final EntityDamageByEntityEvent event) {
-        if (event.getDamager() instanceof Player damager) {
+        Player damager = Helper.getPlayerAttackerOrKiller(event.getDamager());
+        if (damager != null) {
             cancelSpectatorAction(event, damager);
-        } else if (event.getDamager() instanceof Projectile projectile && projectile.getShooter() instanceof Player shooter) {
-            cancelSpectatorAction(event, shooter);
         }
     }
 
