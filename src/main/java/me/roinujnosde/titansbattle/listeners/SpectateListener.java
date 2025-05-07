@@ -83,7 +83,7 @@ public class SpectateListener extends TBListener {
                 return;
             }
         }
-        if (!canBypassCommandRestrictions(player)) {
+        if (!player.hasPermission("titansbattle.command-bypass")) {
             player.sendMessage(MessageFormat.format(plugin.getLang("command-not-allowed-in-spectator"), event.getMessage()));
             event.setCancelled(true);
         }

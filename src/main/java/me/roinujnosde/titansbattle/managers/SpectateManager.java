@@ -30,7 +30,7 @@ public class SpectateManager {
     }
 
     public void addSpectator(final Player player, Game game, @Optional ArenaConfiguration arena) {
-        if (Kit.inventoryHasItems(player)) {
+        if (Kit.inventoryHasItems(player) && !player.hasPermission("titansbattle.inventory-bypass")) {
             player.sendMessage(plugin.getLang("clear-your-inventory-before-spectating"));
             return;
         }
