@@ -37,7 +37,8 @@ public class EntityDamageListener extends TBListener {
     }
 
     //mcMMO's listener is on HIGHEST and ignoreCancelled = true, this will run before
-    @EventHandler(priority = EventPriority.HIGH)
+    //Aurellium / Auraskills is on HIGH
+    @EventHandler(priority = EventPriority.NORMAL)
     public void onDamage(EntityDamageEvent event) {
         if (!(event.getEntity() instanceof Player defender)) {
             return;
