@@ -12,7 +12,6 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
-import org.bukkit.projectiles.ProjectileSource;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -288,14 +287,10 @@ public class Helper {
      * @return the attacker/killer or null
      */
     public static @Nullable Player getPlayerAttackerOrKiller(Entity entity) {
-        if (entity instanceof Player player) {
-            return player;
-        }
-        if (entity instanceof Projectile projectile) {
-            ProjectileSource shooter = projectile.getShooter();
-            if (shooter instanceof Player playerShooter) {
-                return playerShooter;
-            }
+        if (entity instanceof Player damager) {
+            return damager;
+        } else if (entity instanceof Projectile projectile && projectile.getShooter() instanceof Player shooter) {
+            return shooter;
         }
         return null;
     }

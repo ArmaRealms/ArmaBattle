@@ -64,7 +64,7 @@ public class TaskManager {
         boolean loggedMonthly = false;
         for (Event event : plugin.getConfigManager().getEvents()) {
             TimerTask task = createTimerTask(event);
-            if (event.getFrequency() == Event.Frequency.MONTHLY) {
+            if (event.frequency() == Event.Frequency.MONTHLY) {
                 schedulerTimer.schedule(task, event.getDelay());
                 if (!loggedMonthly) {
                     plugin.getLogger().info("Scheduled a monthly event. This event will be repeated only after a restart.");
@@ -72,7 +72,7 @@ public class TaskManager {
                 }
                 continue;
             }
-            schedulerTimer.scheduleAtFixedRate(task, event.getDelay(), event.getFrequency().getPeriod());
+            schedulerTimer.scheduleAtFixedRate(task, event.getDelay(), event.frequency().getPeriod());
         }
     }
 
@@ -90,9 +90,9 @@ public class TaskManager {
             @Override
             public void run() {
                 Optional<GameConfiguration> config = plugin.getConfigurationDao()
-                        .getConfiguration(event.getGameName(), GameConfiguration.class);
+                        .getConfiguration(event.gameName(), GameConfiguration.class);
                 if (config.isEmpty()) {
-                    plugin.getLogger().warning(String.format("Game %s not found!", event.getGameName()));
+                    plugin.getLogger().warning(String.format("Game %s not found!", event.gameName()));
                     return;
                 }
 //                if (plugin.getGameManager().getCurrentGame().isPresent()) {
