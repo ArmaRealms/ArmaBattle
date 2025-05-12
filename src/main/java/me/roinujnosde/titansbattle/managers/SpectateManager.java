@@ -6,7 +6,6 @@ import me.roinujnosde.titansbattle.TitansBattle;
 import me.roinujnosde.titansbattle.challenges.ArenaConfiguration;
 import me.roinujnosde.titansbattle.games.Game;
 import me.roinujnosde.titansbattle.types.Kit;
-import me.roinujnosde.titansbattle.types.Warrior;
 import me.roinujnosde.titansbattle.utils.SoundUtils;
 import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
@@ -16,7 +15,6 @@ import org.bukkit.potion.PotionEffectType;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
 import static me.roinujnosde.titansbattle.utils.SoundUtils.Type.LEAVE_GAME;
@@ -31,14 +29,8 @@ public class SpectateManager {
         this.configManager = plugin.getConfigManager();
     }
 
-    public void addSpectator(final Set<Warrior> warriors, Game game, ArenaConfiguration arena) {
-        warriors.stream()
-                .map(Warrior::toOnlinePlayer)
-                .forEach(player -> addSpectator(player, game, arena));
-    }
-
     public void addSpectator(final Player player, Game game, @Optional ArenaConfiguration arena) {
-        if (Kit.inventoryHasItems(player)) {
+        if (Kit.inventoryHasItems(player) && !player.hasPermission("titansbattle.inventory-bypass")) {
             player.sendMessage(plugin.getLang("clear-your-inventory-before-spectating"));
             return;
         }

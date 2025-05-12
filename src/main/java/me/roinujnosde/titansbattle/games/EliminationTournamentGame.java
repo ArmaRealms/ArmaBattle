@@ -4,14 +4,12 @@ import me.roinujnosde.titansbattle.TitansBattle;
 import me.roinujnosde.titansbattle.events.GroupWinEvent;
 import me.roinujnosde.titansbattle.events.PlayerWinEvent;
 import me.roinujnosde.titansbattle.exceptions.CommandNotSupportedException;
-import me.roinujnosde.titansbattle.managers.SpectateManager;
 import me.roinujnosde.titansbattle.types.GameConfiguration;
 import me.roinujnosde.titansbattle.types.Group;
 import me.roinujnosde.titansbattle.types.Kit;
 import me.roinujnosde.titansbattle.types.Warrior;
 import me.roinujnosde.titansbattle.types.Winners;
 import me.roinujnosde.titansbattle.utils.Helper;
-import me.roinujnosde.titansbattle.utils.MessageUtils;
 import me.roinujnosde.titansbattle.utils.SoundUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -23,14 +21,11 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -42,11 +37,10 @@ import static me.roinujnosde.titansbattle.BaseGameConfiguration.Prize.THIRD;
 
 public class EliminationTournamentGame extends Game {
 
-    protected final SpectateManager spectateManager;
     private final List<Duel<Warrior>> playerDuelists = new ArrayList<>();
     private final List<Duel<Group>> groupDuelists = new ArrayList<>();
     private final List<Warrior> waitingThirdPlace = new ArrayList<>();
-    private final Map<UUID, Integer> hitsCount = new HashMap<>();
+
     private boolean thirdPlaceBattle = false;
     private @NotNull List<Warrior> firstPlaceWinners = new ArrayList<>();
     private @Nullable List<Warrior> secondPlaceWinners;
@@ -54,7 +48,6 @@ public class EliminationTournamentGame extends Game {
 
     public EliminationTournamentGame(TitansBattle plugin, GameConfiguration config) {
         super(plugin, config);
-        this.spectateManager = plugin.getSpectateManager();
     }
 
     @Override
@@ -265,7 +258,7 @@ public class EliminationTournamentGame extends Game {
                 .map(Warrior::toOnlinePlayer)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
-        spectateManager.addSpectator(warriors, this, null);
+        teleport(warriors, getConfig().getExit());
         players.forEach(player -> {
             player.sendMessage(getLang("kicked_to_adjust_duels"));
             if (getConfig().isUseKits()) {
@@ -529,26 +522,12 @@ public class EliminationTournamentGame extends Game {
         return group.equals(getGroup(warrior));
     }
 
-    public boolean onHit(Player attacker, Player victim) {
-        UUID attackerUUID = attacker.getUniqueId();
-        hitsCount.put(attackerUUID, hitsCount.getOrDefault(attackerUUID, 0) + 1);
-        if (hitsCount.get(attackerUUID) < getConfig().getHitAmount()) {
-            MessageUtils.sendActionBar(attacker, getLang("boxing_hit_count", hitsCount.get(attackerUUID), getConfig().getHitAmount()));
-            return true;
-        } else {
-            hitsCount.remove(attackerUUID);
-            hitsCount.remove(victim.getUniqueId());
-            plugin.debug(String.format("onHit() - kill player %s", victim.getName()));
-            return false;
-        }
-    }
-
     @Override
-    public final boolean equals(Object o) {
+    public boolean equals(Object o) {
         if (!(o instanceof EliminationTournamentGame that)) return false;
         if (!super.equals(o)) return false;
 
-        return thirdPlaceBattle == that.thirdPlaceBattle && playerDuelists.equals(that.playerDuelists) && groupDuelists.equals(that.groupDuelists) && waitingThirdPlace.equals(that.waitingThirdPlace) && firstPlaceWinners.equals(that.firstPlaceWinners) && Objects.equals(secondPlaceWinners, that.secondPlaceWinners) && Objects.equals(thirdPlaceWinners, that.thirdPlaceWinners) && hitsCount.equals(that.hitsCount);
+        return thirdPlaceBattle == that.thirdPlaceBattle && playerDuelists.equals(that.playerDuelists) && groupDuelists.equals(that.groupDuelists) && waitingThirdPlace.equals(that.waitingThirdPlace) && firstPlaceWinners.equals(that.firstPlaceWinners) && Objects.equals(secondPlaceWinners, that.secondPlaceWinners) && Objects.equals(thirdPlaceWinners, that.thirdPlaceWinners);
     }
 
     @Override
@@ -561,7 +540,6 @@ public class EliminationTournamentGame extends Game {
         result = 31 * result + firstPlaceWinners.hashCode();
         result = 31 * result + Objects.hashCode(secondPlaceWinners);
         result = 31 * result + Objects.hashCode(thirdPlaceWinners);
-        result = 31 * result + hitsCount.hashCode();
         return result;
     }
 }

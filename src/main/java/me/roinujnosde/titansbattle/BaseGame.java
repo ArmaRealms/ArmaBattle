@@ -150,7 +150,7 @@ public abstract class BaseGame {
 
         int playtimeInSeconds = player.getStatistic(Statistic.PLAY_ONE_MINUTE) / 20;
         int minimumPlaytimeInSeconds = getConfig().getMinimumPlaytimeInSeconds();
-        if (playtimeInSeconds < minimumPlaytimeInSeconds) {
+        if (playtimeInSeconds < minimumPlaytimeInSeconds && !player.hasPermission("titansbattle.playtime-bypass")) {
             plugin.debug(String.format("Player %s has not enough playtime: %d < %d", player.getName(), playtimeInSeconds, minimumPlaytimeInSeconds));
             StringBuilder formattedTime = getFormattedTime(minimumPlaytimeInSeconds, playtimeInSeconds);
             player.sendMessage(getLang("not.enough.playtime", formattedTime.toString()));
