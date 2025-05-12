@@ -10,6 +10,7 @@ import me.roinujnosde.titansbattle.managers.SpectateManager;
 import me.roinujnosde.titansbattle.utils.Helper;
 import org.bukkit.Location;
 import org.bukkit.entity.AbstractArrow;
+import org.bukkit.entity.Arrow;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
@@ -207,12 +208,24 @@ public class SpectateListener extends TBListener {
         PersistentDataContainer to = dst.getPersistentDataContainer();
         from.copyTo(to, true);
 
-        if (src instanceof AbstractArrow a && dst instanceof AbstractArrow b) {
-            b.setCritical(a.isCritical());
-            b.setDamage(a.getDamage());
-            b.setPierceLevel(a.getPierceLevel());
-            b.setKnockbackStrength(a.getKnockbackStrength());
-            b.setPickupStatus(a.getPickupStatus());
+        if (src instanceof Arrow srcArrow && dst instanceof Arrow dstArrow) {
+            dstArrow.setBasePotionType(srcArrow.getBasePotionType());
+            if (srcArrow.getColor() != null) {
+                dstArrow.setColor(srcArrow.getColor());
+            }
+            if (srcArrow.hasCustomEffects()) {
+                for (var effect : srcArrow.getCustomEffects()) {
+                    dstArrow.addCustomEffect(effect, true);
+                }
+            }
+        }
+
+        if (src instanceof AbstractArrow srcAbsArrow && dst instanceof AbstractArrow dstAbsArrow) {
+            dstAbsArrow.setCritical(srcAbsArrow.isCritical());
+            dstAbsArrow.setDamage(srcAbsArrow.getDamage());
+            dstAbsArrow.setPierceLevel(srcAbsArrow.getPierceLevel());
+            dstAbsArrow.setKnockbackStrength(srcAbsArrow.getKnockbackStrength());
+            dstAbsArrow.setPickupStatus(srcAbsArrow.getPickupStatus());
         }
 
         if (src instanceof Trident t && dst instanceof Trident c) {
