@@ -15,8 +15,10 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class JoinGameListener extends TBListener {
 
@@ -88,25 +90,19 @@ public class JoinGameListener extends TBListener {
     public void whitelist(PlayerJoinGameEvent event) {
         Player player = event.getPlayer();
         List<String> whitelist = event.getGame().getConfig().getWhitelistedItems();
-        if (whitelist == null || whitelist.isEmpty()) {
-            return;
-        }
-        items:
-        for (ItemStack item : player.getInventory().getContents()) {
-            if (item == null) {
-                continue;
-            }
-            for (String allowedItem : whitelist) {
-                if (allowedItem.equals(item.getType().name())) {
-                    continue items;
-                }
 
+        if (whitelist == null || whitelist.isEmpty()) return;
+
+        Set<String> allowed = new HashSet<>(whitelist);
+
+        for (ItemStack item : player.getInventory().getContents()) {
+            if (item == null) continue;
+            if (!allowed.contains(item.getType().name())) {
                 cancelWithMessage(event, "item_not_allowed", item.getType());
-                break items;
+                break;
             }
         }
     }
-
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGHEST)
     public void offhandWhitelist(PlayerJoinGameEvent event) {
@@ -168,10 +164,8 @@ public class JoinGameListener extends TBListener {
         BaseGameConfiguration config = event.getGame().getConfig();
         if (config instanceof GameConfiguration) {
             String permission = ((GameConfiguration) config).getPermission();
-            if (permission != null && !permission.isEmpty()) {
-                if (!event.getPlayer().hasPermission(permission)) {
-                    cancelWithMessage(event, "no-permission-game");
-                }
+            if (permission != null && !permission.isEmpty() && !event.getPlayer().hasPermission(permission)) {
+                cancelWithMessage(event, "no-permission-game");
             }
         }
     }
