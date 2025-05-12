@@ -191,10 +191,6 @@ public class SpectateListener extends TBListener {
         }
     }
 
-    private boolean canBypassCommandRestrictions(Player player) {
-        return player.hasPermission("titansbattle.command-bypass");
-    }
-
     private void cloneProjectileData(Projectile src, Projectile dst) {
         dst.setVelocity(src.getVelocity());
         dst.setShooter(src.getShooter());
