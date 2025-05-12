@@ -76,6 +76,9 @@ permissions:
   titansbattle.inventory-bypass:
     default: false
     description: Bypasses inventory restrictions in games
+  titansbattle.playtime-bypass:
+    default: false
+    description: Bypasses playtime restrictions in games
   titansbattle.winners:
     default: false
   titansbattle.setinventory:
