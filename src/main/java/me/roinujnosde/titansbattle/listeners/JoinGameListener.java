@@ -119,6 +119,7 @@ public class JoinGameListener extends TBListener {
             }
             cancelWithMessage(event, "item_not_allowed", item.getType());
         } catch (NoSuchMethodError ignored) {
+            // ignored
         }
     }
 
@@ -156,6 +157,7 @@ public class JoinGameListener extends TBListener {
             }
             cancelWithMessage(event, "item_not_allowed", item.getType());
         } catch (NoSuchMethodError ignored) {
+            // ignored
         }
     }
 
