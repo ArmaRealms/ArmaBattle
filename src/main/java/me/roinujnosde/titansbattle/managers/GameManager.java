@@ -51,7 +51,7 @@ public class GameManager {
             return;
         }
         Bukkit.getPluginManager().callEvent(new NewKillerEvent(killer, victim));
-        Bukkit.getServer().getOnlinePlayers().forEach((p) -> MessageUtils.sendActionBar(p,
+        Bukkit.getServer().getOnlinePlayers().forEach(p -> MessageUtils.sendActionBar(p,
                 MessageFormat.format(plugin.getLang("new_killer", gameConfig.getFileConfiguration()), killer.getName())));
         plugin.getDatabaseManager().getTodaysWinners().setKiller(gameConfig.getName(), killer.getUniqueId());
     }
@@ -95,6 +95,7 @@ public class GameManager {
         try {
             return Class.forName("me.roinujnosde.titansbattle.games." + className);
         } catch (ClassNotFoundException ignored) {
+            // ignored
         }
         try {
             return Class.forName(className);

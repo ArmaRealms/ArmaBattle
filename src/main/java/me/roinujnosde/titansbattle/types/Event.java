@@ -23,8 +23,6 @@
  */
 package me.roinujnosde.titansbattle.types;
 
-import org.jetbrains.annotations.NotNull;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -33,15 +31,9 @@ import java.time.temporal.ChronoUnit;
 /**
  * @author RoinujNosde
  */
-public class Event {
+public record Event(String gameName, me.roinujnosde.titansbattle.types.Event.Frequency frequency, int day, int hour, int minute) {
 
-    private final String gameName;
-    private final Frequency frequency;
-    private final int day;
-    private final int hour;
-    private final int minute;
-
-    public Event(@NotNull String gameName, @NotNull Frequency frequency, int day, int hour, int minute) {
+    public Event {
         if (day < 0 || (day > 7 && frequency == Frequency.WEEKLY) || day > 31) {
             throw new IllegalArgumentException("invalid day");
         }
@@ -51,49 +43,19 @@ public class Event {
         if (minute < 0 || minute > 59) {
             throw new IllegalArgumentException("invalid minute");
         }
-        this.day = day;
-        this.gameName = gameName;
-        this.frequency = frequency;
-        this.hour = hour;
-        this.minute = minute;
-    }
-
-    public @NotNull String getGameName() {
-        return gameName;
-    }
-
-    public Frequency getFrequency() {
-        return frequency;
-    }
-
-    public int getDay() {
-        return day;
-    }
-
-    public int getHour() {
-        return hour;
-    }
-
-    public int getMinute() {
-        return minute;
     }
 
     public long getDelay() {
-        switch (frequency) {
-            case HOURLY:
-                return getHourlyDelay();
-            case DAILY:
-                return getDailyDelay();
-            case WEEKLY:
-                return getWeeklyDelay();
-            case MONTHLY:
-                return getMonthlyDelay();
-        }
-        return -1;
+        return switch (frequency) {
+            case HOURLY -> getHourlyDelay();
+            case DAILY -> getDailyDelay();
+            case WEEKLY -> getWeeklyDelay();
+            case MONTHLY -> getMonthlyDelay();
+        };
     }
 
     private int getHourlyDelay() {
-        int difference = getMinute() - LocalTime.now().getMinute();
+        int difference = minute() - LocalTime.now().getMinute();
         if (difference < 0) {
             difference += 60;
         }

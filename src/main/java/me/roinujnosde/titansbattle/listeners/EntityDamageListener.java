@@ -3,9 +3,10 @@ package me.roinujnosde.titansbattle.listeners;
 import me.roinujnosde.titansbattle.BaseGame;
 import me.roinujnosde.titansbattle.BaseGameConfiguration;
 import me.roinujnosde.titansbattle.TitansBattle;
-import me.roinujnosde.titansbattle.games.EliminationTournamentGame;
+import me.roinujnosde.titansbattle.games.Boxing;
 import me.roinujnosde.titansbattle.managers.DatabaseManager;
 import me.roinujnosde.titansbattle.managers.GroupManager;
+import me.roinujnosde.titansbattle.managers.SpectateManager;
 import me.roinujnosde.titansbattle.types.Warrior;
 import me.roinujnosde.titansbattle.utils.Helper;
 import org.bukkit.entity.Entity;
@@ -18,11 +19,13 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.jetbrains.annotations.NotNull;
 
 public class EntityDamageListener extends TBListener {
+    private final SpectateManager sm;
     private final DatabaseManager dm;
     private final GroupManager gm;
 
     public EntityDamageListener(@NotNull TitansBattle plugin) {
         super(plugin);
+        this.sm = plugin.getSpectateManager();
         this.dm = plugin.getDatabaseManager();
         this.gm = plugin.getGroupManager();
     }
@@ -68,18 +71,21 @@ public class EntityDamageListener extends TBListener {
             return;
         }
 
-        if (attacker != null) {
-            Warrior warrior = dm.getWarrior(attacker);
-            if (!game.getConfig().isPvP() || !game.isInBattle(warrior)) {
-                event.setCancelled(true);
-                return;
-            }
-        }
-
         if (attacker == null) return;
 
-        if (game instanceof EliminationTournamentGame tournament && tournament.getConfig().isBoxing()) {
-            if (tournament.onHit(attacker, defender)) {
+        if (sm.isSpectating(attacker)) {
+            event.setCancelled(true);
+            return;
+        }
+
+        Warrior warrior = dm.getWarrior(attacker);
+        if (!game.getConfig().isPvP() || !game.isInBattle(warrior)) {
+            event.setCancelled(true);
+            return;
+        }
+
+        if (game instanceof Boxing boxing) {
+            if (boxing.onHit(attacker, defender)) {
                 event.setDamage(0.0);
             } else {
                 event.setDamage(1000.0);

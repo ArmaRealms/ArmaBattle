@@ -36,8 +36,6 @@ public abstract class BaseGameConfiguration implements ConfigurationSerializable
     @Path("items.blacklist")
     protected List<String> blacklistedItems;
     protected Boolean pvp = true;
-    @Path("boxing")
-    protected Boolean boxing = false;
     @Path("hit.amount")
     protected Integer hitAmount = 100;
     @Path("damage-type.melee")
@@ -172,10 +170,6 @@ public abstract class BaseGameConfiguration implements ConfigurationSerializable
 
     public Boolean isPvP() {
         return pvp;
-    }
-
-    public boolean isBoxing() {
-        return boxing;
     }
 
     public Integer getHitAmount() {

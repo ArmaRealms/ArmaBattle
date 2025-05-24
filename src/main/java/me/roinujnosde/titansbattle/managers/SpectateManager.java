@@ -6,17 +6,17 @@ import me.roinujnosde.titansbattle.TitansBattle;
 import me.roinujnosde.titansbattle.challenges.ArenaConfiguration;
 import me.roinujnosde.titansbattle.games.Game;
 import me.roinujnosde.titansbattle.types.Kit;
-import me.roinujnosde.titansbattle.types.Warrior;
 import me.roinujnosde.titansbattle.utils.SoundUtils;
 import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerTeleportEvent;
+import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
 import static me.roinujnosde.titansbattle.utils.SoundUtils.Type.LEAVE_GAME;
@@ -26,19 +26,13 @@ public class SpectateManager {
     private final ConfigManager configManager;
     private final List<UUID> spectators = new ArrayList<>();
 
-    public SpectateManager(TitansBattle plugin) {
+    public SpectateManager(@NotNull TitansBattle plugin) {
         this.plugin = plugin;
         this.configManager = plugin.getConfigManager();
     }
 
-    public void addSpectator(final Set<Warrior> warriors, Game game, ArenaConfiguration arena) {
-        warriors.stream()
-                .map(Warrior::toOnlinePlayer)
-                .forEach(player -> addSpectator(player, game, arena));
-    }
-
     public void addSpectator(final Player player, Game game, @Optional ArenaConfiguration arena) {
-        if (Kit.inventoryHasItems(player)) {
+        if (Kit.inventoryHasItems(player) && !player.hasPermission("titansbattle.inventory-bypass")) {
             player.sendMessage(plugin.getLang("clear-your-inventory-before-spectating"));
             return;
         }
@@ -50,7 +44,9 @@ public class SpectateManager {
         }
         config = (arena == null) ? game.getConfig() : arena;
 
+        player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, Integer.MAX_VALUE, 1, false, false));
         if (!player.teleport(config.getWatchroom())) {
+            player.removePotionEffect(PotionEffectType.INVISIBILITY);
             player.sendMessage(plugin.getLang("teleport-failed"));
             plugin.debug(String.format("Failed to teleport player %s to watchroom location.", player.getName()));
             return;
@@ -58,12 +54,14 @@ public class SpectateManager {
 
         spectators.add(player.getUniqueId());
         SoundUtils.playSound(SoundUtils.Type.WATCH, plugin.getConfig(), player);
-        player.hidePlayer(plugin, player);
+        for (Player onlinePlayer : plugin.getServer().getOnlinePlayers()) {
+            onlinePlayer.hidePlayer(plugin, player);
+        }
+        player.setMetadata("vanished", new FixedMetadataValue(plugin, true));
         player.setGameMode(GameMode.ADVENTURE);
         player.setAllowFlight(true);
         player.setFlying(true);
         player.setCollidable(false);
-        player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, Integer.MAX_VALUE, 1, false, false));
         player.sendMessage(plugin.getLang("spectator-enter"));
         plugin.debug(String.format("Player %s has entered spectator mode and was teleported to the watchroom.", player.getName()));
     }
@@ -89,8 +87,10 @@ public class SpectateManager {
             spectators.add(player.getUniqueId());
         }
         SoundUtils.playSound(LEAVE_GAME, plugin.getConfig(), player);
-
-        player.showPlayer(plugin, player);
+        for (Player onlinePlayer : plugin.getServer().getOnlinePlayers()) {
+            onlinePlayer.showPlayer(plugin, player);
+        }
+        player.setMetadata("vanished", new FixedMetadataValue(plugin, false));
         player.setGameMode(GameMode.SURVIVAL);
         player.setAllowFlight(false);
         player.setFlying(false);
