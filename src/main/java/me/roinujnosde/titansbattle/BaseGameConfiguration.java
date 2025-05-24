@@ -36,8 +36,6 @@ public abstract class BaseGameConfiguration implements ConfigurationSerializable
     @Path("items.blacklist")
     protected List<String> blacklistedItems;
     protected Boolean pvp = true;
-    @Path("hit.amount")
-    protected Integer hitAmount = 100;
     @Path("damage-type.melee")
     protected Boolean meleeDamage = true;
     @Path("damage-type.ranged")
@@ -82,10 +80,14 @@ public abstract class BaseGameConfiguration implements ConfigurationSerializable
     protected Double borderDamage = 5.0;
     @Path("cancel-block-interact")
     protected Boolean cancelBlockInteract = true;
+    @Path("hit.amount")
+    protected Integer hitAmount = 100;
     @Path("minimum.playtime")
     protected int minimunPlaytime = 86400;
     @Path("viaversion.block-protocols")
     protected List<Integer> blockedProtocols;
+    @Path("minimum.y.height")
+    protected Integer minimumYHeight = 0;
     @Path("prizes")
     private Map<String, Prizes> prizesMap = createPrizesMap();
 
@@ -170,10 +172,6 @@ public abstract class BaseGameConfiguration implements ConfigurationSerializable
 
     public Boolean isPvP() {
         return pvp;
-    }
-
-    public Integer getHitAmount() {
-        return hitAmount;
     }
 
     public Boolean isMeleeDamage() {
@@ -301,12 +299,20 @@ public abstract class BaseGameConfiguration implements ConfigurationSerializable
         return cancelBlockInteract;
     }
 
+    public Integer getHitAmount() {
+        return hitAmount;
+    }
+
     public int getMinimumPlaytimeInSeconds() {
         return minimunPlaytime;
     }
 
     public List<Integer> getBlockedProtocols() {
         return blockedProtocols;
+    }
+
+    public Integer getMinimumYHeight() {
+        return minimumYHeight;
     }
 
     public enum Destination {

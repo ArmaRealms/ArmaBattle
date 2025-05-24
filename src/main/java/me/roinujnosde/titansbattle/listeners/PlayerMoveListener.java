@@ -2,7 +2,9 @@ package me.roinujnosde.titansbattle.listeners;
 
 import me.roinujnosde.titansbattle.BaseGame;
 import me.roinujnosde.titansbattle.TitansBattle;
+import me.roinujnosde.titansbattle.games.Sumo;
 import me.roinujnosde.titansbattle.managers.DatabaseManager;
+import me.roinujnosde.titansbattle.types.Warrior;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.player.PlayerMoveEvent;
@@ -21,10 +23,16 @@ public class PlayerMoveListener extends TBListener {
         if (event.hasChangedBlock()) {
             Player player = event.getPlayer();
             BaseGame game = plugin.getBaseGameFrom(player);
-            if (game != null && game.isPreparation() && game.getCurrentFighters().contains(dm.getWarrior(player))) {
-                event.setCancelled(true);
+            if (game == null) return;
+            Warrior warrior = dm.getWarrior(player);
+            if (game.getCurrentFighters().contains(warrior)) {
+                if (game.isInBattle(warrior) && game instanceof Sumo && event.getTo().getY() <= game.getConfig().getMinimumYHeight()) {
+                    player.setHealth(0);
+                }
+                if (game.isPreparation()) {
+                    event.setCancelled(true);
+                }
             }
         }
     }
-
 }
