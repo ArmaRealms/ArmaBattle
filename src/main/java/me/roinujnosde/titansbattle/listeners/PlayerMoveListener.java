@@ -21,12 +21,13 @@ public class PlayerMoveListener extends TBListener {
     @EventHandler(ignoreCancelled = true)
     public void onPlayerMove(@NotNull PlayerMoveEvent event) {
         if (event.hasChangedBlock()) {
-            Player player = event.getPlayer();
-            BaseGame game = plugin.getBaseGameFrom(player);
+            final Player player = event.getPlayer();
+            final BaseGame game = plugin.getBaseGameFrom(player);
             if (game == null) return;
-            Warrior warrior = dm.getWarrior(player);
+            final Warrior warrior = dm.getWarrior(player);
             if (game.getCurrentFighters().contains(warrior)) {
-                if (game.isInBattle(warrior) && game instanceof Sumo && event.getTo().getY() <= game.getConfig().getMinimumYHeight()) {
+                if (game.isInBattle(warrior) && game instanceof Sumo
+                        && event.getTo().getY() <= game.getConfig().getMinimumYHeight()) {
                     player.setHealth(0);
                 }
                 if (game.isPreparation()) {
