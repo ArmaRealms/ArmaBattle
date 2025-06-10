@@ -26,18 +26,18 @@ public class SpectateManager {
     private final ConfigManager configManager;
     private final List<UUID> spectators = new ArrayList<>();
 
-    public SpectateManager(@NotNull TitansBattle plugin) {
+    public SpectateManager(@NotNull final TitansBattle plugin) {
         this.plugin = plugin;
         this.configManager = plugin.getConfigManager();
     }
 
-    public void addSpectator(final Player player, Game game, @Optional ArenaConfiguration arena) {
+    public void addSpectator(final Player player, final Game game, @Optional final ArenaConfiguration arena) {
         if (Kit.inventoryHasItems(player) && !player.hasPermission("titansbattle.inventory-bypass")) {
             player.sendMessage(plugin.getLang("clear-your-inventory-before-spectating"));
             return;
         }
 
-        BaseGameConfiguration config;
+        final BaseGameConfiguration config;
         if (arena == null && game == null) {
             player.sendMessage(plugin.getLang("not-starting-or-started"));
             return;
@@ -54,14 +54,14 @@ public class SpectateManager {
 
         spectators.add(player.getUniqueId());
         SoundUtils.playSound(SoundUtils.Type.WATCH, plugin.getConfig(), player);
-        for (Player onlinePlayer : plugin.getServer().getOnlinePlayers()) {
+        for (final Player onlinePlayer : plugin.getServer().getOnlinePlayers()) {
             onlinePlayer.hidePlayer(plugin, player);
         }
         player.setMetadata("vanished", new FixedMetadataValue(plugin, true));
         player.setGameMode(GameMode.ADVENTURE);
-        player.setAllowFlight(true);
-        player.setFlying(true);
         player.setCollidable(false);
+        player.setFallDistance(0f);
+        player.setAllowFlight(true);
         player.sendMessage(plugin.getLang("spectator-enter"));
         plugin.debug(String.format("Player %s has entered spectator mode and was teleported to the watchroom.", player.getName()));
     }
@@ -76,7 +76,7 @@ public class SpectateManager {
             plugin.debug(String.format("Player %s is not a spectator, cannot remove.", player.getName()));
             return;
         }
-        boolean removed = spectators.remove(player.getUniqueId());
+        final boolean removed = spectators.remove(player.getUniqueId());
         if (!removed) {
             plugin.debug(String.format("Player %s was not removed from spectators list.", player.getName()));
             return;
@@ -87,34 +87,33 @@ public class SpectateManager {
             spectators.add(player.getUniqueId());
         }
         SoundUtils.playSound(LEAVE_GAME, plugin.getConfig(), player);
-        for (Player onlinePlayer : plugin.getServer().getOnlinePlayers()) {
+        for (final Player onlinePlayer : plugin.getServer().getOnlinePlayers()) {
             onlinePlayer.showPlayer(plugin, player);
         }
         player.setMetadata("vanished", new FixedMetadataValue(plugin, false));
         player.setGameMode(GameMode.SURVIVAL);
-        player.setAllowFlight(false);
-        player.setFlying(false);
         player.setCollidable(true);
+        player.setAllowFlight(false);
         player.removePotionEffect(PotionEffectType.INVISIBILITY);
         player.sendMessage(plugin.getLang("spectator-exit"));
         plugin.debug(String.format("Player %s has exited spectator mode and was teleported to the exit location.", player.getName()));
     }
 
     public void removeAllSpectators() {
-        List<UUID> copy = new ArrayList<>(spectators);
-        for (UUID uuid : copy) {
-            Player player = plugin.getServer().getPlayer(uuid);
+        final List<UUID> copy = new ArrayList<>(spectators);
+        for (final UUID uuid : copy) {
+            final Player player = plugin.getServer().getPlayer(uuid);
             if (player != null) {
                 removeSpectator(player);
             }
         }
     }
 
-    public boolean isSpectating(Player player) {
+    public boolean isSpectating(final Player player) {
         return spectators.contains(player.getUniqueId());
     }
 
-    public void remove(Player player) {
+    public void remove(final Player player) {
         if (!isSpectating(player)) {
             plugin.debug(String.format("Player %s is not a spectator, cannot remove.", player.getName()));
             return;
