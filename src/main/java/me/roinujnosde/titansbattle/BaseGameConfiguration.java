@@ -83,7 +83,7 @@ public abstract class BaseGameConfiguration implements ConfigurationSerializable
     @Path("hit.amount")
     protected Integer hitAmount = 100;
     @Path("minimum.playtime")
-    protected int minimunPlaytime = 86400;
+    protected int minimumPlaytime = 86400;
     @Path("viaversion.block-protocols")
     protected List<Integer> blockedProtocols;
     @Path("minimum.y.height")
@@ -98,7 +98,7 @@ public abstract class BaseGameConfiguration implements ConfigurationSerializable
         return fileConfiguration;
     }
 
-    public void setFileConfiguration(@NotNull FileConfiguration fileConfiguration) {
+    public void setFileConfiguration(@NotNull final FileConfiguration fileConfiguration) {
         this.fileConfiguration = fileConfiguration;
     }
 
@@ -109,7 +109,7 @@ public abstract class BaseGameConfiguration implements ConfigurationSerializable
         return file;
     }
 
-    public void setFile(@NotNull File file) {
+    public void setFile(@NotNull final File file) {
         this.file = file;
     }
 
@@ -123,7 +123,7 @@ public abstract class BaseGameConfiguration implements ConfigurationSerializable
         return name;
     }
 
-    public void setName(String name) {
+    public void setName(final String name) {
         this.name = name;
     }
 
@@ -158,7 +158,7 @@ public abstract class BaseGameConfiguration implements ConfigurationSerializable
         return kit;
     }
 
-    public void setKit(Kit kit) {
+    public void setKit(final Kit kit) {
         this.kit = kit;
     }
 
@@ -202,7 +202,7 @@ public abstract class BaseGameConfiguration implements ConfigurationSerializable
         return watchroom;
     }
 
-    public void setWatchroom(Location watchroom) {
+    public void setWatchroom(final Location watchroom) {
         this.watchroom = watchroom;
     }
 
@@ -210,7 +210,7 @@ public abstract class BaseGameConfiguration implements ConfigurationSerializable
         return exit;
     }
 
-    public void setExit(Location exit) {
+    public void setExit(final Location exit) {
         this.exit = exit;
     }
 
@@ -218,7 +218,7 @@ public abstract class BaseGameConfiguration implements ConfigurationSerializable
         return lobby;
     }
 
-    public void setLobby(Location lobby) {
+    public void setLobby(final Location lobby) {
         this.lobby = lobby;
     }
 
@@ -230,11 +230,11 @@ public abstract class BaseGameConfiguration implements ConfigurationSerializable
         return borderCenter;
     }
 
-    public void setBorderCenter(Location borderCenter) {
+    public void setBorderCenter(final Location borderCenter) {
         this.borderCenter = borderCenter;
     }
 
-    public void setArenaEntrance(int index, Location entrance) {
+    public void setArenaEntrance(final int index, final Location entrance) {
         arenaEntrances.put(index, entrance);
     }
 
@@ -278,7 +278,7 @@ public abstract class BaseGameConfiguration implements ConfigurationSerializable
         return borderDamage;
     }
 
-    public Prizes getPrizes(@NotNull Prize prize) {
+    public Prizes getPrizes(@NotNull final Prize prize) {
         Prizes prizes = prizesMap.get(prize.name());
         if (prizes == null) {
             Logger.getLogger("TitansBattle").warning(String.format("Prizes not set for %s!", prize.name()));
@@ -288,8 +288,8 @@ public abstract class BaseGameConfiguration implements ConfigurationSerializable
     }
 
     private @NotNull Map<String, Prizes> createPrizesMap() {
-        LinkedHashMap<String, Prizes> map = new LinkedHashMap<>();
-        for (Prize p : Prize.values()) {
+        final LinkedHashMap<String, Prizes> map = new LinkedHashMap<>();
+        for (final Prize p : Prize.values()) {
             map.put(p.name(), new Prizes());
         }
         return map;
@@ -304,7 +304,7 @@ public abstract class BaseGameConfiguration implements ConfigurationSerializable
     }
 
     public int getMinimumPlaytimeInSeconds() {
-        return minimunPlaytime;
+        return minimumPlaytime;
     }
 
     public List<Integer> getBlockedProtocols() {
@@ -323,7 +323,7 @@ public abstract class BaseGameConfiguration implements ConfigurationSerializable
         FIRST, SECOND, THIRD, KILLER;
 
         @SuppressWarnings("unused")
-        public static Prize deserialize(@NotNull Map<String, Object> data) {
+        public static Prize deserialize(@NotNull final Map<String, Object> data) {
             return Prize.valueOf((String) data.get("prize"));
         }
 
