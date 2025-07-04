@@ -63,22 +63,22 @@ public final class ConfigManager {
 
         if (isScheduler()) {
             events.clear();
-            ConfigurationSection schedulersSection = config.getConfigurationSection("scheduler.events");
+            final ConfigurationSection schedulersSection = config.getConfigurationSection("scheduler.events");
             if (schedulersSection == null) {
                 return;
             }
-            Set<String> ids = schedulersSection.getKeys(false);
-            String pathPrefix = "scheduler.events.";
-            for (String id : ids) {
+            final Set<String> ids = schedulersSection.getKeys(false);
+            final String pathPrefix = "scheduler.events.";
+            for (final String id : ids) {
                 try {
-                    String game = config.getString(pathPrefix + id + ".game");
-                    Frequency frequency = Frequency.valueOf(config.getString(pathPrefix + id + ".frequency"));
-                    int day = config.getInt(pathPrefix + id + ".day");
-                    int hour = config.getInt(pathPrefix + id + ".hour");
-                    int minute = config.getInt(pathPrefix + id + ".minute");
+                    final String game = config.getString(pathPrefix + id + ".game");
+                    final Frequency frequency = Frequency.valueOf(config.getString(pathPrefix + id + ".frequency"));
+                    final int day = config.getInt(pathPrefix + id + ".day");
+                    final int hour = config.getInt(pathPrefix + id + ".hour");
+                    final int minute = config.getInt(pathPrefix + id + ".minute");
                     if (game == null) continue;
                     events.add(new Event(game, frequency, day, hour, minute));
-                } catch (IllegalArgumentException ex) {
+                } catch (final IllegalArgumentException ex) {
                     plugin.getLogger().log(Level.SEVERE, format("Invalid event configuration for ID %s: %s", id, ex.getMessage()));
                 }
             }
@@ -108,7 +108,7 @@ public final class ConfigManager {
         return (Location) config.get("destinations.general_exit");
     }
 
-    public void setGeneralExit(Location generalExit) {
+    public void setGeneralExit(final Location generalExit) {
         config.set("destinations.general_exit", generalExit);
     }
 
@@ -131,7 +131,7 @@ public final class ConfigManager {
      * @param allowedCommands the allowed commands
      */
     @SuppressWarnings("unused")
-    public void setAllowedCommands(@NotNull List<String> allowedCommands) {
+    public void setAllowedCommands(@NotNull final List<String> allowedCommands) {
         config.set("allowed_commands", allowedCommands);
     }
 
@@ -140,8 +140,18 @@ public final class ConfigManager {
      *
      * @return the allowed commands in spectator
      */
-    public List<String> getAllowedCommandsInSpectator() {
+    public @NotNull List<String> getAllowedCommandsInSpectator() {
         return config.getStringList("allowed_commands_in_spectator");
+    }
+
+    /**
+     * Sets the commands allowed in spectator
+     *
+     * @param allowedCommandsInSpectator the allowed commands in spectator
+     */
+    @SuppressWarnings("unused")
+    public void setAllowedCommandsInSpectator(@NotNull final List<String> allowedCommandsInSpectator) {
+        config.set("allowed_commands_in_spectator", allowedCommandsInSpectator);
     }
 
     /**
