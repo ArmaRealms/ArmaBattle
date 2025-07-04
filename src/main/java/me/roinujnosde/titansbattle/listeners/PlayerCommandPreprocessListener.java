@@ -39,24 +39,22 @@ import java.text.MessageFormat;
  */
 public class PlayerCommandPreprocessListener extends TBListener {
 
-    public PlayerCommandPreprocessListener(@NotNull TitansBattle plugin) {
+    public PlayerCommandPreprocessListener(@NotNull final TitansBattle plugin) {
         super(plugin);
     }
 
     @EventHandler
-    public void onCommandEveryone(PlayerCommandPreprocessEvent event) {
-        GameManager gm = plugin.getGameManager();
-        ConfigManager cm = plugin.getConfigManager();
+    public void onCommandEveryone(final PlayerCommandPreprocessEvent event) {
+        final GameManager gm = plugin.getGameManager();
+        final ConfigManager cm = plugin.getConfigManager();
 
-        BaseGame game = gm.getCurrentGame().orElse(null);
-        if (game == null) {
-            return;
-        }
-        Player player = event.getPlayer();
-        if (canBypassCommandRestrictions(player)) {
-            return;
-        }
-        for (String command : cm.getBlockedCommandsEveryone()) {
+        final BaseGame game = gm.getCurrentGame().orElse(null);
+        if (game == null) return;
+
+        final Player player = event.getPlayer();
+        if (canBypassCommandRestrictions(player)) return;
+
+        for (final String command : cm.getBlockedCommandsEveryone()) {
             if (event.getMessage().startsWith(command)) {
                 player.sendMessage(MessageFormat.format(plugin.getLang("command-blocked-for-everyone", game),
                         event.getMessage()));
@@ -67,26 +65,31 @@ public class PlayerCommandPreprocessListener extends TBListener {
     }
 
     @EventHandler
-    public void onCommand(PlayerCommandPreprocessEvent event) {
-        ConfigManager cm = plugin.getConfigManager();
-
-        Player player = event.getPlayer();
-        BaseGame game = plugin.getBaseGameFrom(player);
+    public void onCommand(final PlayerCommandPreprocessEvent event) {
+        final ConfigManager cm = plugin.getConfigManager();
+        final Player player = event.getPlayer();
+        final BaseGame game = plugin.getBaseGameFrom(player);
         if (game == null) {
+            plugin.debug("PlayerCommandPreprocessEvent: No game found for player " + player.getName());
             return;
         }
-        for (String command : cm.getAllowedCommands()) {
+
+        for (final String command : cm.getAllowedCommands()) {
             if (event.getMessage().startsWith(command)) {
+                plugin.debug("PlayerCommandPreprocessEvent: Command allowed for player " + player.getName() + ": " + event.getMessage());
                 return;
             }
         }
+
+        plugin.debug("PlayerCommandPreprocessEvent: Command not allowed for player " + player.getName() + ": " + event.getMessage());
         if (!canBypassCommandRestrictions(player)) {
             player.sendMessage(MessageFormat.format(plugin.getLang("command-not-allowed", game), event.getMessage()));
             event.setCancelled(true);
+            plugin.debug("PlayerCommandPreprocessEvent: Command cancelled for player " + player.getName() + ": " + event.getMessage());
         }
     }
 
-    private boolean canBypassCommandRestrictions(Player player) {
+    private boolean canBypassCommandRestrictions(final Player player) {
         return player.hasPermission("titansbattle.command-bypass");
     }
 
