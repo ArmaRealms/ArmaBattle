@@ -43,24 +43,24 @@ public class SpectateListener extends TBListener {
     private final ConfigManager configManager;
     private final SpectateManager spectateManager;
 
-    public SpectateListener(TitansBattle plugin) {
+    public SpectateListener(final TitansBattle plugin) {
         super(plugin);
         this.configManager = plugin.getConfigManager();
         this.spectateManager = plugin.getSpectateManager();
     }
 
     @EventHandler
-    public void onGameFinish(GameFinishEvent event) {
+    public void onGameFinish(final GameFinishEvent event) {
         spectateManager.removeAllSpectators();
     }
 
     @EventHandler
-    public void onGroupWin(GroupWinEvent event) {
+    public void onGroupWin(final GroupWinEvent event) {
         spectateManager.removeAllSpectators();
     }
 
     @EventHandler
-    public void onPlayerWin(PlayerWinEvent event) {
+    public void onPlayerWin(final PlayerWinEvent event) {
         spectateManager.removeAllSpectators();
     }
 
@@ -76,14 +76,12 @@ public class SpectateListener extends TBListener {
     @EventHandler(ignoreCancelled = true)
     public void onPlayerCommandPreprocess(final PlayerCommandPreprocessEvent event) {
         final Player player = event.getPlayer();
-        if (!spectateManager.isSpectating(player)) {
-            return;
+        if (!spectateManager.isSpectating(player)) return;
+
+        for (final String command : configManager.getAllowedCommandsInSpectator()) {
+            if (event.getMessage().startsWith(command)) return;
         }
-        for (String command : configManager.getAllowedCommandsInSpectator()) {
-            if (event.getMessage().startsWith(command)) {
-                return;
-            }
-        }
+
         if (!player.hasPermission("titansbattle.command-bypass")) {
             player.sendMessage(MessageFormat.format(plugin.getLang("command-not-allowed-in-spectator"), event.getMessage()));
             event.setCancelled(true);
@@ -114,7 +112,7 @@ public class SpectateListener extends TBListener {
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onEntityDamageByEntity(final EntityDamageByEntityEvent event) {
-        Player damager = Helper.getPlayerAttackerOrKiller(event.getDamager());
+        final Player damager = Helper.getPlayerAttackerOrKiller(event.getDamager());
         if (damager != null) {
             cancelSpectatorAction(event, damager);
         }
@@ -122,54 +120,40 @@ public class SpectateListener extends TBListener {
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onEntityDamage(final EntityDamageEvent event) {
-        if (event.getEntity() instanceof Player player && spectateManager.isSpectating(player)) {
+        if (event.getEntity() instanceof final Player player && spectateManager.isSpectating(player)) {
             player.setFireTicks(0);
             event.setCancelled(true);
         }
     }
 
-    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
-    public void onProjectileHit(ProjectileHitEvent event) {
-        Projectile proj = event.getEntity();
-        if (event.getHitEntity() instanceof Player player && spectateManager.isSpectating(player)) {
-            Location loc = proj.getLocation();
-            EntityType type = proj.getType();
-
-            proj.remove();
-
-            Projectile copy = (Projectile) loc.getWorld().spawnEntity(loc, type);
-            cloneProjectileData(proj, copy);
-        }
-    }
-
     @EventHandler
-    public void onFoodLevelChange(FoodLevelChangeEvent event) {
-        if (event.getEntity() instanceof Player player) {
+    public void onFoodLevelChange(final FoodLevelChangeEvent event) {
+        if (event.getEntity() instanceof final Player player) {
             cancelSpectatorAction(event, player);
         }
     }
 
     @EventHandler(ignoreCancelled = true)
-    public void onEntityCombust(EntityCombustEvent event) {
-        if (event.getEntity() instanceof Player player) {
+    public void onEntityCombust(final EntityCombustEvent event) {
+        if (event.getEntity() instanceof final Player player) {
             cancelSpectatorAction(event, player);
         }
     }
 
     @EventHandler(ignoreCancelled = true)
-    public void onPlayerPickupArrow(PlayerPickupArrowEvent event) {
+    public void onPlayerPickupArrow(final PlayerPickupArrowEvent event) {
         cancelSpectatorAction(event, event.getPlayer());
     }
 
     @EventHandler(ignoreCancelled = true)
-    public void onPlayerPickupExperience(PlayerPickupExperienceEvent event) {
+    public void onPlayerPickupExperience(final PlayerPickupExperienceEvent event) {
         cancelSpectatorAction(event, event.getPlayer());
     }
 
     @EventHandler(ignoreCancelled = true)
-    public void onPotionSplash(PotionSplashEvent event) {
-        for (LivingEntity ent : event.getAffectedEntities()) {
-            if (ent instanceof Player player && spectateManager.isSpectating(player)) {
+    public void onPotionSplash(final PotionSplashEvent event) {
+        for (final LivingEntity ent : event.getAffectedEntities()) {
+            if (ent instanceof final Player player && spectateManager.isSpectating(player)) {
                 // Define a intensidade só para este jogador como zero
                 event.setIntensity(ent, 0.0);
             }
@@ -177,68 +161,19 @@ public class SpectateListener extends TBListener {
     }
 
     @EventHandler(ignoreCancelled = true)
-    public void onEntityPotionEffect(EntityPotionEffectEvent event) {
-        if (event.getEntity() instanceof Player player
+    public void onEntityPotionEffect(final EntityPotionEffectEvent event) {
+        if (event.getEntity() instanceof final Player player
                 && event.getCause() != EntityPotionEffectEvent.Cause.PLUGIN
                 && event.getAction() == EntityPotionEffectEvent.Action.ADDED) {
             cancelSpectatorAction(event, player);
         }
     }
 
-    private void cancelSpectatorAction(Cancellable event, Player player) {
+    private void cancelSpectatorAction(final Cancellable event, final Player player) {
         if (spectateManager.isSpectating(player)) {
             event.setCancelled(true);
         }
     }
-
-    private void cloneProjectileData(Projectile src, Projectile dst) {
-        dst.setVelocity(src.getVelocity());
-        dst.setShooter(src.getShooter());
-        dst.setFireTicks(src.getFireTicks());
-        dst.setGravity(src.hasGravity());
-        dst.setSilent(src.isSilent());
-        dst.setPersistent(src.isPersistent());
-        dst.getScoreboardTags().addAll(src.getScoreboardTags());
-
-        PersistentDataContainer from = src.getPersistentDataContainer();
-        PersistentDataContainer to = dst.getPersistentDataContainer();
-        from.copyTo(to, true);
-
-        if (src instanceof Arrow srcArrow && dst instanceof Arrow dstArrow) {
-            dstArrow.setBasePotionType(srcArrow.getBasePotionType());
-            if (srcArrow.getColor() != null) {
-                dstArrow.setColor(srcArrow.getColor());
-            }
-            if (srcArrow.hasCustomEffects()) {
-                for (var effect : srcArrow.getCustomEffects()) {
-                    dstArrow.addCustomEffect(effect, true);
-                }
-            }
-        }
-
-        if (src instanceof AbstractArrow srcAbsArrow && dst instanceof AbstractArrow dstAbsArrow) {
-            dstAbsArrow.setCritical(srcAbsArrow.isCritical());
-            dstAbsArrow.setDamage(srcAbsArrow.getDamage());
-            dstAbsArrow.setPierceLevel(srcAbsArrow.getPierceLevel());
-            dstAbsArrow.setKnockbackStrength(srcAbsArrow.getKnockbackStrength());
-            dstAbsArrow.setPickupStatus(srcAbsArrow.getPickupStatus());
-        }
-
-        if (src instanceof Trident t && dst instanceof Trident c) {
-            c.setLoyaltyLevel(t.getLoyaltyLevel());
-            c.setGlint(t.hasGlint());
-            c.setHasDealtDamage(t.hasDealtDamage());
-        }
-
-        if (src instanceof ThrownPotion p && dst instanceof ThrownPotion q) {
-            q.setItem(p.getItem());
-        }
-
-        if (src instanceof ThrowableProjectile tp && dst instanceof ThrowableProjectile tq) {
-            tq.setItem(tp.getItem());
-        }
-    }
-
 }
 
 

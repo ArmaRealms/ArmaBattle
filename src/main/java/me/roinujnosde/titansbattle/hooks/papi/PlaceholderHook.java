@@ -11,14 +11,14 @@ public class PlaceholderHook {
 
     private final TitansBattle plugin;
 
-    public PlaceholderHook(@NotNull TitansBattle plugin) {
+    public PlaceholderHook(@NotNull final TitansBattle plugin) {
         this.plugin = plugin;
         if (isPapi()) {
             new TBExpansion(plugin).register();
         }
     }
 
-    public String parse(@Nullable OfflinePlayer player, @NotNull String text, String... internalPlaceholders) {
+    public String parse(@Nullable final OfflinePlayer player, @NotNull String text, final String @NotNull ... internalPlaceholders) {
         for (int i = 0; i + 1 < internalPlaceholders.length; i = i + 2) {
             text = text.replace(internalPlaceholders[i], internalPlaceholders[i + 1]);
         }
@@ -28,7 +28,7 @@ public class PlaceholderHook {
         return text;
     }
 
-    public String parse(@NotNull Warrior warrior, @NotNull String text, String... internalPlaceholders) {
+    public String parse(@NotNull final Warrior warrior, @NotNull final String text, final String... internalPlaceholders) {
         return parse(warrior.toPlayer(), text, internalPlaceholders);
     }
 
