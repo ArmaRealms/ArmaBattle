@@ -205,7 +205,7 @@ public class TBCommands extends BaseCommand {
     public void watch(final Player sender, final Game game, @Optional final ArenaConfiguration arena) {
         final BaseGame baseGame = plugin.getBaseGameFrom(sender);
         if (baseGame != null) {
-            sender.sendMessage(plugin.getLang("command-not-allowed-in-game", baseGame));
+            sender.sendMessage(plugin.getLang("command-not-allowed", "/camarote"));
             return;
         }
         if (spectateManager.isSpectating(sender)) {
