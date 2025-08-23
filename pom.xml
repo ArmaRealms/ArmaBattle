@@ -147,7 +147,8 @@
             <groupId>net.sacredlabyrinth.phaed.simpleclans</groupId>
             <artifactId>SimpleClans</artifactId>
             <version>2.19.3-SNAPSHOT</version>
-            <scope>provided</scope>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/libs/SimpleClans-2.19.3-SNAPSHOT.jar</systemPath>
         </dependency>
 <!--        <dependency>-->
 <!--            <groupId>org.spigotmc</groupId>-->
