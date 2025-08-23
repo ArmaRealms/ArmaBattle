@@ -9,7 +9,9 @@ import org.mockito.MockitoAnnotations;
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 /**
@@ -30,7 +32,7 @@ public class CombatLogServiceTest {
         when(plugin.getConfig()).thenReturn(org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(
                 new java.io.StringReader("battle:\n  npcProxy:\n    combatTimeoutMs: 15000")
         ));
-        
+
         combatLogService = new CombatLogService(plugin);
         ownerId = UUID.randomUUID();
         attackerId = UUID.randomUUID();
@@ -42,7 +44,7 @@ public class CombatLogServiceTest {
         combatLogService.recordDamageToProxy(ownerId, attackerId, 10.0);
 
         // Verify last attacker is recorded
-        Optional<UUID> lastAttacker = combatLogService.getLastAttacker(ownerId);
+        final Optional<UUID> lastAttacker = combatLogService.getLastAttacker(ownerId);
         assertTrue(lastAttacker.isPresent());
         assertEquals(attackerId, lastAttacker.get());
 
@@ -59,13 +61,13 @@ public class CombatLogServiceTest {
         when(plugin.getConfig()).thenReturn(org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(
                 new java.io.StringReader("battle:\n  npcProxy:\n    combatTimeoutMs: 0")
         ));
-        
-        CombatLogService shortTimeoutService = new CombatLogService(plugin);
+
+        final CombatLogService shortTimeoutService = new CombatLogService(plugin);
         shortTimeoutService.recordDamageToProxy(ownerId, attackerId, 5.0);
 
         // Wait a bit and check - should have no last attacker due to timeout
         Thread.sleep(10);
-        Optional<UUID> lastAttacker = shortTimeoutService.getLastAttacker(ownerId);
+        final Optional<UUID> lastAttacker = shortTimeoutService.getLastAttacker(ownerId);
         assertFalse(lastAttacker.isPresent());
     }
 
@@ -78,21 +80,21 @@ public class CombatLogServiceTest {
         combatLogService.clear(ownerId);
 
         // Verify records are cleared
-        Optional<UUID> lastAttacker = combatLogService.getLastAttacker(ownerId);
+        final Optional<UUID> lastAttacker = combatLogService.getLastAttacker(ownerId);
         assertFalse(lastAttacker.isPresent());
         assertEquals(0.0, combatLogService.getTotalDamage(ownerId), 0.01);
     }
 
     @Test
     public void testMultipleAttackers() {
-        UUID attacker2 = UUID.randomUUID();
+        final UUID attacker2 = UUID.randomUUID();
 
         // Record damage from multiple attackers
         combatLogService.recordDamageToProxy(ownerId, attackerId, 8.0);
         combatLogService.recordDamageToProxy(ownerId, attacker2, 12.0);
 
         // Last attacker should be the most recent
-        Optional<UUID> lastAttacker = combatLogService.getLastAttacker(ownerId);
+        final Optional<UUID> lastAttacker = combatLogService.getLastAttacker(ownerId);
         assertTrue(lastAttacker.isPresent());
         assertEquals(attacker2, lastAttacker.get());
 
