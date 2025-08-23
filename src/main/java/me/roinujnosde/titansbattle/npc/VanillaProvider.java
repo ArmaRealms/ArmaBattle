@@ -26,7 +26,6 @@ package me.roinujnosde.titansbattle.npc;
 import me.roinujnosde.titansbattle.TitansBattle;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
-import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
@@ -64,7 +63,7 @@ public class VanillaProvider implements NpcProvider {
 
     @Override
     @NotNull
-    public NpcHandle spawnProxy(@NotNull final Player player, @NotNull final Location location, final double health) {
+    public NpcHandle spawnProxy(@NotNull final Player player, @NotNull final Location location) {
         try {
             // Get mob type from configuration
             final String mobTypeString = plugin.getConfig().getString("battle.npcProxy.vanilla.mobType", "ZOMBIE");
@@ -97,17 +96,13 @@ public class VanillaProvider implements NpcProvider {
             mob.setCustomNameVisible(true);
             mob.setRemoveWhenFarAway(false);
             mob.setPersistent(true);
-
-            // Disable AI to prevent the mob from targeting players
+            mob.setInvulnerable(true);
             mob.setAI(false);
-
-            // Set health
-            mob.setHealth(health);
 
             // Mark as TitansBattle proxy
             mob.getPersistentDataContainer().set(proxyKey, PersistentDataType.STRING, player.getUniqueId().toString());
 
-            final VanillaNpcHandle handle = new VanillaNpcHandle(player.getUniqueId(), mob, health);
+            final VanillaNpcHandle handle = new VanillaNpcHandle(player.getUniqueId(), mob);
             proxies.put(player.getUniqueId(), handle);
 
             plugin.getLogger().info("Spawned vanilla mob proxy (" + mobType + ") for player " + player.getName() + " at " + location);
@@ -128,7 +123,7 @@ public class VanillaProvider implements NpcProvider {
     @Override
     public boolean isProxyAlive(@NotNull final UUID ownerPlayerId) {
         final VanillaNpcHandle handle = proxies.get(ownerPlayerId);
-        return handle != null && handle.isAlive();
+        return handle != null && !handle.mob().isDead();
     }
 
     @Override
@@ -136,8 +131,8 @@ public class VanillaProvider implements NpcProvider {
         final VanillaNpcHandle handle = proxies.remove(ownerPlayerId);
         if (handle != null) {
             try {
-                final LivingEntity mob = handle.getMob();
-                if (mob != null && !mob.isDead()) {
+                final LivingEntity mob = handle.mob();
+                if (!mob.isDead()) {
                     mob.remove();
                 }
                 plugin.getLogger().info("Despawned vanilla mob proxy for player " + ownerPlayerId + " (reason: " + reason + ")");
@@ -162,122 +157,36 @@ public class VanillaProvider implements NpcProvider {
     }
 
     /**
-     * Check if an entity UUID belongs to a TitansBattle proxy mob
-     *
-     * @param entityUuid the entity UUID to check
-     * @return true if it's a proxy mob
-     */
-    public boolean isProxyMob(@NotNull final UUID entityUuid) {
-        return proxies.values().stream()
-                .anyMatch(handle -> handle.getNpcUniqueId().equals(entityUuid));
-    }
-
-    /**
-     * Get the owner ID of a proxy mob
-     *
-     * @param mobUuid the mob UUID
-     * @return the owner player UUID if found
-     */
-    @NotNull
-    public Optional<UUID> getProxyOwner(@NotNull final UUID mobUuid) {
-        return proxies.entrySet().stream()
-                .filter(entry -> entry.getValue().getNpcUniqueId().equals(mobUuid))
-                .map(Map.Entry::getKey)
-                .findFirst();
-    }
-
-    /**
-     * Check if an entity is a TitansBattle proxy using persistent data
-     *
-     * @param entity the entity to check
-     * @return true if it's a proxy mob
-     */
-    public boolean isProxyEntity(@NotNull final Entity entity) {
-        return entity.getPersistentDataContainer().has(proxyKey, PersistentDataType.STRING);
-    }
-
-    /**
-     * Get the proxy owner UUID from entity persistent data
-     *
-     * @param entity the entity to check
-     * @return the owner UUID if found
-     */
-    @NotNull
-    public Optional<UUID> getEntityProxyOwner(@NotNull final Entity entity) {
-        final String ownerString = entity.getPersistentDataContainer().get(proxyKey, PersistentDataType.STRING);
-        if (ownerString != null) {
-            try {
-                return Optional.of(UUID.fromString(ownerString));
-            } catch (final IllegalArgumentException e) {
-                plugin.getLogger().warning("Invalid UUID in proxy entity data: " + ownerString);
-            }
-        }
-        return Optional.empty();
-    }
-
-    /**
-     * Handle for a vanilla mob proxy
-     */
-    static class VanillaNpcHandle implements NpcHandle {
-        private final UUID ownerId;
-        private final LivingEntity mob;
-        private double health;
-        private boolean alive = true;
-
-        public VanillaNpcHandle(@NotNull final UUID ownerId, @NotNull final LivingEntity mob, final double health) {
-            this.ownerId = ownerId;
-            this.mob = mob;
-            this.health = health;
-        }
-
-        @Override
-        @NotNull
-        public UUID getOwnerPlayerId() {
-            return ownerId;
-        }
-
-        @Override
-        @NotNull
-        public UUID getNpcUniqueId() {
-            return mob.getUniqueId();
-        }
-
-        @Override
-        public boolean isAlive() {
-            return alive && mob.isValid() && !mob.isDead();
-        }
-
-        @Override
-        public double getHealth() {
-            return health;
-        }
-
-        @Override
-        public void setHealth(final double health) {
-            this.health = Math.max(0.0, health);
-            if (mob.isValid() && !mob.isDead()) {
-                mob.setHealth(Math.max(this.health, 0.1)); // Prevent 0 health which would kill the mob
+         * Handle for a vanilla mob proxy
+         */
+        record VanillaNpcHandle(UUID ownerId, LivingEntity mob) implements NpcHandle {
+            VanillaNpcHandle(@NotNull final UUID ownerId, @NotNull final LivingEntity mob) {
+                this.ownerId = ownerId;
+                this.mob = mob;
             }
 
-            if (this.health <= 0) {
-                markDead();
+            @Override
+            @NotNull
+            public UUID getOwnerPlayerId() {
+                return ownerId;
+            }
+
+            @Override
+            @NotNull
+            public UUID getNpcUniqueId() {
+                return mob.getUniqueId();
+            }
+
+            @Override
+            @NotNull
+            public Location getLocation() {
+                return mob.getLocation();
+            }
+
+            @Override
+            @NotNull
+            public LivingEntity mob() {
+                return mob;
             }
         }
-
-        @Override
-        @NotNull
-        public Location getLocation() {
-            return mob.getLocation();
-        }
-
-        @Override
-        public void markDead() {
-            this.alive = false;
-        }
-
-        @NotNull
-        public LivingEntity getMob() {
-            return mob;
-        }
-    }
 }

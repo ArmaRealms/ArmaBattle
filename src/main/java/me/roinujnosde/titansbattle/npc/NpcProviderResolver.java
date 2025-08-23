@@ -25,6 +25,7 @@ package me.roinujnosde.titansbattle.npc;
 
 import me.roinujnosde.titansbattle.TitansBattle;
 import org.bukkit.Bukkit;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Locale;
@@ -94,7 +95,8 @@ public final class NpcProviderResolver {
         return Optional.empty();
     }
     
-    private static NpcProvider fallbackToVanilla(@NotNull final TitansBattle plugin, @NotNull final String reason) {
+    @Contract("_, _ -> new")
+    private static @NotNull NpcProvider fallbackToVanilla(@NotNull final TitansBattle plugin, @NotNull final String reason) {
         plugin.getLogger().warning(reason + ", falling back to vanilla mob proxies");
         return new VanillaProvider(plugin);
     }

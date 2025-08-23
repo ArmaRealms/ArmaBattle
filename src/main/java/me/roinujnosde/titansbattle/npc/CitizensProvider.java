@@ -40,7 +40,7 @@ public class CitizensProvider implements NpcProvider {
 
     private final TitansBattle plugin;
 
-    public CitizensProvider(@NotNull TitansBattle plugin) {
+    public CitizensProvider(@NotNull final TitansBattle plugin) {
         this.plugin = plugin;
     }
 
@@ -52,23 +52,23 @@ public class CitizensProvider implements NpcProvider {
 
     @Override
     @NotNull
-    public NpcHandle spawnProxy(@NotNull Player player, @NotNull Location location, double health) {
+    public NpcHandle spawnProxy(@NotNull final Player player, @NotNull final Location location) {
         throw new UnsupportedOperationException("Citizens provider not yet implemented");
     }
 
     @Override
     @NotNull
-    public Optional<NpcHandle> getProxyByOwner(@NotNull UUID ownerPlayerId) {
+    public Optional<NpcHandle> getProxyByOwner(@NotNull final UUID ownerPlayerId) {
         return Optional.empty();
     }
 
     @Override
-    public boolean isProxyAlive(@NotNull UUID ownerPlayerId) {
+    public boolean isProxyAlive(@NotNull final UUID ownerPlayerId) {
         return false;
     }
 
     @Override
-    public void despawnProxy(@NotNull UUID ownerPlayerId, @NotNull String reason) {
+    public void despawnProxy(@NotNull final UUID ownerPlayerId, @NotNull final String reason) {
         // No-op
     }
 

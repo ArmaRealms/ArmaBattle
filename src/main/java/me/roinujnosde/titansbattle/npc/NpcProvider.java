@@ -49,10 +49,9 @@ public interface NpcProvider {
      *
      * @param player   the player to create a proxy for
      * @param location the location to spawn the NPC
-     * @param health   the initial health for the NPC
      * @return the NPC handle
      */
-    @NotNull NpcHandle spawnProxy(@NotNull Player player, @NotNull Location location, double health);
+    @NotNull NpcHandle spawnProxy(@NotNull Player player, @NotNull Location location);
 
     /**
      * Get the proxy NPC for a player if it exists

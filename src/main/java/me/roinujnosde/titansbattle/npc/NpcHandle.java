@@ -50,35 +50,9 @@ public interface NpcHandle {
     @NotNull UUID getNpcUniqueId();
 
     /**
-     * Check if this NPC is still alive
-     *
-     * @return true if the NPC is alive
-     */
-    boolean isAlive();
-
-    /**
-     * Get the current health of the NPC
-     *
-     * @return the current health
-     */
-    double getHealth();
-
-    /**
-     * Set the health of the NPC
-     *
-     * @param health the new health value
-     */
-    void setHealth(double health);
-
-    /**
      * Get the current location of the NPC
      *
      * @return the NPC's location
      */
     @NotNull Location getLocation();
-
-    /**
-     * Mark this NPC as dead (for logical death handling)
-     */
-    void markDead();
 }

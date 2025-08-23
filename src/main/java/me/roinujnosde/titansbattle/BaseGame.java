@@ -306,16 +306,14 @@ public abstract class BaseGame {
                     // Create NPC proxy instead of killing the player
                     final NpcProvider npcProvider = plugin.getNpcProvider();
                     if (npcProvider.isAvailable()) {
-                        final double currentHealth = player.getHealth();
                         final Location location = player.getLocation();
+                        final NpcHandle npcHandle = npcProvider.spawnProxy(player, location);
 
-                        final NpcHandle npcHandle = npcProvider.spawnProxy(player, location, currentHealth);
-
-                        final NpcProxySpawnEvent event = new NpcProxySpawnEvent(warrior.getUniqueId(), npcHandle, currentHealth);
+                        final NpcProxySpawnEvent event = new NpcProxySpawnEvent(warrior.getUniqueId(), npcHandle);
                         Bukkit.getPluginManager().callEvent(event);
 
-                        plugin.debug(String.format("onDisconnect() -> spawned NPC proxy for %s with %.2f health (disconnect #%d)",
-                                player.getName(), currentHealth, plugin.getDisconnectTrackingService().getDisconnectionCount(warrior.getUniqueId())));
+                        plugin.debug(String.format("onDisconnect() -> spawned NPC proxy for %s (disconnect #%d)",
+                                player.getName(), plugin.getDisconnectTrackingService().getDisconnectionCount(warrior.getUniqueId())));
 
                         broadcastKey("npc_proxy_spawned", player.getName());
                         return; // Don't continue with normal disconnect processing

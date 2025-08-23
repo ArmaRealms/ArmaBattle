@@ -43,12 +43,10 @@ public class NpcProxySpawnEvent extends Event {
     
     private final UUID ownerId;
     private final NpcHandle npcHandle;
-    private final double initialHealth;
 
-    public NpcProxySpawnEvent(@NotNull final UUID ownerId, @Nullable final NpcHandle npcHandle, final double initialHealth) {
+    public NpcProxySpawnEvent(@NotNull final UUID ownerId, @Nullable final NpcHandle npcHandle) {
         this.ownerId = ownerId;
         this.npcHandle = npcHandle;
-        this.initialHealth = initialHealth;
     }
 
     /**
@@ -72,15 +70,6 @@ public class NpcProxySpawnEvent extends Event {
     @Nullable
     public NpcHandle getNpcHandle() {
         return npcHandle;
-    }
-
-    /**
-     * Get the initial health the NPC was spawned with
-     *
-     * @return the initial health
-     */
-    public double getInitialHealth() {
-        return initialHealth;
     }
 
     @Override
