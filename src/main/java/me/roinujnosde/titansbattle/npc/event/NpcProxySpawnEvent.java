@@ -33,18 +33,17 @@ import org.jetbrains.annotations.Nullable;
 import java.util.UUID;
 
 /**
- * Event fired when an NPC proxy is about to be spawned for a disconnected player
+ * Event fired when an NPC proxy is spawned for a disconnected player
  *
  * @author RoinujNosde
  */
-public class NpcProxySpawnEvent extends Event implements Cancellable {
+public class NpcProxySpawnEvent extends Event {
 
     private static final HandlerList HANDLERS = new HandlerList();
     
     private final UUID ownerId;
     private final NpcHandle npcHandle;
     private final double initialHealth;
-    private boolean cancelled = false;
 
     public NpcProxySpawnEvent(@NotNull final UUID ownerId, @Nullable final NpcHandle npcHandle, final double initialHealth) {
         this.ownerId = ownerId;
@@ -65,7 +64,8 @@ public class NpcProxySpawnEvent extends Event implements Cancellable {
     /**
      * Get the NPC handle
      * 
-     * Note: This will be null when the event is fired before spawning (for cancellation checks)
+     * Note: This may be null if the event is fired before the NPC is actually spawned
+     * (e.g., during pre-spawn cancellation checks)
      *
      * @return the NPC handle, or null if not yet spawned
      */
@@ -75,22 +75,12 @@ public class NpcProxySpawnEvent extends Event implements Cancellable {
     }
 
     /**
-     * Get the initial health the NPC will be spawned with
+     * Get the initial health the NPC was spawned with
      *
      * @return the initial health
      */
     public double getInitialHealth() {
         return initialHealth;
-    }
-
-    @Override
-    public boolean isCancelled() {
-        return cancelled;
-    }
-
-    @Override
-    public void setCancelled(boolean cancelled) {
-        this.cancelled = cancelled;
     }
 
     @Override
