@@ -118,10 +118,7 @@ public abstract class BaseGame {
 
     public void finish(final boolean cancelled) {
         new GameFinishEvent(this).callEvent();
-
-        // Clean up any remaining NPC proxies
         cleanupNpcProxies("game-end");
-
         teleportAll(getConfig().getExit());
         killTasks();
         runCommandsAfterBattle(getParticipants());
@@ -152,9 +149,9 @@ public abstract class BaseGame {
                 plugin.getNpcProvider().despawnProxy(playerId, reason);
                 plugin.getCombatLogService().clear(playerId);
             }
-            // Clean up disconnect tracking for all participants when game ends
-            plugin.getDisconnectTrackingService().clearPlayer(playerId);
         }
+        // Clean up disconnect tracking for all participants when game ends
+        plugin.getDisconnectTrackingService().clearAll();
     }
 
     public abstract void setWinner(@NotNull Warrior warrior) throws CommandNotSupportedException;

@@ -65,6 +65,7 @@ public class NpcProxyListener extends TBListener {
         // Check if the damaged entity is an NPC proxy
         final UUID npcProxyOwner = getNpcProxyOwner(event.getEntity());
         if (npcProxyOwner == null) {
+            plugin.debug("Damaged entity is not an NPC proxy, ignoring");
             return;
         }
 
