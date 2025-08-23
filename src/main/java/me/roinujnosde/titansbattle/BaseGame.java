@@ -315,16 +315,23 @@ public abstract class BaseGame {
                         final double currentHealth = player.getHealth();
                         final Location location = player.getLocation();
 
-                        final NpcHandle npcHandle = npcProvider.spawnProxy(player, location, currentHealth);
-
-                        final NpcProxySpawnEvent event = new NpcProxySpawnEvent(warrior.getUniqueId(), npcHandle, currentHealth);
+                        // Fire event before spawning to allow cancellation
+                        final NpcProxySpawnEvent event = new NpcProxySpawnEvent(warrior.getUniqueId(), null, currentHealth);
                         Bukkit.getPluginManager().callEvent(event);
 
-                        plugin.debug(String.format("onDisconnect() -> spawned NPC proxy for %s with %.2f health (disconnect #%d)",
-                                player.getName(), currentHealth, plugin.getDisconnectTrackingService().getDisconnectionCount(warrior.getUniqueId())));
+                        // Check if the event was cancelled
+                        if (event.isCancelled()) {
+                            plugin.debug("NPC proxy spawn was cancelled by event handler for player " + player.getName());
+                            // Fall through to normal disconnect behavior
+                        } else {
+                            final NpcHandle npcHandle = npcProvider.spawnProxy(player, location, currentHealth);
 
-                        broadcastKey("npc_proxy_spawned", player.getName());
-                        return; // Don't continue with normal disconnect processing
+                            plugin.debug(String.format("onDisconnect() -> spawned NPC proxy for %s with %.2f health (disconnect #%d)",
+                                    player.getName(), currentHealth, plugin.getDisconnectTrackingService().getDisconnectionCount(warrior.getUniqueId())));
+
+                            broadcastKey("npc_proxy_spawned", player.getName());
+                            return; // Don't continue with normal disconnect processing
+                        }
                     } else {
                         plugin.debug("NPC provider not available, falling back to normal disconnect behavior");
                     }
