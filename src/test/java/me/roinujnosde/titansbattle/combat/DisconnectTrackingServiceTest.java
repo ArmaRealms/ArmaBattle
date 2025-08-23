@@ -23,7 +23,9 @@
  */
 package me.roinujnosde.titansbattle.combat;
 
+import me.roinujnosde.titansbattle.TitansBattle;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -73,12 +75,12 @@ public class DisconnectTrackingServiceTest {
      * but this simple override approach is used for compatibility with the current test structure.
      */
     private static class TestableDisconnectTrackingService extends DisconnectTrackingService {
-        public TestableDisconnectTrackingService(me.roinujnosde.titansbattle.TitansBattle plugin) {
+        public TestableDisconnectTrackingService(final TitansBattle plugin) {
             super(plugin);
         }
 
         @Override
-        protected void scheduleTimeoutTask(UUID playerId) {
+        protected void scheduleTimeoutTask(@NotNull final UUID playerId) {
             // Override to do nothing during tests to avoid scheduler dependency
             // In a real test environment with full MockBukkit integration, this would work normally
         }

@@ -92,8 +92,7 @@ public class FancyNpcsProvider implements NpcProvider {
             final Npc npc = FancyNpcsPlugin.get().getNpcAdapter().apply(npcData);
             npc.getData().setSkinData(new SkinData(player.getUniqueId().toString(), SkinData.SkinVariant.AUTO));
 
-            // Note: Skin setting disabled for now due to API changes in 2.7.0
-            plugin.getLogger().info("Created NPC proxy for " + player.getName() + " without skin (API compatibility)");
+            plugin.getLogger().info("Created NPC proxy for " + player.getName() + " with entity ID " + entityId);
 
             // Create and spawn NPC
             npc.create();
