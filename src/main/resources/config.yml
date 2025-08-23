@@ -140,6 +140,8 @@ battle:
     combatTimeoutMs: 15000  # 15 seconds
     dropItemsOnProxyDeath: false
     broadcastMessages: true
+    vanilla:
+      mobType: ZOMBIE  # Entity type for vanilla proxy mobs
 
 #Data used by the plugin, don't edit it.
 data:
