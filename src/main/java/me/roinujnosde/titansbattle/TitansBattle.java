@@ -46,6 +46,7 @@ import me.roinujnosde.titansbattle.types.GameConfiguration;
 import me.roinujnosde.titansbattle.types.Kit;
 import me.roinujnosde.titansbattle.types.Prizes;
 import me.roinujnosde.titansbattle.types.Warrior;
+import me.roinujnosde.titansbattle.types.Warrior;
 import org.bstats.bukkit.Metrics;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -124,6 +125,27 @@ public final class TitansBattle extends JavaPlugin {
     public @Nullable BaseGame getBaseGameFrom(@NotNull Player player) {
         Warrior warrior = getDatabaseManager().getWarrior(player);
 
+        Optional<Game> currentGame = getGameManager().getCurrentGame();
+        if (currentGame.isPresent() && (currentGame.get().isParticipant(warrior))) {
+            return currentGame.get();
+        }
+        List<ChallengeRequest<?>> requests = getChallengeManager().getRequests();
+        for (ChallengeRequest<?> request : requests) {
+            Challenge challenge = request.getChallenge();
+            if (challenge.isParticipant(warrior)) {
+                return challenge;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Get the base game that a warrior is participating in
+     *
+     * @param warrior the warrior to check
+     * @return the base game or null if not participating
+     */
+    public @Nullable BaseGame getBaseGameFrom(@NotNull Warrior warrior) {
         Optional<Game> currentGame = getGameManager().getCurrentGame();
         if (currentGame.isPresent() && (currentGame.get().isParticipant(warrior))) {
             return currentGame.get();

@@ -119,6 +119,10 @@ public abstract class BaseGame {
 
     public void finish(boolean cancelled) {
         new GameFinishEvent(this).callEvent();
+        
+        // Clean up any remaining NPC proxies
+        cleanupNpcProxies("game-end");
+        
         teleportAll(getConfig().getExit());
         killTasks();
         runCommandsAfterBattle(getParticipants());
@@ -131,6 +135,24 @@ public abstract class BaseGame {
         Bukkit.getScheduler().runTask(plugin, () -> plugin.getDatabaseManager().saveAll());
         if (!cancelled) {
             processWinners();
+        }
+    }
+
+    /**
+     * Clean up NPC proxies for all participants
+     */
+    private void cleanupNpcProxies(@NotNull String reason) {
+        if (!plugin.getNpcProvider().isAvailable()) {
+            return;
+        }
+        
+        for (Warrior participant : participants) {
+            UUID playerId = participant.getUniqueId();
+            if (plugin.getNpcProvider().isProxyAlive(playerId)) {
+                plugin.debug("Cleaning up NPC proxy for " + participant.getName() + " (reason: " + reason + ")");
+                plugin.getNpcProvider().despawnProxy(playerId, reason);
+                plugin.getCombatLogService().clear(playerId);
+            }
         }
     }
 
