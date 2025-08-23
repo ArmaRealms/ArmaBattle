@@ -25,7 +25,6 @@ package me.roinujnosde.titansbattle.combat;
 
 import me.roinujnosde.titansbattle.TitansBattle;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
 import java.util.Optional;
@@ -43,7 +42,7 @@ public class CombatLogService {
     private final Map<UUID, CombatRecord> combatRecords = new ConcurrentHashMap<>();
     private final long combatTimeoutMs;
 
-    public CombatLogService(@NotNull TitansBattle plugin) {
+    public CombatLogService(@NotNull final TitansBattle plugin) {
         this.plugin = plugin;
         // Get timeout from config, default to 15 seconds
         this.combatTimeoutMs = plugin.getConfig().getLong("battle.npcProxy.combatTimeoutMs", 15000L);
@@ -56,14 +55,12 @@ public class CombatLogService {
      * @param attackerId    the UUID of the attacking player
      * @param damage        the damage amount
      */
-    public void recordDamageToProxy(@NotNull UUID ownerPlayerId, @NotNull UUID attackerId, double damage) {
-        long currentTime = System.currentTimeMillis();
-        CombatRecord record = combatRecords.computeIfAbsent(ownerPlayerId, 
-                k -> new CombatRecord(ownerPlayerId));
+    public void recordDamageToProxy(@NotNull final UUID ownerPlayerId, @NotNull final UUID attackerId, final double damage) {
+        final long currentTime = System.currentTimeMillis();
+        final CombatRecord record = combatRecords.computeIfAbsent(ownerPlayerId, k -> new CombatRecord());
         record.recordDamage(attackerId, damage, currentTime);
-        
-        plugin.debug(String.format("Recorded damage: %s -> %s (%.2f damage)", 
-                attackerId, ownerPlayerId, damage));
+
+        plugin.debug(String.format("Recorded damage: %s -> %s (%.2f damage)", attackerId, ownerPlayerId, damage));
     }
 
     /**
@@ -73,13 +70,13 @@ public class CombatLogService {
      * @return the UUID of the last valid attacker, if any
      */
     @NotNull
-    public Optional<UUID> getLastAttacker(@NotNull UUID ownerPlayerId) {
-        CombatRecord record = combatRecords.get(ownerPlayerId);
+    public Optional<UUID> getLastAttacker(@NotNull final UUID ownerPlayerId) {
+        final CombatRecord record = combatRecords.get(ownerPlayerId);
         if (record == null) {
             return Optional.empty();
         }
 
-        long currentTime = System.currentTimeMillis();
+        final long currentTime = System.currentTimeMillis();
         return record.getLastAttacker(currentTime, combatTimeoutMs);
     }
 
@@ -88,7 +85,7 @@ public class CombatLogService {
      *
      * @param ownerPlayerId the UUID of the player to clear records for
      */
-    public void clear(@NotNull UUID ownerPlayerId) {
+    public void clear(@NotNull final UUID ownerPlayerId) {
         combatRecords.remove(ownerPlayerId);
         plugin.debug("Cleared combat records for " + ownerPlayerId);
     }
@@ -107,8 +104,8 @@ public class CombatLogService {
      * @param ownerPlayerId the UUID of the player who owns the proxy
      * @return the total damage dealt
      */
-    public double getTotalDamage(@NotNull UUID ownerPlayerId) {
-        CombatRecord record = combatRecords.get(ownerPlayerId);
+    public double getTotalDamage(@NotNull final UUID ownerPlayerId) {
+        final CombatRecord record = combatRecords.get(ownerPlayerId);
         return record != null ? record.getTotalDamage() : 0.0;
     }
 
@@ -116,31 +113,26 @@ public class CombatLogService {
      * Record of combat damage for a single proxy owner
      */
     private static class CombatRecord {
-        private final UUID ownerId;
         private final Map<UUID, DamageEntry> damageByAttacker = new ConcurrentHashMap<>();
         private volatile UUID lastAttackerId;
         private volatile long lastAttackTime;
 
-        public CombatRecord(@NotNull UUID ownerId) {
-            this.ownerId = ownerId;
-        }
-
-        public void recordDamage(@NotNull UUID attackerId, double damage, long timestamp) {
+        public void recordDamage(@NotNull final UUID attackerId, final double damage, final long timestamp) {
             damageByAttacker.compute(attackerId, (k, existing) -> {
                 if (existing == null) {
-                    return new DamageEntry(damage, timestamp);
+                    return new DamageEntry(damage);
                 } else {
-                    existing.addDamage(damage, timestamp);
+                    existing.addDamage(damage);
                     return existing;
                 }
             });
-            
+
             this.lastAttackerId = attackerId;
             this.lastAttackTime = timestamp;
         }
 
         @NotNull
-        public Optional<UUID> getLastAttacker(long currentTime, long timeoutMs) {
+        public Optional<UUID> getLastAttacker(final long currentTime, final long timeoutMs) {
             if (lastAttackerId == null || (currentTime - lastAttackTime) > timeoutMs) {
                 return Optional.empty();
             }
@@ -159,24 +151,17 @@ public class CombatLogService {
      */
     private static class DamageEntry {
         private double totalDamage;
-        private long lastDamageTime;
 
-        public DamageEntry(double damage, long timestamp) {
+        public DamageEntry(final double damage) {
             this.totalDamage = damage;
-            this.lastDamageTime = timestamp;
         }
 
-        public void addDamage(double damage, long timestamp) {
+        public void addDamage(final double damage) {
             this.totalDamage += damage;
-            this.lastDamageTime = timestamp;
         }
 
         public double getTotalDamage() {
             return totalDamage;
-        }
-
-        public long getLastDamageTime() {
-            return lastDamageTime;
         }
     }
 }

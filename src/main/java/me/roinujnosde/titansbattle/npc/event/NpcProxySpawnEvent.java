@@ -37,16 +37,15 @@ import java.util.UUID;
  *
  * @author RoinujNosde
  */
-public class NpcProxySpawnEvent extends Event implements Cancellable {
+public class NpcProxySpawnEvent extends Event {
 
     private static final HandlerList HANDLERS = new HandlerList();
     
     private final UUID ownerId;
     private final NpcHandle npcHandle;
     private final double initialHealth;
-    private boolean cancelled = false;
 
-    public NpcProxySpawnEvent(@NotNull UUID ownerId, @Nullable NpcHandle npcHandle, double initialHealth) {
+    public NpcProxySpawnEvent(@NotNull final UUID ownerId, @Nullable final NpcHandle npcHandle, final double initialHealth) {
         this.ownerId = ownerId;
         this.npcHandle = npcHandle;
         this.initialHealth = initialHealth;
@@ -82,16 +81,6 @@ public class NpcProxySpawnEvent extends Event implements Cancellable {
      */
     public double getInitialHealth() {
         return initialHealth;
-    }
-
-    @Override
-    public boolean isCancelled() {
-        return cancelled;
-    }
-
-    @Override
-    public void setCancelled(boolean cancelled) {
-        this.cancelled = cancelled;
     }
 
     @Override

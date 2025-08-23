@@ -26,21 +26,17 @@ package me.roinujnosde.titansbattle.npc;
 import de.oliver.fancynpcs.api.FancyNpcsPlugin;
 import de.oliver.fancynpcs.api.Npc;
 import de.oliver.fancynpcs.api.NpcData;
-import de.oliver.fancynpcs.api.events.NpcInteractEvent;
-import de.oliver.fancynpcs.api.utils.SkinFetcher;
+import de.oliver.fancynpcs.api.skins.SkinData;
 import me.roinujnosde.titansbattle.TitansBattle;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
-import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * FancyNpcs implementation of NPC provider
@@ -49,12 +45,11 @@ import java.util.concurrent.CompletableFuture;
  */
 public class FancyNpcsProvider implements NpcProvider {
 
-    private static final String TITANS_BATTLE_PROXY_KEY = "titans_battle_proxy";
     private final TitansBattle plugin;
     private final Map<UUID, FancyNpcsHandle> proxies = new HashMap<>();
-    private boolean available;
+    private final boolean available;
 
-    public FancyNpcsProvider(@NotNull TitansBattle plugin) {
+    public FancyNpcsProvider(@NotNull final TitansBattle plugin) {
         this.plugin = plugin;
         this.available = checkAvailability();
     }
@@ -63,7 +58,7 @@ public class FancyNpcsProvider implements NpcProvider {
         try {
             return Bukkit.getPluginManager().isPluginEnabled("FancyNpcs")
                     && FancyNpcsPlugin.get() != null;
-        } catch (Exception e) {
+        } catch (final Exception e) {
             plugin.getLogger().warning("FancyNpcs plugin found but API not available: " + e.getMessage());
             return false;
         }
@@ -76,15 +71,15 @@ public class FancyNpcsProvider implements NpcProvider {
 
     @Override
     @NotNull
-    public NpcHandle spawnProxy(@NotNull Player player, @NotNull Location location, double health) {
+    public NpcHandle spawnProxy(@NotNull final Player player, @NotNull final Location location, final double health) {
         if (!isAvailable()) {
             throw new IllegalStateException("FancyNpcs provider is not available");
         }
 
         try {
             // Create NPC data - using entity UUID for 2.7.0 API
-            UUID entityId = UUID.randomUUID(); 
-            NpcData npcData = new NpcData(
+            final UUID entityId = UUID.randomUUID();
+            final NpcData npcData = new NpcData(
                     UUID.randomUUID().toString(),
                     entityId,
                     location
@@ -94,7 +89,8 @@ public class FancyNpcsProvider implements NpcProvider {
             npcData.setDisplayName(player.getDisplayName());
 
             // Create the NPC
-            Npc npc = FancyNpcsPlugin.get().getNpcAdapter().apply(npcData);
+            final Npc npc = FancyNpcsPlugin.get().getNpcAdapter().apply(npcData);
+            npc.getData().setSkinData(new SkinData(player.getUniqueId().toString(), SkinData.SkinVariant.AUTO));
 
             // Note: Skin setting disabled for now due to API changes in 2.7.0
             plugin.getLogger().info("Created NPC proxy for " + player.getName() + " without skin (API compatibility)");
@@ -102,14 +98,15 @@ public class FancyNpcsProvider implements NpcProvider {
             // Create and spawn NPC
             npc.create();
             npc.spawnForAll();
+            npc.setSaveToFile(false);
 
-            FancyNpcsHandle handle = new FancyNpcsHandle(player.getUniqueId(), npc, health);
+            final FancyNpcsHandle handle = new FancyNpcsHandle(player.getUniqueId(), npc, health);
             proxies.put(player.getUniqueId(), handle);
 
             plugin.getLogger().info("Spawned NPC proxy for player " + player.getName() + " at " + location);
             return handle;
 
-        } catch (Exception e) {
+        } catch (final Exception e) {
             plugin.getLogger().severe("Failed to spawn NPC proxy for player " + player.getName() + ": " + e.getMessage());
             throw new RuntimeException("Failed to spawn NPC proxy", e);
         }
@@ -117,24 +114,24 @@ public class FancyNpcsProvider implements NpcProvider {
 
     @Override
     @NotNull
-    public Optional<NpcHandle> getProxyByOwner(@NotNull UUID ownerPlayerId) {
+    public Optional<NpcHandle> getProxyByOwner(@NotNull final UUID ownerPlayerId) {
         return Optional.ofNullable(proxies.get(ownerPlayerId));
     }
 
     @Override
-    public boolean isProxyAlive(@NotNull UUID ownerPlayerId) {
-        FancyNpcsHandle handle = proxies.get(ownerPlayerId);
+    public boolean isProxyAlive(@NotNull final UUID ownerPlayerId) {
+        final FancyNpcsHandle handle = proxies.get(ownerPlayerId);
         return handle != null && handle.isAlive();
     }
 
     @Override
-    public void despawnProxy(@NotNull UUID ownerPlayerId, @NotNull String reason) {
-        FancyNpcsHandle handle = proxies.remove(ownerPlayerId);
+    public void despawnProxy(@NotNull final UUID ownerPlayerId, @NotNull final String reason) {
+        final FancyNpcsHandle handle = proxies.remove(ownerPlayerId);
         if (handle != null) {
             try {
                 handle.getNpc().removeForAll();
                 plugin.getLogger().info("Despawned NPC proxy for player " + ownerPlayerId + " (reason: " + reason + ")");
-            } catch (Exception e) {
+            } catch (final Exception e) {
                 plugin.getLogger().warning("Failed to despawn NPC proxy for player " + ownerPlayerId + ": " + e.getMessage());
             }
         }
@@ -142,7 +139,7 @@ public class FancyNpcsProvider implements NpcProvider {
 
     @Override
     public void onDisable() {
-        for (UUID ownerId : proxies.keySet().toArray(new UUID[0])) {
+        for (final UUID ownerId : proxies.keySet().toArray(new UUID[0])) {
             despawnProxy(ownerId, "plugin-disable");
         }
         proxies.clear();
@@ -160,7 +157,7 @@ public class FancyNpcsProvider implements NpcProvider {
      * @param entityUuid the entity UUID to check
      * @return true if it's a proxy NPC
      */
-    public boolean isProxyNpc(@NotNull UUID entityUuid) {
+    public boolean isProxyNpc(@NotNull final UUID entityUuid) {
         return proxies.values().stream()
                 .anyMatch(handle -> handle.getNpcUniqueId().equals(entityUuid));
     }
@@ -172,7 +169,7 @@ public class FancyNpcsProvider implements NpcProvider {
      * @return the owner player UUID if found
      */
     @NotNull
-    public Optional<UUID> getProxyOwner(@NotNull UUID npcUuid) {
+    public Optional<UUID> getProxyOwner(@NotNull final UUID npcUuid) {
         return proxies.entrySet().stream()
                 .filter(entry -> entry.getValue().getNpcUniqueId().equals(npcUuid))
                 .map(Map.Entry::getKey)
@@ -188,7 +185,7 @@ public class FancyNpcsProvider implements NpcProvider {
         private double health;
         private boolean alive = true;
 
-        public FancyNpcsHandle(@NotNull UUID ownerId, @NotNull Npc npc, double health) {
+        public FancyNpcsHandle(@NotNull final UUID ownerId, @NotNull final Npc npc, final double health) {
             this.ownerId = ownerId;
             this.npc = npc;
             this.health = health;
@@ -203,12 +200,12 @@ public class FancyNpcsProvider implements NpcProvider {
         @Override
         @NotNull
         public UUID getNpcUniqueId() {
-            return npc.getData().getUuid();
+            return UUID.fromString(npc.getData().getId());
         }
 
         @Override
         public boolean isAlive() {
-            return alive && npc.getData().isCreated();
+            return alive;
         }
 
         @Override
@@ -217,7 +214,7 @@ public class FancyNpcsProvider implements NpcProvider {
         }
 
         @Override
-        public void setHealth(double health) {
+        public void setHealth(final double health) {
             this.health = Math.max(0.0, health);
             if (this.health <= 0) {
                 markDead();

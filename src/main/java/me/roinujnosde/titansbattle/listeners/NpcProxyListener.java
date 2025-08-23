@@ -55,35 +55,31 @@ public class NpcProxyListener extends TBListener {
 
     private final CombatLogService combatLogService;
 
-    public NpcProxyListener(@NotNull TitansBattle plugin) {
+    public NpcProxyListener(@NotNull final TitansBattle plugin) {
         super(plugin);
         this.combatLogService = plugin.getCombatLogService();
     }
 
-    @EventHandler(priority = EventPriority.NORMAL)
-    public void onNpcProxyDamage(EntityDamageByEntityEvent event) {
-        if (event.isCancelled()) {
-            return;
-        }
-
+    @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
+    public void onNpcProxyDamage(final EntityDamageByEntityEvent event) {
         // Check if the damaged entity is an NPC proxy
-        UUID npcProxyOwner = getNpcProxyOwner(event.getEntity());
+        final UUID npcProxyOwner = getNpcProxyOwner(event.getEntity());
         if (npcProxyOwner == null) {
             return;
         }
 
         // Get the attacking player
-        UUID attackerId = getAttackerPlayerId(event.getDamager());
+        final UUID attackerId = getAttackerPlayerId(event.getDamager());
         if (attackerId == null) {
             plugin.debug("NPC proxy damaged by non-player entity, ignoring");
             return;
         }
 
         // Verify both players are in the same game
-        Warrior ownerWarrior = plugin.getDatabaseManager().getWarrior(npcProxyOwner);
-        Warrior attackerWarrior = plugin.getDatabaseManager().getWarrior(attackerId);
-        BaseGame ownerGame = plugin.getBaseGameFrom(ownerWarrior);
-        BaseGame attackerGame = plugin.getBaseGameFrom(attackerWarrior);
+        final Warrior ownerWarrior = plugin.getDatabaseManager().getWarrior(npcProxyOwner);
+        final Warrior attackerWarrior = plugin.getDatabaseManager().getWarrior(attackerId);
+        final BaseGame ownerGame = plugin.getBaseGameFrom(ownerWarrior);
+        final BaseGame attackerGame = plugin.getBaseGameFrom(attackerWarrior);
 
         if (ownerGame == null || attackerGame != ownerGame) {
             plugin.debug("NPC proxy owner and attacker not in same game, cancelling damage");
@@ -92,13 +88,13 @@ public class NpcProxyListener extends TBListener {
         }
 
         // Record the damage in combat log
-        double damage = event.getFinalDamage();
+        final double damage = event.getFinalDamage();
         combatLogService.recordDamageToProxy(npcProxyOwner, attackerId, damage);
 
         // Update NPC health and check for death
-        NpcProvider npcProvider = plugin.getNpcProvider();
+        final NpcProvider npcProvider = plugin.getNpcProvider();
         npcProvider.getProxyByOwner(npcProxyOwner).ifPresent(npcHandle -> {
-            double newHealth = npcHandle.getHealth() - damage;
+            final double newHealth = npcHandle.getHealth() - damage;
             npcHandle.setHealth(newHealth);
 
             plugin.debug(String.format("NPC proxy for %s took %.2f damage, health now %.2f", 
@@ -111,25 +107,25 @@ public class NpcProxyListener extends TBListener {
         });
     }
 
-    private void handleNpcProxyDeath(@NotNull UUID ownerId, @NotNull NpcHandle npcHandle, @Nullable UUID killerId) {
+    private void handleNpcProxyDeath(@NotNull final UUID ownerId, @NotNull final NpcHandle npcHandle, @Nullable final UUID killerId) {
         plugin.debug("Handling NPC proxy death for owner " + ownerId);
 
         // Mark NPC as dead
         npcHandle.markDead();
 
         // Get the last attacker from combat log (more reliable than direct killer)
-        Optional<UUID> lastAttacker = combatLogService.getLastAttacker(ownerId);
-        UUID finalKillerId = lastAttacker.orElse(killerId);
+        final Optional<UUID> lastAttacker = combatLogService.getLastAttacker(ownerId);
+        final UUID finalKillerId = lastAttacker.orElse(killerId);
 
         // Fire proxy death event
-        NpcProxyDeathEvent event = new NpcProxyDeathEvent(ownerId, npcHandle, finalKillerId);
+        final NpcProxyDeathEvent event = new NpcProxyDeathEvent(ownerId, npcHandle, finalKillerId);
         Bukkit.getPluginManager().callEvent(event);
 
         // Find the game and eliminate the owner
-        Warrior ownerWarrior = plugin.getDatabaseManager().getWarrior(ownerId);
-        BaseGame game = plugin.getBaseGameFrom(ownerWarrior);
+        final Warrior ownerWarrior = plugin.getDatabaseManager().getWarrior(ownerId);
+        final BaseGame game = plugin.getBaseGameFrom(ownerWarrior);
         if (game != null) {
-            Warrior killerWarrior = finalKillerId != null ? plugin.getDatabaseManager().getWarrior(finalKillerId) : null;
+            final Warrior killerWarrior = finalKillerId != null ? plugin.getDatabaseManager().getWarrior(finalKillerId) : null;
             plugin.debug(String.format("Eliminating proxy owner %s, killer: %s", 
                     ownerWarrior.getName(), killerWarrior != null ? killerWarrior.getName() : "unknown"));
             
@@ -141,23 +137,19 @@ public class NpcProxyListener extends TBListener {
         plugin.getNpcProvider().despawnProxy(ownerId, "proxy-death");
         combatLogService.clear(ownerId);
     }
-    
-
 
     /**
      * Get the owner UUID of an NPC proxy, if the entity is one
      */
     @Nullable
-    private UUID getNpcProxyOwner(@NotNull Entity entity) {
-        NpcProvider provider = plugin.getNpcProvider();
+    private UUID getNpcProxyOwner(@NotNull final Entity entity) {
+        final NpcProvider provider = plugin.getNpcProvider();
         
-        if (provider instanceof FancyNpcsProvider) {
-            FancyNpcsProvider fancyProvider = (FancyNpcsProvider) provider;
+        if (provider instanceof final FancyNpcsProvider fancyProvider) {
             if (fancyProvider.isProxyNpc(entity.getUniqueId())) {
                 return fancyProvider.getProxyOwner(entity.getUniqueId()).orElse(null);
             }
-        } else if (provider instanceof VanillaProvider) {
-            VanillaProvider vanillaProvider = (VanillaProvider) provider;
+        } else if (provider instanceof final VanillaProvider vanillaProvider) {
             if (vanillaProvider.isProxyMob(entity.getUniqueId())) {
                 return vanillaProvider.getProxyOwner(entity.getUniqueId()).orElse(null);
             }
@@ -174,13 +166,12 @@ public class NpcProxyListener extends TBListener {
      * Get the attacking player UUID, resolving through projectiles if needed
      */
     @Nullable
-    private UUID getAttackerPlayerId(@NotNull Entity damager) {
+    private UUID getAttackerPlayerId(@NotNull final Entity damager) {
         if (damager instanceof Player) {
             return damager.getUniqueId();
-        } else if (damager instanceof Projectile) {
-            Projectile projectile = (Projectile) damager;
-            if (projectile.getShooter() instanceof Player) {
-                return ((Player) projectile.getShooter()).getUniqueId();
+        } else if (damager instanceof final Projectile projectile) {
+            if (projectile.getShooter() instanceof final Player shooter) {
+                return shooter.getUniqueId();
             }
         }
         return null;
