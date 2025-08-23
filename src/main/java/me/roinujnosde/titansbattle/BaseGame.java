@@ -712,7 +712,7 @@ public abstract class BaseGame {
     protected void teleportToArena(final List<Warrior> warriors) {
         final List<Location> arenaEntrances = new ArrayList<>(getConfig().getArenaEntrances().values());
         if (arenaEntrances.size() == 1) {
-            teleport(warriors, arenaEntrances.getFirst());
+            teleport(warriors, arenaEntrances.get(0));
             return;
         }
 

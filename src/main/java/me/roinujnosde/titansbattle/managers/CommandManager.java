@@ -85,7 +85,7 @@ public class CommandManager extends PaperCommandManager {
 
     private void setDefaultLocale() {
         BukkitLocales locales = getLocales();
-        Locale defaultLocale = Locale.of(getPlugin().getConfigManager().getLanguage().split("_")[0]);
+        Locale defaultLocale = new Locale(getPlugin().getConfigManager().getLanguage().split("_")[0]);
         locales.setDefaultLocale(defaultLocale);
 
         LanguageManager languageManager = getPlugin().getLanguageManager();

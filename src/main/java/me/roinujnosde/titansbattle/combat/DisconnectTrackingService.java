@@ -165,7 +165,7 @@ public class DisconnectTrackingService {
      *
      * @param playerId the UUID of the player whose NPC should be removed
      */
-    private void scheduleTimeoutTask(@NotNull final UUID playerId) {
+    protected void scheduleTimeoutTask(@NotNull final UUID playerId) {
         // Cancel any existing timeout task
         final BukkitTask existingTask = timeoutTasks.get(playerId);
         if (existingTask != null && !existingTask.isCancelled()) {
