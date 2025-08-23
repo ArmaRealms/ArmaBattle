@@ -27,6 +27,7 @@ import me.roinujnosde.titansbattle.TitansBattle;
 import org.bukkit.Bukkit;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Locale;
 import java.util.Optional;
 
 /**
@@ -51,7 +52,7 @@ public final class NpcProviderResolver {
         final String providerConfig = plugin.getConfig().getString("battle.npcProxy.provider", "auto").toLowerCase();
         
         // If specific provider is requested, try to use it
-        return switch (providerConfig) {
+        return switch (providerConfig.toLowerCase(Locale.ROOT)) {
             case "fancynpcs" ->
                     tryFancyNpcs(plugin).orElseGet(() -> fallbackToVanilla(plugin, "FancyNpcs requested but not available"));
             case "citizens" ->
