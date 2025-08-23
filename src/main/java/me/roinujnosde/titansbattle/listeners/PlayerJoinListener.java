@@ -53,9 +53,57 @@ public class PlayerJoinListener extends TBListener {
     @EventHandler
     public void onJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
+        
+        // Check if player has an active NPC proxy that needs to be restored
+        handleNpcProxyRestoration(player);
+        
         teleportToExit(player);
         clearInventory(player);
         sendJoinMessage(player);
+    }
+
+    private void handleNpcProxyRestoration(Player player) {
+        try {
+            // Check if player has an active NPC proxy
+            plugin.getNpcProvider().getProxyByOwner(player.getUniqueId()).ifPresent(npcHandle -> {
+                if (npcHandle.isAlive()) {
+                    plugin.debug("Restoring player " + player.getName() + " from NPC proxy");
+                    
+                    // Get proxy state
+                    double proxyHealth = npcHandle.getHealth();
+                    Location proxyLocation = npcHandle.getLocation();
+                    
+                    // Teleport player to proxy location
+                    player.teleport(proxyLocation);
+                    
+                    // Restore health (ensure it doesn't exceed max health)
+                    double maxHealth = player.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).getValue();
+                    player.setHealth(Math.min(proxyHealth, maxHealth));
+                    
+                    // Fire despawn event
+                    me.roinujnosde.titansbattle.npc.event.NpcProxyDespawnEvent despawnEvent = 
+                        new me.roinujnosde.titansbattle.npc.event.NpcProxyDespawnEvent(
+                            player.getUniqueId(), npcHandle, "owner-rejoined");
+                    org.bukkit.Bukkit.getPluginManager().callEvent(despawnEvent);
+                    
+                    // Despawn the proxy
+                    plugin.getNpcProvider().despawnProxy(player.getUniqueId(), "owner-rejoined");
+                    
+                    plugin.getLogger().info("Restored player " + player.getName() + 
+                        " from NPC proxy with " + proxyHealth + " health at " + proxyLocation);
+                        
+                    // Find the active game and reinstate the player
+                    me.roinujnosde.titansbattle.BaseGame game = plugin.getBaseGameFrom(player);
+                    if (game != null) {
+                        // Player should still be in participants list, just need to clear them from casualties
+                        game.getCasualties().remove(plugin.getDatabaseManager().getWarrior(player));
+                        plugin.debug("Reinstated player " + player.getName() + " in game");
+                    }
+                }
+            });
+        } catch (Exception e) {
+            plugin.getLogger().warning("Failed to restore NPC proxy for " + player.getName() + ": " + e.getMessage());
+        }
     }
 
     private void sendJoinMessage(Player player) {

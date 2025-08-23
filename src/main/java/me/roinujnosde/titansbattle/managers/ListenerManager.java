@@ -4,6 +4,7 @@ import me.roinujnosde.titansbattle.TitansBattle;
 import me.roinujnosde.titansbattle.listeners.EntityDamageListener;
 import me.roinujnosde.titansbattle.listeners.ItemsProtectionListener;
 import me.roinujnosde.titansbattle.listeners.JoinGameListener;
+import me.roinujnosde.titansbattle.listeners.NpcProxyListener;
 import me.roinujnosde.titansbattle.listeners.PlayerCommandPreprocessListener;
 import me.roinujnosde.titansbattle.listeners.PlayerDeathListener;
 import me.roinujnosde.titansbattle.listeners.PlayerJoinListener;
@@ -36,6 +37,7 @@ public class ListenerManager {
         registerListener(new PlayerJoinListener(plugin), true);
         registerListener(new ItemsProtectionListener(plugin), true);
         registerListener(new PlayerSpawnLocationListener(plugin), true);
+        registerListener(new NpcProxyListener(plugin), true);
     }
 
     public void registerBattleListeners() {

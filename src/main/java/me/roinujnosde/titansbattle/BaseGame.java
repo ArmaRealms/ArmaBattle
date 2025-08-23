@@ -14,6 +14,11 @@ import me.roinujnosde.titansbattle.hooks.viaversion.ViaVersionHook;
 import me.roinujnosde.titansbattle.managers.CommandManager;
 import me.roinujnosde.titansbattle.managers.GameManager;
 import me.roinujnosde.titansbattle.managers.GroupManager;
+import me.roinujnosde.titansbattle.npc.NpcHandle;
+import me.roinujnosde.titansbattle.npc.NpcProvider;
+import me.roinujnosde.titansbattle.npc.event.NpcProxySpawnEvent;
+import me.roinujnosde.titansbattle.npc.event.NpcProxyDespawnEvent;
+import me.roinujnosde.titansbattle.combat.CombatLogService;
 import me.roinujnosde.titansbattle.types.Group;
 import me.roinujnosde.titansbattle.types.Kit;
 import me.roinujnosde.titansbattle.types.Warrior;
@@ -264,19 +269,59 @@ public abstract class BaseGame {
         if (getConfig().isUseKits()) {
             plugin.getConfigManager().getClearInventory().add(warrior.getUniqueId());
         }
+        
+        // Check if player is in combat and should have an NPC proxy created
         if (!isLobby() && getCurrentFighters().contains(warrior)) {
             Player player = warrior.toOnlinePlayer();
+            if (player != null && shouldCreateNpcProxy()) {
+                try {
+                    // Create NPC proxy instead of killing the player
+                    NpcProvider npcProvider = plugin.getNpcProvider();
+                    if (npcProvider.isAvailable()) {
+                        double currentHealth = player.getHealth();
+                        Location location = player.getLocation();
+                        
+                        NpcHandle npcHandle = npcProvider.spawnProxy(player, location, currentHealth);
+                        
+                        // Fire event for other systems to hook into
+                        NpcProxySpawnEvent event = new NpcProxySpawnEvent(warrior.getUniqueId(), npcHandle, currentHealth);
+                        Bukkit.getPluginManager().callEvent(event);
+                        
+                        plugin.debug(String.format("onDisconnect() -> spawned NPC proxy for %s with %.2f health", 
+                                player.getName(), currentHealth));
+                        
+                        broadcastKey("npc_proxy_spawned", player.getName());
+                        return; // Don't continue with normal disconnect processing
+                    } else {
+                        plugin.debug("NPC provider not available, falling back to normal disconnect behavior");
+                    }
+                } catch (Exception e) {
+                    plugin.getLogger().warning("Failed to create NPC proxy for " + player.getName() + ": " + e.getMessage());
+                    plugin.debug("onDisconnect() -> kill player " + player.getName() + " (NPC proxy failed)");
+                }
+            }
+            
+            // Fallback behavior: kill the player if NPC proxy creation failed or is disabled
             if (player != null) {
                 plugin.debug(String.format("onDisconnect() -> kill player %s", player.getName()));
                 player.setHealth(0);
             }
             return;
         }
+        
+        // Normal disconnect processing for non-combat situations
         casualties.add(warrior);
         casualtiesWatching.add(warrior); //adding to this Collection, so they are not teleported on respawn
         plugin.getConfigManager().getRespawn().add(warrior.getUniqueId());
         plugin.getConfigManager().save();
         processPlayerExit(warrior);
+    }
+
+    /**
+     * Check if NPC proxy should be created based on configuration
+     */
+    private boolean shouldCreateNpcProxy() {
+        return plugin.getConfig().getBoolean("battle.npcProxy.enabled", true);
     }
 
     public void onLeave(@NotNull Warrior warrior) {

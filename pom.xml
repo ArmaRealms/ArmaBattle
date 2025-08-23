@@ -132,6 +132,10 @@
             <id>viaversion-repo</id>
             <url>https://repo.viaversion.com</url>
         </repository>
+        <repository>
+            <id>fancynpcs-repo</id>
+            <url>https://repo.fancyinnovations.com/releases</url>
+        </repository>
     </repositories>
     <dependencies>
         <dependency>
@@ -212,6 +216,12 @@
             <groupId>com.viaversion</groupId>
             <artifactId>viaversion-api</artifactId>
             <version>5.3.1</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>de.oliver</groupId>
+            <artifactId>FancyNpcs</artifactId>
+            <version>latest</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>

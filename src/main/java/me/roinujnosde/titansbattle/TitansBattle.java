@@ -39,6 +39,9 @@ import me.roinujnosde.titansbattle.managers.ListenerManager;
 import me.roinujnosde.titansbattle.managers.SimpleClansGroupManager;
 import me.roinujnosde.titansbattle.managers.SpectateManager;
 import me.roinujnosde.titansbattle.managers.TaskManager;
+import me.roinujnosde.titansbattle.npc.NpcProvider;
+import me.roinujnosde.titansbattle.npc.NpcProviderResolver;
+import me.roinujnosde.titansbattle.combat.CombatLogService;
 import me.roinujnosde.titansbattle.types.GameConfiguration;
 import me.roinujnosde.titansbattle.types.Kit;
 import me.roinujnosde.titansbattle.types.Prizes;
@@ -77,6 +80,8 @@ public final class TitansBattle extends JavaPlugin {
     private PlaceholderHook placeholderHook;
     private ViaVersionHook viaVersionHook;
     private SpectateManager spectateManager;
+    private NpcProvider npcProvider;
+    private CombatLogService combatLogService;
 
     public static TitansBattle getInstance() {
         return instance;
@@ -96,6 +101,8 @@ public final class TitansBattle extends JavaPlugin {
         listenerManager = new ListenerManager(this);
         configurationDao = new ConfigurationDao(getDataFolder());
         spectateManager = new SpectateManager(this);
+        npcProvider = NpcProviderResolver.resolve(this);
+        combatLogService = new CombatLogService(this);
 
         configManager.load();
         languageManager.setup();
@@ -139,6 +146,12 @@ public final class TitansBattle extends JavaPlugin {
     public void onDisable() {
         challengeManager.getChallenges().forEach(c -> c.cancel(Bukkit.getConsoleSender()));
         gameManager.getCurrentGame().ifPresent(g -> g.cancel(Bukkit.getConsoleSender()));
+        if (npcProvider != null) {
+            npcProvider.onDisable();
+        }
+        if (combatLogService != null) {
+            combatLogService.clearAll();
+        }
         databaseManager.close();
     }
 
@@ -291,5 +304,25 @@ public final class TitansBattle extends JavaPlugin {
                 }
             }
         });
+    }
+
+    /**
+     * Get the NPC provider for creating proxy NPCs
+     *
+     * @return the NPC provider
+     */
+    @NotNull
+    public NpcProvider getNpcProvider() {
+        return npcProvider;
+    }
+
+    /**
+     * Get the combat log service for tracking proxy damage
+     *
+     * @return the combat log service
+     */
+    @NotNull
+    public CombatLogService getCombatLogService() {
+        return combatLogService;
     }
 }

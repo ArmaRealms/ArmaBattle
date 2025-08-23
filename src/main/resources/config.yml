@@ -131,6 +131,16 @@ scheduler:
       hour: 18
       minute: 30
 
+#NPC Proxy System Configuration
+battle:
+  npcProxy:
+    enabled: true
+    provider: auto  # auto | fancynpcs | citizens | vanilla
+    onlyWhenInCombat: true
+    combatTimeoutMs: 15000  # 15 seconds
+    dropItemsOnProxyDeath: false
+    broadcastMessages: true
+
 #Data used by the plugin, don't edit it.
 data:
   respawn: [ ]
