@@ -35,6 +35,10 @@ public class ViaVersionHook {
      */
     public boolean isPlayerVersionBlocked(final @NotNull Player player, final @NotNull BaseGameConfiguration config) {
         final int playerProtocolVersion = Via.getAPI().getPlayerVersion(player.getUniqueId());
-        return config.getBlockedProtocols().contains(playerProtocolVersion);
+        final List<Integer> blockedProtocols = config.getBlockedProtocols();
+        if (blockedProtocols == null || blockedProtocols.isEmpty()) {
+            return false;
+        }
+        return blockedProtocols.contains(playerProtocolVersion);
     }
 }
