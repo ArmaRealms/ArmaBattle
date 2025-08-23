@@ -61,7 +61,7 @@ public class FancyNpcsProvider implements NpcProvider {
 
     private boolean checkAvailability() {
         try {
-            return Bukkit.getPluginManager().getPlugin("FancyNpcs") != null
+            return Bukkit.getPluginManager().isPluginEnabled("FancyNpcs")
                     && FancyNpcsPlugin.get() != null;
         } catch (Exception e) {
             plugin.getLogger().warning("FancyNpcs plugin found but API not available: " + e.getMessage());

@@ -53,10 +53,8 @@ public class PlayerJoinListener extends TBListener {
     @EventHandler
     public void onJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
-        
         // Check if player has an active NPC proxy that needs to be restored
         handleNpcProxyRestoration(player);
-        
         teleportToExit(player);
         clearInventory(player);
         sendJoinMessage(player);

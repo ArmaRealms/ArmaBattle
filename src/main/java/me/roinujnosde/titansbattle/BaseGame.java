@@ -303,11 +303,17 @@ public abstract class BaseGame {
                         double currentHealth = player.getHealth();
                         Location location = player.getLocation();
                         
-                        NpcHandle npcHandle = npcProvider.spawnProxy(player, location, currentHealth);
-                        
-                        // Fire event for other systems to hook into
-                        NpcProxySpawnEvent event = new NpcProxySpawnEvent(warrior.getUniqueId(), npcHandle, currentHealth);
+                        // Fire event first to allow other systems to cancel the spawning
+                        NpcProxySpawnEvent event = new NpcProxySpawnEvent(warrior.getUniqueId(), null, currentHealth);
                         Bukkit.getPluginManager().callEvent(event);
+                        
+                        // Check if event was cancelled
+                        if (event.isCancelled()) {
+                            plugin.debug("NPC proxy spawn cancelled by event for " + player.getName());
+                            return; // Don't continue with normal disconnect processing
+                        }
+                        
+                        NpcHandle npcHandle = npcProvider.spawnProxy(player, location, currentHealth);
                         
                         plugin.debug(String.format("onDisconnect() -> spawned NPC proxy for %s with %.2f health", 
                                 player.getName(), currentHealth));

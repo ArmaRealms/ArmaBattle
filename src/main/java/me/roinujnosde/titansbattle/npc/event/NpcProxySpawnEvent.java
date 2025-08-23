@@ -24,6 +24,7 @@
 package me.roinujnosde.titansbattle.npc.event;
 
 import me.roinujnosde.titansbattle.npc.NpcHandle;
+import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.NotNull;
@@ -36,15 +37,16 @@ import java.util.UUID;
  *
  * @author RoinujNosde
  */
-public class NpcProxySpawnEvent extends Event {
+public class NpcProxySpawnEvent extends Event implements Cancellable {
 
     private static final HandlerList HANDLERS = new HandlerList();
     
     private final UUID ownerId;
     private final NpcHandle npcHandle;
     private final double initialHealth;
+    private boolean cancelled = false;
 
-    public NpcProxySpawnEvent(@NotNull UUID ownerId, @NotNull NpcHandle npcHandle, double initialHealth) {
+    public NpcProxySpawnEvent(@NotNull UUID ownerId, @Nullable NpcHandle npcHandle, double initialHealth) {
         this.ownerId = ownerId;
         this.npcHandle = npcHandle;
         this.initialHealth = initialHealth;
@@ -62,10 +64,13 @@ public class NpcProxySpawnEvent extends Event {
 
     /**
      * Get the NPC handle
+     * 
+     * Note: This may be null if the event is fired before the NPC is actually spawned
+     * (e.g., during pre-spawn cancellation checks)
      *
-     * @return the NPC handle
+     * @return the NPC handle, or null if not yet spawned
      */
-    @NotNull
+    @Nullable
     public NpcHandle getNpcHandle() {
         return npcHandle;
     }
@@ -77,6 +82,16 @@ public class NpcProxySpawnEvent extends Event {
      */
     public double getInitialHealth() {
         return initialHealth;
+    }
+
+    @Override
+    public boolean isCancelled() {
+        return cancelled;
+    }
+
+    @Override
+    public void setCancelled(boolean cancelled) {
+        this.cancelled = cancelled;
     }
 
     @Override

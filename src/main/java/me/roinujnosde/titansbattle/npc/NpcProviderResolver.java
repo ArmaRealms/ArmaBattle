@@ -70,7 +70,7 @@ public final class NpcProviderResolver {
     }
     
     private static java.util.Optional<NpcProvider> tryFancyNpcs(@NotNull TitansBattle plugin) {
-        if (Bukkit.getPluginManager().getPlugin("FancyNpcs") != null) {
+        if (Bukkit.getPluginManager().isPluginEnabled("FancyNpcs")) {
             NpcProvider provider = new FancyNpcsProvider(plugin);
             if (provider.isAvailable()) {
                 plugin.getLogger().info("Using FancyNpcs for NPC proxy system");
@@ -81,7 +81,7 @@ public final class NpcProviderResolver {
     }
     
     private static java.util.Optional<NpcProvider> tryCitizens(@NotNull TitansBattle plugin) {
-        if (Bukkit.getPluginManager().getPlugin("Citizens") != null) {
+        if (Bukkit.getPluginManager().isPluginEnabled("Citizens")) {
             NpcProvider provider = new CitizensProvider(plugin);
             if (provider.isAvailable()) {
                 plugin.getLogger().info("Using Citizens for NPC proxy system");
