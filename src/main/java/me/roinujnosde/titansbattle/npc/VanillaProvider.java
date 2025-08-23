@@ -100,6 +100,9 @@ public class VanillaProvider implements NpcProvider {
             mob.setRemoveWhenFarAway(false);
             mob.setPersistent(true);
             
+            // Disable AI to prevent the mob from targeting players
+            mob.setAI(false);
+            
             // Set health
             if (mob.getAttribute(Attribute.GENERIC_MAX_HEALTH) != null) {
                 double maxHealth = Math.max(health, 1.0); // Ensure at least 1 HP

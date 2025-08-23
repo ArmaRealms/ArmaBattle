@@ -39,7 +39,7 @@ import org.bukkit.entity.Projectile;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.event.entity.EntityTargetEvent;
+
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -142,23 +142,7 @@ public class NpcProxyListener extends TBListener {
         combatLogService.clear(ownerId);
     }
     
-    @EventHandler(priority = EventPriority.NORMAL)
-    public void onMobTarget(EntityTargetEvent event) {
-        if (event.isCancelled()) {
-            return;
-        }
-        
-        // Check if the targeting entity is a vanilla proxy mob
-        NpcProvider provider = plugin.getNpcProvider();
-        if (provider instanceof VanillaProvider) {
-            VanillaProvider vanillaProvider = (VanillaProvider) provider;
-            if (vanillaProvider.isProxyEntity(event.getEntity())) {
-                // Prevent proxy mobs from targeting players
-                event.setCancelled(true);
-                plugin.debug("Prevented proxy mob from targeting: " + event.getTarget());
-            }
-        }
-    }
+
 
     /**
      * Get the owner UUID of an NPC proxy, if the entity is one
