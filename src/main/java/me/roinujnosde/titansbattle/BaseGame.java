@@ -147,7 +147,6 @@ public abstract class BaseGame {
             if (plugin.getNpcProvider().isProxyAlive(playerId)) {
                 plugin.debug("Cleaning up NPC proxy for " + participant.getName() + " (reason: " + reason + ")");
                 plugin.getNpcProvider().despawnProxy(playerId, reason);
-                plugin.getCombatLogService().clear(playerId);
             }
         }
         // Clean up disconnect tracking for all participants when game ends
@@ -299,10 +298,8 @@ public abstract class BaseGame {
                     if (!plugin.getDisconnectTrackingService().trackDisconnection(warrior.getUniqueId())) {
                         plugin.debug("Player " + player.getName() + " exceeded disconnect limit, eliminating");
                         broadcastKey("player_eliminated_disconnect_limit", player.getName());
-                        if (player != null) {
-                            plugin.debug(String.format("onDisconnect() -> kill player %s (disconnect limit exceeded)", player.getName()));
-                            player.setHealth(0);
-                        }
+                        plugin.debug(String.format("onDisconnect() -> kill player %s (disconnect limit exceeded)", player.getName()));
+                        player.setHealth(0);
                         return;
                     }
 
