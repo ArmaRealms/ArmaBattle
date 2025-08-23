@@ -153,6 +153,8 @@ public abstract class BaseGame {
                 plugin.getNpcProvider().despawnProxy(playerId, reason);
                 plugin.getCombatLogService().clear(playerId);
             }
+            // Clean up disconnect tracking for all participants when game ends
+            plugin.getDisconnectTrackingService().clearPlayer(playerId);
         }
     }
 
@@ -297,6 +299,17 @@ public abstract class BaseGame {
             Player player = warrior.toOnlinePlayer();
             if (player != null && shouldCreateNpcProxy()) {
                 try {
+                    // Check if player hasn't exceeded disconnect limits
+                    if (!plugin.getDisconnectTrackingService().trackDisconnection(warrior.getUniqueId())) {
+                        plugin.debug("Player " + player.getName() + " exceeded disconnect limit, eliminating");
+                        broadcastKey("player_eliminated_disconnect_limit", player.getName());
+                        if (player != null) {
+                            plugin.debug(String.format("onDisconnect() -> kill player %s (disconnect limit exceeded)", player.getName()));
+                            player.setHealth(0);
+                        }
+                        return;
+                    }
+                    
                     // Create NPC proxy instead of killing the player
                     NpcProvider npcProvider = plugin.getNpcProvider();
                     if (npcProvider.isAvailable()) {
@@ -315,8 +328,8 @@ public abstract class BaseGame {
                         
                         NpcHandle npcHandle = npcProvider.spawnProxy(player, location, currentHealth);
                         
-                        plugin.debug(String.format("onDisconnect() -> spawned NPC proxy for %s with %.2f health", 
-                                player.getName(), currentHealth));
+                        plugin.debug(String.format("onDisconnect() -> spawned NPC proxy for %s with %.2f health (disconnect #%d)", 
+                                player.getName(), currentHealth, plugin.getDisconnectTrackingService().getDisconnectionCount(warrior.getUniqueId())));
                         
                         broadcastKey("npc_proxy_spawned", player.getName());
                         return; // Don't continue with normal disconnect processing
@@ -580,6 +593,28 @@ public abstract class BaseGame {
             }
             sendRemainingOpponentsCount();
         }
+    }
+
+    /**
+     * Eliminate a player from the game (add to casualties and process exit)
+     *
+     * @param warrior the warrior to eliminate
+     * @param reason  the reason for elimination (for logging)
+     */
+    public void eliminate(@NotNull Warrior warrior, @NotNull String reason) {
+        plugin.debug(String.format("eliminate() -> warrior %s, reason: %s", warrior.getName(), reason));
+        
+        if (!isParticipant(warrior)) {
+            plugin.debug("Warrior " + warrior.getName() + " is not a participant, cannot eliminate");
+            return;
+        }
+        
+        // Add to casualties
+        casualties.add(warrior);
+        casualtiesWatching.add(warrior);
+        
+        // Process the player exit
+        processPlayerExit(warrior);
     }
 
     protected abstract void processRemainingPlayers(@NotNull Warrior warrior);

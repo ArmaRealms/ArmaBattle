@@ -140,6 +140,9 @@ battle:
     combatTimeoutMs: 15000  # 15 seconds
     dropItemsOnProxyDeath: false
     broadcastMessages: true
+    # Disconnection limits and timeout settings
+    maxDisconnections: 3  # Maximum times a player can disconnect during the same event
+    maxOfflineTimeMs: 300000  # Maximum time a player can stay offline (5 minutes)
     vanilla:
       mobType: ZOMBIE  # Entity type for vanilla proxy mobs
 

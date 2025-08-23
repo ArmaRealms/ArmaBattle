@@ -42,6 +42,7 @@ import me.roinujnosde.titansbattle.managers.TaskManager;
 import me.roinujnosde.titansbattle.npc.NpcProvider;
 import me.roinujnosde.titansbattle.npc.NpcProviderResolver;
 import me.roinujnosde.titansbattle.combat.CombatLogService;
+import me.roinujnosde.titansbattle.combat.DisconnectTrackingService;
 import me.roinujnosde.titansbattle.types.GameConfiguration;
 import me.roinujnosde.titansbattle.types.Kit;
 import me.roinujnosde.titansbattle.types.Prizes;
@@ -83,6 +84,7 @@ public final class TitansBattle extends JavaPlugin {
     private SpectateManager spectateManager;
     private NpcProvider npcProvider;
     private CombatLogService combatLogService;
+    private DisconnectTrackingService disconnectTrackingService;
 
     public static TitansBattle getInstance() {
         return instance;
@@ -104,6 +106,7 @@ public final class TitansBattle extends JavaPlugin {
         spectateManager = new SpectateManager(this);
         npcProvider = NpcProviderResolver.resolve(this);
         combatLogService = new CombatLogService(this);
+        disconnectTrackingService = new DisconnectTrackingService(this);
 
         configManager.load();
         languageManager.setup();
@@ -173,6 +176,9 @@ public final class TitansBattle extends JavaPlugin {
         }
         if (combatLogService != null) {
             combatLogService.clearAll();
+        }
+        if (disconnectTrackingService != null) {
+            disconnectTrackingService.clearAll();
         }
         databaseManager.close();
     }
@@ -346,5 +352,15 @@ public final class TitansBattle extends JavaPlugin {
     @NotNull
     public CombatLogService getCombatLogService() {
         return combatLogService;
+    }
+
+    /**
+     * Get the disconnect tracking service for managing player reconnection limits
+     *
+     * @return the disconnect tracking service
+     */
+    @NotNull
+    public DisconnectTrackingService getDisconnectTrackingService() {
+        return disconnectTrackingService;
     }
 }

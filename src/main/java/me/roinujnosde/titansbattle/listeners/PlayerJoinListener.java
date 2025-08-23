@@ -29,6 +29,7 @@ import me.roinujnosde.titansbattle.types.Kit;
 import me.roinujnosde.titansbattle.utils.Helper;
 import me.roinujnosde.titansbattle.utils.MessageUtils;
 import me.roinujnosde.titansbattle.utils.SoundUtils;
+import org.bukkit.Location;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -62,6 +63,22 @@ public class PlayerJoinListener extends TBListener {
 
     private void handleNpcProxyRestoration(Player player) {
         try {
+            // Check if player is allowed to return first
+            if (!plugin.getDisconnectTrackingService().canPlayerReturn(player.getUniqueId())) {
+                plugin.debug("Player " + player.getName() + " exceeded disconnect limit, cannot return to game");
+                
+                // Find their active game and eliminate them permanently
+                me.roinujnosde.titansbattle.BaseGame game = plugin.getBaseGameFrom(player);
+                if (game != null) {
+                    me.roinujnosde.titansbattle.types.Warrior warrior = plugin.getDatabaseManager().getWarrior(player);
+                    if (warrior != null) {
+                        game.eliminate(warrior, "disconnect-limit-exceeded");
+                        plugin.debug("Permanently eliminated player " + player.getName() + " due to disconnect limit");
+                    }
+                }
+                return;
+            }
+            
             // Check if player has an active NPC proxy
             plugin.getNpcProvider().getProxyByOwner(player.getUniqueId()).ifPresent(npcHandle -> {
                 if (npcHandle.isAlive()) {
@@ -86,6 +103,9 @@ public class PlayerJoinListener extends TBListener {
                     
                     // Despawn the proxy
                     plugin.getNpcProvider().despawnProxy(player.getUniqueId(), "owner-rejoined");
+                    
+                    // Clear reconnection for this session
+                    plugin.getDisconnectTrackingService().clearPlayerReconnected(player.getUniqueId());
                     
                     plugin.getLogger().info("Restored player " + player.getName() + 
                         " from NPC proxy with " + proxyHealth + " health at " + proxyLocation);
