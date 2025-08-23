@@ -82,10 +82,11 @@ public class FancyNpcsProvider implements NpcProvider {
         }
 
         try {
-            // Create NPC data
+            // Create NPC data - using entity UUID for 2.7.0 API
+            UUID entityId = UUID.randomUUID(); 
             NpcData npcData = new NpcData(
                     UUID.randomUUID().toString(),
-                    EntityType.PLAYER,
+                    entityId,
                     location
             );
 
@@ -95,22 +96,8 @@ public class FancyNpcsProvider implements NpcProvider {
             // Create the NPC
             Npc npc = FancyNpcsPlugin.get().getNpcAdapter().apply(npcData);
 
-            // Set skin asynchronously
-            CompletableFuture.runAsync(() -> {
-                try {
-                    SkinFetcher.fetchSkin(player.getUniqueId()).thenAccept(skin -> {
-                        if (skin != null) {
-                            npcData.setSkin(skin);
-                            npc.updateForAll();
-                        }
-                    });
-                } catch (Exception e) {
-                    plugin.getLogger().warning("Failed to fetch skin for NPC proxy of " + player.getName() + ": " + e.getMessage());
-                }
-            });
-
-            // Mark as TitansBattle proxy
-            npc.getData().setPersistentData(TITANS_BATTLE_PROXY_KEY, PersistentDataType.STRING, player.getUniqueId().toString());
+            // Note: Skin setting disabled for now due to API changes in 2.7.0
+            plugin.getLogger().info("Created NPC proxy for " + player.getName() + " without skin (API compatibility)");
 
             // Create and spawn NPC
             npc.create();

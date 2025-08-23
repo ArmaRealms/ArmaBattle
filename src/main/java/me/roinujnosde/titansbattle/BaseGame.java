@@ -43,6 +43,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Unmodifiable;
 
 import java.text.MessageFormat;
+import java.util.UUID;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
