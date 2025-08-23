@@ -82,39 +82,32 @@ public class PlayerJoinListener extends TBListener {
 
             // Check if player has an active NPC proxy
             plugin.getNpcProvider().getProxyByOwner(player.getUniqueId()).ifPresent(npcHandle -> {
-                if (npcHandle.isAlive()) {
-                    plugin.debug("Restoring player " + player.getName() + " from NPC proxy");
+                plugin.debug("Restoring player " + player.getName() + " from NPC proxy");
 
-                    // Get proxy state
-                    final double proxyHealth = npcHandle.getHealth();
-                    final Location proxyLocation = npcHandle.getLocation();
+                // Get proxy state
+                final Location proxyLocation = npcHandle.getLocation();
 
-                    // Teleport player to proxy location
-                    player.teleport(proxyLocation);
+                // Teleport player to proxy location
+                player.teleport(proxyLocation);
 
-                    // Restore health (ensure it doesn't exceed max health)
-                    player.setHealth(Math.min(proxyHealth, 20.0D));
+                // Fire despawn event
+                final NpcProxyDespawnEvent despawnEvent = new NpcProxyDespawnEvent(player.getUniqueId(), npcHandle, "owner-rejoined");
+                Bukkit.getPluginManager().callEvent(despawnEvent);
 
-                    // Fire despawn event
-                    final NpcProxyDespawnEvent despawnEvent = new NpcProxyDespawnEvent(player.getUniqueId(), npcHandle, "owner-rejoined");
-                    Bukkit.getPluginManager().callEvent(despawnEvent);
+                // Despawn the proxy
+                plugin.getNpcProvider().despawnProxy(player.getUniqueId(), "owner-rejoined");
 
-                    // Despawn the proxy
-                    plugin.getNpcProvider().despawnProxy(player.getUniqueId(), "owner-rejoined");
+                // Clear reconnection for this session
+                plugin.getDisconnectTrackingService().clearPlayerReconnected(player.getUniqueId());
 
-                    // Clear reconnection for this session
-                    plugin.getDisconnectTrackingService().clearPlayerReconnected(player.getUniqueId());
+                plugin.getLogger().info("Restored player " + player.getName() + " from NPC proxy at " + proxyLocation);
 
-                    plugin.getLogger().info("Restored player " + player.getName() +
-                            " from NPC proxy with " + proxyHealth + " health at " + proxyLocation);
-
-                    // Find the active game and reinstate the player
-                    final me.roinujnosde.titansbattle.BaseGame game = plugin.getBaseGameFrom(player);
-                    if (game != null) {
-                        // Player should still be in participants list, just need to clear them from casualties
-                        game.getCasualties().remove(plugin.getDatabaseManager().getWarrior(player));
-                        plugin.debug("Reinstated player " + player.getName() + " in game");
-                    }
+                // Find the active game and reinstate the player
+                final me.roinujnosde.titansbattle.BaseGame game = plugin.getBaseGameFrom(player);
+                if (game != null) {
+                    // Player should still be in participants list, just need to clear them from casualties
+                    game.getCasualties().remove(plugin.getDatabaseManager().getWarrior(player));
+                    plugin.debug("Reinstated player " + player.getName() + " in game");
                 }
             });
         } catch (final Exception e) {
