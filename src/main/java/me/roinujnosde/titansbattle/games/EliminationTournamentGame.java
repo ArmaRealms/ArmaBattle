@@ -407,7 +407,7 @@ public class EliminationTournamentGame extends Game {
                 name = group.getName();
             }
         } else if (warriors != null && !warriors.isEmpty()) {
-            name = warriors.getFirst().getName();
+            name = warriors.get(0).getName();
         }
         return name;
     }

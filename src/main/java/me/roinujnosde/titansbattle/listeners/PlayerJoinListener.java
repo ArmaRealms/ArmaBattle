@@ -23,12 +23,17 @@
  */
 package me.roinujnosde.titansbattle.listeners;
 
+import me.roinujnosde.titansbattle.BaseGame;
 import me.roinujnosde.titansbattle.TitansBattle;
 import me.roinujnosde.titansbattle.managers.ConfigManager;
+import me.roinujnosde.titansbattle.npc.event.NpcProxyDespawnEvent;
 import me.roinujnosde.titansbattle.types.Kit;
+import me.roinujnosde.titansbattle.types.Warrior;
 import me.roinujnosde.titansbattle.utils.Helper;
 import me.roinujnosde.titansbattle.utils.MessageUtils;
 import me.roinujnosde.titansbattle.utils.SoundUtils;
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -45,24 +50,76 @@ public class PlayerJoinListener extends TBListener {
 
     private final ConfigManager cm;
 
-    public PlayerJoinListener(@NotNull TitansBattle plugin) {
+    public PlayerJoinListener(@NotNull final TitansBattle plugin) {
         super(plugin);
         cm = plugin.getConfigManager();
     }
 
     @EventHandler
-    public void onJoin(PlayerJoinEvent event) {
-        Player player = event.getPlayer();
+    public void onJoin(final PlayerJoinEvent event) {
+        final Player player = event.getPlayer();
+        handleNpcProxyRestoration(player);
         teleportToExit(player);
         clearInventory(player);
         sendJoinMessage(player);
     }
 
-    private void sendJoinMessage(Player player) {
+    private void handleNpcProxyRestoration(final Player player) {
+        try {
+            // Check if player is allowed to return first
+            if (!plugin.getDisconnectTrackingService().canPlayerReturn(player.getUniqueId())) {
+                plugin.debug("Player " + player.getName() + " exceeded disconnect limit, cannot return to game");
+
+                // Find their active game and eliminate them permanently
+                final BaseGame game = plugin.getBaseGameFrom(player);
+                if (game != null) {
+                    final Warrior warrior = plugin.getDatabaseManager().getWarrior(player);
+                    game.eliminate(warrior, "disconnect-limit-exceeded");
+                    plugin.debug("Permanently eliminated player " + player.getName() + " due to disconnect limit");
+                }
+                return;
+            }
+
+            // Check if player has an active NPC proxy
+            plugin.getNpcProvider().getProxyByOwner(player.getUniqueId()).ifPresent(npcHandle -> {
+                plugin.debug("Restoring player " + player.getName() + " from NPC proxy");
+
+                // Get proxy state
+                final Location proxyLocation = npcHandle.getLocation();
+
+                // Teleport player to proxy location
+                player.teleport(proxyLocation);
+
+                // Fire despawn event
+                final NpcProxyDespawnEvent despawnEvent = new NpcProxyDespawnEvent(player.getUniqueId(), npcHandle, "owner-rejoined");
+                Bukkit.getPluginManager().callEvent(despawnEvent);
+
+                // Despawn the proxy
+                plugin.getNpcProvider().despawnProxy(player.getUniqueId(), "owner-rejoined");
+
+                // Clear reconnection for this session
+                plugin.getDisconnectTrackingService().clearPlayerReconnected(player.getUniqueId());
+
+                plugin.getLogger().info("Restored player " + player.getName() + " from NPC proxy at " + proxyLocation);
+
+                // Find the active game and reinstate the player
+                final me.roinujnosde.titansbattle.BaseGame game = plugin.getBaseGameFrom(player);
+                if (game != null) {
+                    // Player should still be in participants list, just need to clear them from casualties
+                    game.getCasualties().remove(plugin.getDatabaseManager().getWarrior(player));
+                    plugin.debug("Reinstated player " + player.getName() + " in game");
+                }
+            });
+        } catch (final Exception e) {
+            plugin.getLogger().warning("Failed to restore NPC proxy for " + player.getName() + ": " + e.getMessage());
+        }
+    }
+
+    private void sendJoinMessage(final Player player) {
         if (Helper.isWinner(player) || Helper.isKiller(player)) {
-            boolean killerJoinMessageEnabled = Helper.isKillerJoinMessageEnabled(player);
-            boolean winnerJoinMessageEnabled = Helper.isWinnerJoinMessageEnabled(player);
-            FileConfiguration config = Helper.getConfigFromWinnerOrKiller(player);
+            final boolean killerJoinMessageEnabled = Helper.isKillerJoinMessageEnabled(player);
+            final boolean winnerJoinMessageEnabled = Helper.isWinnerJoinMessageEnabled(player);
+            final FileConfiguration config = Helper.getConfigFromWinnerOrKiller(player);
             if (Helper.isKiller(player) && Helper.isWinner(player)) {
                 if (Helper.isKillerPriority(player) && killerJoinMessageEnabled) {
                     MessageUtils.broadcastKey("killer-has-joined", config, player.getName());
@@ -82,8 +139,8 @@ public class PlayerJoinListener extends TBListener {
         }
     }
 
-    private void clearInventory(Player player) {
-        List<UUID> toClear = cm.getClearInventory();
+    private void clearInventory(final @NotNull Player player) {
+        final List<UUID> toClear = cm.getClearInventory();
         if (toClear.contains(player.getUniqueId())) {
             Kit.clearInventory(player);
             toClear.remove(player.getUniqueId());
@@ -91,7 +148,7 @@ public class PlayerJoinListener extends TBListener {
         }
     }
 
-    private void teleportToExit(Player player) {
+    private void teleportToExit(final @NotNull Player player) {
         if (!cm.getRespawn().contains(player.getUniqueId())) {
             return;
         }

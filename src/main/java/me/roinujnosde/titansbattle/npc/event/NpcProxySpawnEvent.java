@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright 2017 Edson Passos - edsonpassosjr@outlook.com.
+ * Copyright 2024 Edson Passos - edsonpassosjr@outlook.com.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,61 +21,65 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package me.roinujnosde.titansbattle.events;
+package me.roinujnosde.titansbattle.npc.event;
 
-import me.roinujnosde.titansbattle.BaseGame;
-import me.roinujnosde.titansbattle.types.Warrior;
+import me.roinujnosde.titansbattle.npc.NpcHandle;
+import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Unmodifiable;
+import org.jetbrains.annotations.Nullable;
 
-import java.util.Collections;
-import java.util.List;
+import java.util.UUID;
 
 /**
+ * Event fired when an NPC proxy is spawned for a disconnected player
+ *
  * @author RoinujNosde
  */
-public class PlayerWinEvent extends Event {
+public class NpcProxySpawnEvent extends Event {
 
     private static final HandlerList HANDLERS = new HandlerList();
-    private final BaseGame game;
-    private final List<Warrior> players;
+    
+    private final UUID ownerId;
+    private final NpcHandle npcHandle;
 
-    public PlayerWinEvent(@NotNull BaseGame game, @NotNull List<Warrior> players) {
-        this.game = game;
-        this.players = players;
-    }
-
-    @SuppressWarnings("unused")
-    public static HandlerList getHandlerList() {
-        return HANDLERS;
-    }
-
-    public @NotNull BaseGame getGame() {
-        return game;
+    public NpcProxySpawnEvent(@NotNull final UUID ownerId, @Nullable final NpcHandle npcHandle) {
+        this.ownerId = ownerId;
+        this.npcHandle = npcHandle;
     }
 
     /**
-     * Returns the winner of the event (or the first of the list, if there are more than one winner)
+     * Get the UUID of the player this proxy represents
      *
-     * @return the winner of the event
+     * @return the owner's UUID
      */
-    public Warrior getPlayer() {
-        return players.get(0);
+    @NotNull
+    public UUID getOwnerId() {
+        return ownerId;
     }
 
     /**
-     * Returns an Unmodifiable List of the Winners
+     * Get the NPC handle
+     * 
+     * Note: This may be null if the event is fired before the NPC is actually spawned
+     * (e.g., during pre-spawn cancellation checks)
      *
-     * @return an Unmodifiable List of the Winners
+     * @return the NPC handle, or null if not yet spawned
      */
-    public @Unmodifiable List<Warrior> getPlayers() {
-        return Collections.unmodifiableList(players);
+    @Nullable
+    public NpcHandle getNpcHandle() {
+        return npcHandle;
     }
 
     @Override
-    public @NotNull HandlerList getHandlers() {
+    @NotNull
+    public HandlerList getHandlers() {
+        return HANDLERS;
+    }
+
+    @NotNull
+    public static HandlerList getHandlerList() {
         return HANDLERS;
     }
 }
