@@ -166,7 +166,3 @@ groups-ranking:
   name-title: "Name"
   title: "&b--- TB Groups Ranking ---\n \n# %name-title%n-space [%v-space%v-title |%k-space%k-title |%deaths-space%deaths-title |%defeats-space%defeats-title]"
   line: "&b%position. %name%n-space [%v-space%victories |%k-space%kills |%deaths-space%deaths |%defeats-space%defeats]"
-
-# NPC Proxy System Messages
-npc_proxy_spawned: "&6» {0} disconnected - NPC proxy spawned to continue the battle!"
-player_eliminated_disconnect_limit: "&c» {0} has been eliminated for exceeding the disconnect limit!"

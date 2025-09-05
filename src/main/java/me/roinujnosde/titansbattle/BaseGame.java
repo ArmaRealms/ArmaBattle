@@ -295,8 +295,6 @@ public abstract class BaseGame {
                 try {
                     // Check if player hasn't exceeded disconnect limits
                     if (!plugin.getDisconnectTrackingService().trackDisconnection(warrior.getUniqueId())) {
-                        plugin.debug("Player " + player.getName() + " exceeded disconnect limit, eliminating");
-                        broadcastKey("player_eliminated_disconnect_limit", player.getName());
                         plugin.debug(String.format("onDisconnect() -> kill player %s (disconnect limit exceeded)", player.getName()));
                         player.setHealth(0);
                         return;
@@ -310,8 +308,6 @@ public abstract class BaseGame {
 
                         plugin.debug(String.format("onDisconnect() -> spawned NPC proxy for %s (disconnect #%d)",
                                 player.getName(), plugin.getDisconnectTrackingService().getDisconnectionCount(warrior.getUniqueId())));
-
-                        broadcastKey("npc_proxy_spawned", player.getName());
                         return;
                     } else {
                         plugin.debug("NPC provider not available, falling back to normal disconnect behavior");

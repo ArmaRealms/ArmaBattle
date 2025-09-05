@@ -45,11 +45,6 @@ battle:
 - Cancels timeout tasks when players reconnect
 - Proper cleanup prevents memory leaks
 
-### 5. **Language Support**
-Added new language keys:
-- `npc_proxy_spawned`: Notification when NPC proxy is created
-- `player_eliminated_disconnect_limit`: Message when player exceeds disconnect limit
-
 ## Implementation Details
 
 ### Disconnect Limit Logic
