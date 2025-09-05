@@ -26,7 +26,6 @@ package me.roinujnosde.titansbattle.listeners;
 import me.roinujnosde.titansbattle.BaseGame;
 import me.roinujnosde.titansbattle.TitansBattle;
 import me.roinujnosde.titansbattle.managers.ConfigManager;
-import me.roinujnosde.titansbattle.npc.event.NpcProxyDespawnEvent;
 import me.roinujnosde.titansbattle.types.Kit;
 import me.roinujnosde.titansbattle.types.Warrior;
 import me.roinujnosde.titansbattle.utils.Helper;
@@ -70,7 +69,6 @@ public class PlayerJoinListener extends TBListener {
             if (!plugin.getDisconnectTrackingService().canPlayerReturn(player.getUniqueId())) {
                 plugin.debug("Player " + player.getName() + " exceeded disconnect limit, cannot return to game");
 
-                // Find their active game and eliminate them permanently
                 final BaseGame game = plugin.getBaseGameFrom(player);
                 if (game != null) {
                     final Warrior warrior = plugin.getDatabaseManager().getWarrior(player);
@@ -84,20 +82,12 @@ public class PlayerJoinListener extends TBListener {
             plugin.getNpcProvider().getProxyByOwner(player.getUniqueId()).ifPresent(npcHandle -> {
                 plugin.debug("Restoring player " + player.getName() + " from NPC proxy");
 
-                // Get proxy state
                 final Location proxyLocation = npcHandle.getLocation();
 
-                // Teleport player to proxy location
                 player.teleport(proxyLocation);
 
-                // Fire despawn event
-                final NpcProxyDespawnEvent despawnEvent = new NpcProxyDespawnEvent(player.getUniqueId(), npcHandle, "owner-rejoined");
-                Bukkit.getPluginManager().callEvent(despawnEvent);
-
-                // Despawn the proxy
                 plugin.getNpcProvider().despawnProxy(player.getUniqueId(), "owner-rejoined");
 
-                // Clear reconnection for this session
                 plugin.getDisconnectTrackingService().clearPlayerReconnected(player.getUniqueId());
 
                 plugin.getLogger().info("Restored player " + player.getName() + " from NPC proxy at " + proxyLocation);

@@ -16,7 +16,6 @@ import me.roinujnosde.titansbattle.managers.GameManager;
 import me.roinujnosde.titansbattle.managers.GroupManager;
 import me.roinujnosde.titansbattle.npc.NpcHandle;
 import me.roinujnosde.titansbattle.npc.NpcProvider;
-import me.roinujnosde.titansbattle.npc.event.NpcProxySpawnEvent;
 import me.roinujnosde.titansbattle.types.Group;
 import me.roinujnosde.titansbattle.types.Kit;
 import me.roinujnosde.titansbattle.types.Warrior;
@@ -307,16 +306,13 @@ public abstract class BaseGame {
                     final NpcProvider npcProvider = plugin.getNpcProvider();
                     if (npcProvider.isAvailable()) {
                         final Location location = player.getLocation();
-                        final NpcHandle npcHandle = npcProvider.spawnProxy(player, location);
-
-                        final NpcProxySpawnEvent event = new NpcProxySpawnEvent(warrior.getUniqueId(), npcHandle);
-                        Bukkit.getPluginManager().callEvent(event);
+                        npcProvider.spawnProxy(player, location);
 
                         plugin.debug(String.format("onDisconnect() -> spawned NPC proxy for %s (disconnect #%d)",
                                 player.getName(), plugin.getDisconnectTrackingService().getDisconnectionCount(warrior.getUniqueId())));
 
                         broadcastKey("npc_proxy_spawned", player.getName());
-                        return; // Don't continue with normal disconnect processing
+                        return;
                     } else {
                         plugin.debug("NPC provider not available, falling back to normal disconnect behavior");
                     }
