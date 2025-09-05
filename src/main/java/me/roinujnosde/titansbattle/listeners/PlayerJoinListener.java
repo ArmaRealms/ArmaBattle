@@ -90,14 +90,16 @@ public class PlayerJoinListener extends TBListener {
 
                 plugin.getDisconnectTrackingService().clearPlayerReconnected(player.getUniqueId());
 
-                plugin.getLogger().info("Restored player " + player.getName() + " from NPC proxy at " + proxyLocation);
+                plugin.debug("Restored player " + player.getName() + " from NPC proxy at " + proxyLocation);
 
                 // Find the active game and reinstate the player
-                final me.roinujnosde.titansbattle.BaseGame game = plugin.getBaseGameFrom(player);
+                final BaseGame game = plugin.getBaseGameFrom(player);
                 if (game != null) {
                     // Player should still be in participants list, just need to clear them from casualties
-                    game.getCasualties().remove(plugin.getDatabaseManager().getWarrior(player));
+                    final Warrior warrior = plugin.getDatabaseManager().getWarrior(player);
+                    game.getCasualties().remove(warrior);
                     plugin.debug("Reinstated player " + player.getName() + " in game");
+                    game.setKit(warrior);
                 }
             });
         } catch (final Exception e) {

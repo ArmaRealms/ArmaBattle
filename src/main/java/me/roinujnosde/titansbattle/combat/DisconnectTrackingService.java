@@ -109,12 +109,6 @@ public class DisconnectTrackingService {
             timeoutTask.cancel();
             plugin.debug("Cancelled timeout task for reconnected player " + playerId);
         }
-
-        // Keep the disconnect record but mark as reconnected for this session
-        final DisconnectRecord record = disconnectRecords.get(playerId);
-        if (record != null) {
-            record.markReconnected();
-        }
     }
 
     /**
@@ -175,9 +169,8 @@ public class DisconnectTrackingService {
         // Convert milliseconds to ticks (20 ticks per second)
         final long timeoutTicks = maxOfflineTimeMs / 50L;
 
-        final BukkitTask timeoutTask = Bukkit.getScheduler().runTaskLater(plugin, () -> {
-            handlePlayerTimeout(playerId);
-        }, timeoutTicks);
+        final BukkitTask timeoutTask = Bukkit.getScheduler().runTaskLater(plugin,
+                () -> handlePlayerTimeout(playerId), timeoutTicks);
 
         timeoutTasks.put(playerId, timeoutTask);
 
@@ -224,29 +217,13 @@ public class DisconnectTrackingService {
      */
     private static class DisconnectRecord {
         private int disconnectionCount = 0;
-        private long lastDisconnectTime = 0;
-        private boolean currentlyReconnected = false;
 
         public void recordDisconnection() {
             this.disconnectionCount++;
-            this.lastDisconnectTime = System.currentTimeMillis();
-            this.currentlyReconnected = false;
-        }
-
-        public void markReconnected() {
-            this.currentlyReconnected = true;
         }
 
         public int getDisconnectionCount() {
             return disconnectionCount;
-        }
-
-        public long getLastDisconnectTime() {
-            return lastDisconnectTime;
-        }
-
-        public boolean isCurrentlyReconnected() {
-            return currentlyReconnected;
         }
     }
 }

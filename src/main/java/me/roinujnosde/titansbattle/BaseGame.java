@@ -599,7 +599,7 @@ public abstract class BaseGame {
 
     protected abstract void processRemainingPlayers(@NotNull Warrior warrior);
 
-    protected void setKit(@NotNull final Warrior warrior) {
+    public void setKit(@NotNull final Warrior warrior) {
         final Player player = warrior.toOnlinePlayer();
         final Kit kit = getConfig().getKit();
         if (getConfig().isUseKits() && kit != null && player != null) {
