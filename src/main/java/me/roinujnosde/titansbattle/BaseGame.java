@@ -14,7 +14,6 @@ import me.roinujnosde.titansbattle.hooks.viaversion.ViaVersionHook;
 import me.roinujnosde.titansbattle.managers.CommandManager;
 import me.roinujnosde.titansbattle.managers.GameManager;
 import me.roinujnosde.titansbattle.managers.GroupManager;
-import me.roinujnosde.titansbattle.npc.NpcHandle;
 import me.roinujnosde.titansbattle.npc.NpcProvider;
 import me.roinujnosde.titansbattle.types.Group;
 import me.roinujnosde.titansbattle.types.Kit;
@@ -284,9 +283,6 @@ public abstract class BaseGame {
         if (!isParticipant(warrior)) {
             return;
         }
-        if (getConfig().isUseKits()) {
-            plugin.getConfigManager().getClearInventory().add(warrior.getUniqueId());
-        }
 
         // Check if player is in combat and should have an NPC proxy created
         if (!isLobby() && getCurrentFighters().contains(warrior)) {
@@ -324,6 +320,10 @@ public abstract class BaseGame {
                 player.setHealth(0);
             }
             return;
+        }
+
+        if (getConfig().isUseKits()) {
+            plugin.getConfigManager().getClearInventory().add(warrior.getUniqueId());
         }
 
         // Normal disconnect processing for non-combat situations
