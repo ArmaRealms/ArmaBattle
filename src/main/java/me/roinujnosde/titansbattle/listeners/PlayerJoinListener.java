@@ -31,11 +31,11 @@ import me.roinujnosde.titansbattle.types.Warrior;
 import me.roinujnosde.titansbattle.utils.Helper;
 import me.roinujnosde.titansbattle.utils.MessageUtils;
 import me.roinujnosde.titansbattle.utils.SoundUtils;
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.jetbrains.annotations.NotNull;
 
@@ -54,8 +54,8 @@ public class PlayerJoinListener extends TBListener {
         cm = plugin.getConfigManager();
     }
 
-    @EventHandler
-    public void onJoin(final PlayerJoinEvent event) {
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void onJoin(final @NotNull PlayerJoinEvent event) {
         final Player player = event.getPlayer();
         handleNpcProxyRestoration(player);
         teleportToExit(player);
@@ -83,24 +83,11 @@ public class PlayerJoinListener extends TBListener {
                 plugin.debug("Restoring player " + player.getName() + " from NPC proxy");
 
                 final Location proxyLocation = npcHandle.getLocation();
-
                 player.teleport(proxyLocation);
-
                 plugin.getNpcProvider().despawnProxy(player.getUniqueId(), "owner-rejoined");
-
                 plugin.getDisconnectTrackingService().clearPlayerReconnected(player.getUniqueId());
 
                 plugin.debug("Restored player " + player.getName() + " from NPC proxy at " + proxyLocation);
-
-                // Find the active game and reinstate the player
-                final BaseGame game = plugin.getBaseGameFrom(player);
-                if (game != null) {
-                    // Player should still be in participants list, just need to clear them from casualties
-                    final Warrior warrior = plugin.getDatabaseManager().getWarrior(player);
-                    game.getCasualties().remove(warrior);
-                    plugin.debug("Reinstated player " + player.getName() + " in game");
-                    game.setKit(warrior);
-                }
             });
         } catch (final Exception e) {
             plugin.getLogger().warning("Failed to restore NPC proxy for " + player.getName() + ": " + e.getMessage());
