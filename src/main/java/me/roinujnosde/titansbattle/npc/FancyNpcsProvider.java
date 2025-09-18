@@ -43,7 +43,7 @@ import java.util.UUID;
  *
  * @author RoinujNosde
  */
-public class FancyNpcsProvider implements NpcProvider {
+public final class FancyNpcsProvider implements NpcProvider {
 
     private final TitansBattle plugin;
     private final Map<UUID, FancyNpcsHandle> proxies = new HashMap<>();

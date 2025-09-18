@@ -43,7 +43,7 @@ import java.util.UUID;
  *
  * @author RoinujNosde
  */
-public class VanillaProvider implements NpcProvider {
+public final class VanillaProvider implements NpcProvider {
 
     private static final String TITANS_BATTLE_PROXY_KEY = "titans_battle_proxy";
     private final TitansBattle plugin;
@@ -157,36 +157,36 @@ public class VanillaProvider implements NpcProvider {
     }
 
     /**
-         * Handle for a vanilla mob proxy
-         */
-        record VanillaNpcHandle(UUID ownerId, LivingEntity mob) implements NpcHandle {
-            VanillaNpcHandle(@NotNull final UUID ownerId, @NotNull final LivingEntity mob) {
-                this.ownerId = ownerId;
-                this.mob = mob;
-            }
-
-            @Override
-            @NotNull
-            public UUID getOwnerPlayerId() {
-                return ownerId;
-            }
-
-            @Override
-            @NotNull
-            public UUID getNpcUniqueId() {
-                return mob.getUniqueId();
-            }
-
-            @Override
-            @NotNull
-            public Location getLocation() {
-                return mob.getLocation();
-            }
-
-            @Override
-            @NotNull
-            public LivingEntity mob() {
-                return mob;
-            }
+     * Handle for a vanilla mob proxy
+     */
+    record VanillaNpcHandle(UUID ownerId, LivingEntity mob) implements NpcHandle {
+        VanillaNpcHandle(@NotNull final UUID ownerId, @NotNull final LivingEntity mob) {
+            this.ownerId = ownerId;
+            this.mob = mob;
         }
+
+        @Override
+        @NotNull
+        public UUID getOwnerPlayerId() {
+            return ownerId;
+        }
+
+        @Override
+        @NotNull
+        public UUID getNpcUniqueId() {
+            return mob.getUniqueId();
+        }
+
+        @Override
+        @NotNull
+        public Location getLocation() {
+            return mob.getLocation();
+        }
+
+        @Override
+        @NotNull
+        public LivingEntity mob() {
+            return mob;
+        }
+    }
 }

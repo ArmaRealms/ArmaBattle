@@ -36,7 +36,7 @@ import java.util.UUID;
  *
  * @author RoinujNosde
  */
-public class CitizensProvider implements NpcProvider {
+public final class CitizensProvider implements NpcProvider {
 
     private final TitansBattle plugin;
 

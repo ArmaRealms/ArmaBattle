@@ -33,7 +33,7 @@ import java.util.UUID;
  *
  * @author RoinujNosde
  */
-public interface NpcHandle {
+public sealed interface NpcHandle permits FancyNpcsProvider.FancyNpcsHandle, VanillaProvider.VanillaNpcHandle {
 
     /**
      * Get the UUID of the player this NPC represents

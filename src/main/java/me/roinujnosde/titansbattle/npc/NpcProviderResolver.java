@@ -51,7 +51,7 @@ public final class NpcProviderResolver {
     @NotNull
     public static NpcProvider resolve(@NotNull final TitansBattle plugin) {
         final String providerConfig = plugin.getConfig().getString("battle.npcProxy.provider", "auto").toLowerCase();
-        
+
         // If specific provider is requested, try to use it
         return switch (providerConfig.toLowerCase(Locale.ROOT)) {
             case "fancynpcs" ->
@@ -72,7 +72,7 @@ public final class NpcProviderResolver {
                             });
         };
     }
-    
+
     private static Optional<NpcProvider> tryFancyNpcs(@NotNull final TitansBattle plugin) {
         if (Bukkit.getPluginManager().isPluginEnabled("FancyNpcs")) {
             final NpcProvider provider = new FancyNpcsProvider(plugin);
@@ -83,7 +83,7 @@ public final class NpcProviderResolver {
         }
         return Optional.empty();
     }
-    
+
     private static Optional<NpcProvider> tryCitizens(@NotNull final TitansBattle plugin) {
         if (Bukkit.getPluginManager().isPluginEnabled("Citizens")) {
             final NpcProvider provider = new CitizensProvider(plugin);
@@ -94,7 +94,7 @@ public final class NpcProviderResolver {
         }
         return Optional.empty();
     }
-    
+
     @Contract("_, _ -> new")
     private static @NotNull NpcProvider fallbackToVanilla(@NotNull final TitansBattle plugin, @NotNull final String reason) {
         plugin.getLogger().warning(reason + ", falling back to vanilla mob proxies");

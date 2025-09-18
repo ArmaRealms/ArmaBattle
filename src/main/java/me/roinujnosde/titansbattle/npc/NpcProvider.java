@@ -35,7 +35,7 @@ import java.util.UUID;
  *
  * @author RoinujNosde
  */
-public interface NpcProvider {
+public sealed interface NpcProvider permits CitizensProvider, FancyNpcsProvider, VanillaProvider {
 
     /**
      * Check if this provider is available and can create NPCs
