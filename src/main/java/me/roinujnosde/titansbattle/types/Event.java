@@ -31,7 +31,8 @@ import java.time.temporal.ChronoUnit;
 /**
  * @author RoinujNosde
  */
-public record Event(String gameName, me.roinujnosde.titansbattle.types.Event.Frequency frequency, int day, int hour, int minute) {
+public record Event(String gameName, me.roinujnosde.titansbattle.types.Event.Frequency frequency, int day, int hour,
+                    int minute) {
 
     public Event {
         if (day < 0 || (day > 7 && frequency == Frequency.WEEKLY) || day > 31) {
@@ -64,7 +65,7 @@ public record Event(String gameName, me.roinujnosde.titansbattle.types.Event.Fre
 
     private long getDailyDelay() {
         LocalDateTime target = LocalDateTime.of(LocalDate.now(), LocalTime.of(hour, minute));
-        LocalDateTime now = LocalDateTime.now();
+        final LocalDateTime now = LocalDateTime.now();
 
         if (now.isAfter(target)) {
             target = target.plusDays(1);
@@ -74,14 +75,14 @@ public record Event(String gameName, me.roinujnosde.titansbattle.types.Event.Fre
     }
 
     private long getWeeklyDelay() {
-        int dayOfWeek = LocalDate.now().getDayOfWeek().getValue();
+        final int dayOfWeek = LocalDate.now().getDayOfWeek().getValue();
         int dayOfWeekToStart = day;
         if (dayOfWeekToStart < dayOfWeek) {
             dayOfWeekToStart += 7;
         }
-        int difference = dayOfWeekToStart - dayOfWeek;
+        final int difference = dayOfWeekToStart - dayOfWeek;
         LocalDateTime target = LocalDateTime.of(LocalDate.now().plusDays(difference), LocalTime.of(hour, minute));
-        LocalDateTime now = LocalDateTime.now();
+        final LocalDateTime now = LocalDateTime.now();
 
         if (now.isAfter(target)) {
             target = target.plusDays(7);
@@ -91,14 +92,14 @@ public record Event(String gameName, me.roinujnosde.titansbattle.types.Event.Fre
     }
 
     private long getMonthlyDelay() {
-        int dayOfMonth = LocalDate.now().getDayOfMonth();
+        final int dayOfMonth = LocalDate.now().getDayOfMonth();
         int dayOfMonthToStart = day;
         if (dayOfMonthToStart < dayOfMonth) {
             dayOfMonthToStart += LocalDate.now().lengthOfMonth();
         }
-        int difference = dayOfMonthToStart - dayOfMonth;
+        final int difference = dayOfMonthToStart - dayOfMonth;
         LocalDateTime target = LocalDateTime.of(LocalDate.now().plusDays(difference), LocalTime.of(hour, minute));
-        LocalDateTime now = LocalDateTime.now();
+        final LocalDateTime now = LocalDateTime.now();
 
         if (now.isAfter(target)) {
             target = target.plusMonths(1);
@@ -115,7 +116,7 @@ public record Event(String gameName, me.roinujnosde.titansbattle.types.Event.Fre
 
         private final long periodInMillis;
 
-        Frequency(long periodInMillis) {
+        Frequency(final long periodInMillis) {
             this.periodInMillis = periodInMillis;
         }
 

@@ -23,7 +23,7 @@ public class ConfigurationDao {
     private final Map<Class<? extends BaseGameConfiguration>, Metadata> metadataMap;
     private final Set<BaseGameConfiguration> configurations;
 
-    public ConfigurationDao(@NotNull File dataFolder) {
+    public ConfigurationDao(@NotNull final File dataFolder) {
         metadataMap = new HashMap<>();
         metadataMap.put(ArenaConfiguration.class, new Metadata(new File(dataFolder, "arenas"), "arena"));
         metadataMap.put(GameConfiguration.class, new Metadata(new File(dataFolder, "games"), "game"));
@@ -34,17 +34,17 @@ public class ConfigurationDao {
 
     public void loadConfigurations() {
         configurations.clear();
-        for (Map.Entry<Class<? extends BaseGameConfiguration>, Metadata> entry : metadataMap.entrySet()) {
-            File folder = entry.getValue().folder;
+        for (final Map.Entry<Class<? extends BaseGameConfiguration>, Metadata> entry : metadataMap.entrySet()) {
+            final File folder = entry.getValue().folder;
             if (!folder.exists() && !folder.mkdirs()) {
                 logger.log(Level.SEVERE, "Error creating folder {0}", folder.getAbsolutePath());
                 continue;
             }
-            File[] files = folder.listFiles((dir, name) -> name.endsWith(".yml") || name.endsWith(".yaml"));
+            final File[] files = folder.listFiles((dir, name) -> name.endsWith(".yml") || name.endsWith(".yaml"));
             //noinspection ConstantConditions
-            for (File file : files) {
-                YamlConfiguration yamlConfig = YamlConfiguration.loadConfiguration(file);
-                BaseGameConfiguration gc = (BaseGameConfiguration) yamlConfig.get(entry.getValue().configKey);
+            for (final File file : files) {
+                final YamlConfiguration yamlConfig = YamlConfiguration.loadConfiguration(file);
+                final BaseGameConfiguration gc = (BaseGameConfiguration) yamlConfig.get(entry.getValue().configKey);
                 if (gc != null) {
                     configurations.add(gc);
                     gc.setFile(file);
@@ -54,9 +54,9 @@ public class ConfigurationDao {
         }
     }
 
-    public @NotNull <T extends BaseGameConfiguration> Set<T> getConfigurations(@NotNull Class<T> clazz) {
-        Set<T> set = new HashSet<>();
-        for (BaseGameConfiguration configuration : configurations) {
+    public @NotNull <T extends BaseGameConfiguration> Set<T> getConfigurations(@NotNull final Class<T> clazz) {
+        final Set<T> set = new HashSet<>();
+        for (final BaseGameConfiguration configuration : configurations) {
             if (clazz.isInstance(configuration)) {
                 set.add(clazz.cast(configuration));
             }
@@ -64,10 +64,10 @@ public class ConfigurationDao {
         return set;
     }
 
-    public @NotNull <T extends BaseGameConfiguration> Optional<T> getConfiguration(@NotNull String name,
-                                                                                   @NotNull Class<T> clazz) {
-        Set<T> configurations = getConfigurations(clazz);
-        for (T configuration : configurations) {
+    public @NotNull <T extends BaseGameConfiguration> Optional<T> getConfiguration(@NotNull final String name,
+                                                                                   @NotNull final Class<T> clazz) {
+        final Set<T> configurations = getConfigurations(clazz);
+        for (final T configuration : configurations) {
             if (configuration.getName().equalsIgnoreCase(name)) {
                 return Optional.of(configuration);
             }
@@ -75,48 +75,48 @@ public class ConfigurationDao {
         return Optional.empty();
     }
 
-    public <T extends BaseGameConfiguration> boolean create(@NotNull String name, @NotNull Class<T> clazz) {
+    public <T extends BaseGameConfiguration> boolean create(@NotNull String name, @NotNull final Class<T> clazz) {
         name = name.replace(" ", "_").replace(".", "");
-        Metadata metadata = metadataMap.get(clazz);
+        final Metadata metadata = metadataMap.get(clazz);
         if (metadata == null) {
             throw new IllegalArgumentException(String.format("Invalid config class: %s", clazz.getName()));
         }
 
-        File file = new File(metadata.folder, name + ".yml");
+        final File file = new File(metadata.folder, name + ".yml");
         try {
             if (!file.createNewFile()) {
                 logger.log(Level.SEVERE, String.format("Error creating the config %s's file. Maybe it already exists?",
                         name));
                 return false;
             }
-            T config = clazz.getConstructor().newInstance();
+            final T config = clazz.getConstructor().newInstance();
             config.setName(name);
             config.setFile(file);
 
-            YamlConfiguration yamlConfiguration = new YamlConfiguration();
+            final YamlConfiguration yamlConfiguration = new YamlConfiguration();
             config.setFileConfiguration(yamlConfiguration);
             yamlConfiguration.set(metadata.configKey, config);
             yamlConfiguration.save(file);
             configurations.add(config);
             return true;
-        } catch (IOException | ReflectiveOperationException ex) {
+        } catch (final IOException | ReflectiveOperationException ex) {
             logger.log(Level.SEVERE, String.format("Error creating the config %s", name), ex);
         }
         return false;
     }
 
-    public <T extends BaseGameConfiguration> boolean save(T config) {
-        Metadata metadata = metadataMap.get(config.getClass());
+    public <T extends BaseGameConfiguration> boolean save(final T config) {
+        final Metadata metadata = metadataMap.get(config.getClass());
         if (metadata == null) {
             logger.log(Level.SEVERE, "Invalid config class {0}", config.getClass().getName());
             return false;
         }
-        FileConfiguration fileConfiguration = config.getFileConfiguration();
+        final FileConfiguration fileConfiguration = config.getFileConfiguration();
         fileConfiguration.set(metadata.configKey, config);
         try {
             fileConfiguration.save(config.getFile());
             return true;
-        } catch (IOException e) {
+        } catch (final IOException e) {
             logger.log(Level.SEVERE, "Error saving config", e);
         }
         return false;
@@ -126,11 +126,10 @@ public class ConfigurationDao {
         File folder;
         String configKey;
 
-        public Metadata(File folder, String configKey) {
+        public Metadata(final File folder, final String configKey) {
             this.folder = folder;
             this.configKey = configKey;
         }
     }
-
 
 }

@@ -38,8 +38,7 @@ public class LobbyStartEvent extends Event implements Cancellable {
     private final BaseGame game;
     private boolean cancelled = false;
 
-
-    public LobbyStartEvent(@NotNull BaseGame game) {
+    public LobbyStartEvent(@NotNull final BaseGame game) {
         this.game = game;
     }
 
@@ -73,7 +72,7 @@ public class LobbyStartEvent extends Event implements Cancellable {
      * @param cancel should the game be cancelled?
      */
     @Override
-    public void setCancelled(boolean cancel) {
+    public void setCancelled(final boolean cancel) {
         cancelled = cancel;
     }
 }
