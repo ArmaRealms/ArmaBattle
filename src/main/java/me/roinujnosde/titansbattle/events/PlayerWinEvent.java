@@ -42,7 +42,7 @@ public class PlayerWinEvent extends Event {
     private final BaseGame game;
     private final List<Warrior> players;
 
-    public PlayerWinEvent(@NotNull BaseGame game, @NotNull List<Warrior> players) {
+    public PlayerWinEvent(@NotNull final BaseGame game, @NotNull final List<Warrior> players) {
         this.game = game;
         this.players = players;
     }

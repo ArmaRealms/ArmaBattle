@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright 2017 Edson Passos - edsonpassosjr@outlook.com.
+ * Copyright 2024 Edson Passos - edsonpassosjr@outlook.com.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,58 +21,38 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package me.roinujnosde.titansbattle.events;
+package me.roinujnosde.titansbattle.npc;
 
-import me.roinujnosde.titansbattle.BaseGame;
-import org.bukkit.event.Cancellable;
-import org.bukkit.event.Event;
-import org.bukkit.event.HandlerList;
+import org.bukkit.Location;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.UUID;
+
 /**
+ * Handle for an NPC proxy that represents a disconnected player
+ *
  * @author RoinujNosde
  */
-public class LobbyStartEvent extends Event implements Cancellable {
-
-    private static final HandlerList HANDLERS = new HandlerList();
-    private final BaseGame game;
-    private boolean cancelled = false;
-
-    public LobbyStartEvent(@NotNull final BaseGame game) {
-        this.game = game;
-    }
-
-    @SuppressWarnings("unused")
-    public static HandlerList getHandlerList() {
-        return HANDLERS;
-    }
+public sealed interface NpcHandle permits FancyNpcsProvider.FancyNpcsHandle, VanillaProvider.VanillaNpcHandle {
 
     /**
-     * Returns the Game
+     * Get the UUID of the player this NPC represents
      *
-     * @return the Game
+     * @return the owner's UUID
      */
-    public BaseGame getGame() {
-        return game;
-    }
-
-    @Override
-    public @NotNull HandlerList getHandlers() {
-        return HANDLERS;
-    }
-
-    @Override
-    public boolean isCancelled() {
-        return cancelled;
-    }
+    @NotNull UUID getOwnerPlayerId();
 
     /**
-     * Cancels the starting game
+     * Get the UUID of the NPC entity
      *
-     * @param cancel should the game be cancelled?
+     * @return the NPC's UUID
      */
-    @Override
-    public void setCancelled(final boolean cancel) {
-        cancelled = cancel;
-    }
+    @NotNull UUID getNpcUniqueId();
+
+    /**
+     * Get the current location of the NPC
+     *
+     * @return the NPC's location
+     */
+    @NotNull Location getLocation();
 }

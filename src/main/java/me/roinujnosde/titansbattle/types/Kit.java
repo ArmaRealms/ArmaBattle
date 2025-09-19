@@ -29,9 +29,8 @@ public class Kit implements ConfigurationSerializable {
     private final ItemStack leggings;
     private final ItemStack boots;
 
-
-    public Kit(@NotNull PlayerInventory inventory) {
-        ItemStack[] invContents = inventory.getContents();
+    public Kit(@NotNull final PlayerInventory inventory) {
+        final ItemStack[] invContents = inventory.getContents();
         this.contents = new ItemStack[invContents.length];
         this.helmet = clone(inventory.getHelmet());
         this.chestplate = clone(inventory.getChestplate());
@@ -41,20 +40,20 @@ public class Kit implements ConfigurationSerializable {
         clone(invContents, contents);
     }
 
-    public Kit(@NotNull Map<String, Object> data) {
-        int size = data.keySet().stream().mapToInt(s -> {
+    public Kit(@NotNull final Map<String, Object> data) {
+        final int size = data.keySet().stream().mapToInt(s -> {
             try {
                 return Integer.parseInt(s);
-            } catch (NumberFormatException ex) {
+            } catch (final NumberFormatException ex) {
                 return 0;
             }
         }).max().orElse(0) + 1;
         contents = new ItemStack[size];
-        for (Map.Entry<String, Object> entry : data.entrySet()) {
+        for (final Map.Entry<String, Object> entry : data.entrySet()) {
             try {
-                int index = Integer.parseInt(entry.getKey());
+                final int index = Integer.parseInt(entry.getKey());
                 contents[index] = ((ItemStack) entry.getValue());
-            } catch (NumberFormatException ignore) {
+            } catch (final NumberFormatException ignore) {
             }
         }
         this.helmet = getItem(data.get(HELMET_KEY));
@@ -65,13 +64,13 @@ public class Kit implements ConfigurationSerializable {
         setNBTTag(contents);
     }
 
-    public static boolean inventoryHasItems(@NotNull Player player) {
-        PlayerInventory inventory = player.getInventory();
+    public static boolean inventoryHasItems(@NotNull final Player player) {
+        final PlayerInventory inventory = player.getInventory();
         return hasItems(inventory.getArmorContents()) || hasItems(inventory.getContents());
     }
 
-    private static boolean hasItems(ItemStack @NotNull [] items) {
-        for (ItemStack item : items) {
+    private static boolean hasItems(final ItemStack @NotNull [] items) {
+        for (final ItemStack item : items) {
             if (item == null) {
                 continue;
             }
@@ -82,14 +81,14 @@ public class Kit implements ConfigurationSerializable {
         return false;
     }
 
-    public static void clearInventory(@NotNull Warrior warrior) {
-        Player player = warrior.toOnlinePlayer();
+    public static void clearInventory(@NotNull final Warrior warrior) {
+        final Player player = warrior.toOnlinePlayer();
         if (player != null) {
             clearInventory(player);
         }
     }
 
-    public static void clearInventory(@Nullable Player player) {
+    public static void clearInventory(@Nullable final Player player) {
         if (player == null) return;
 
         player.getInventory().clear();
@@ -99,7 +98,7 @@ public class Kit implements ConfigurationSerializable {
         player.getInventory().setBoots(null);
     }
 
-    public static void applyNBTTag(@NotNull ItemStack item) {
+    public static void applyNBTTag(@NotNull final ItemStack item) {
         if (item.getType() == Material.AIR) {
             return;
         }
@@ -108,16 +107,16 @@ public class Kit implements ConfigurationSerializable {
         });
     }
 
-    public static boolean isKitItem(@NotNull ItemStack item) {
+    public static boolean isKitItem(@NotNull final ItemStack item) {
         if (item.getType() == Material.AIR) {
             return false;
         }
         return NBT.get(item, n -> (boolean) n.getBoolean(Kit.NBT_TAG));
     }
 
-    private void clone(ItemStack @NotNull [] source, ItemStack[] destination) {
+    private void clone(final ItemStack @NotNull [] source, final ItemStack[] destination) {
         for (int i = 0; i < source.length; i++) {
-            ItemStack itemStack = source[i];
+            final ItemStack itemStack = source[i];
             destination[i] = itemStack != null ? itemStack.clone() : null;
         }
         setNBTTag(destination);
@@ -125,9 +124,9 @@ public class Kit implements ConfigurationSerializable {
 
     @Override
     public @NotNull Map<String, Object> serialize() {
-        TreeMap<String, Object> data = new TreeMap<>();
+        final TreeMap<String, Object> data = new TreeMap<>();
         for (int i = 0; i < contents.length; i++) {
-            ItemStack item = contents[i];
+            final ItemStack item = contents[i];
             if (item != null) {
                 data.put(String.valueOf(i), item);
             }
@@ -139,8 +138,8 @@ public class Kit implements ConfigurationSerializable {
         return data;
     }
 
-    public void set(@NotNull Player player) {
-        PlayerInventory inventory = player.getInventory();
+    public void set(@NotNull final Player player) {
+        final PlayerInventory inventory = player.getInventory();
         inventory.setHelmet(helmet);
         inventory.setChestplate(chestplate);
         inventory.setLeggings(leggings);
@@ -148,11 +147,11 @@ public class Kit implements ConfigurationSerializable {
         inventory.setContents(contents);
     }
 
-    private ItemStack getItem(Object object) {
+    private ItemStack getItem(final Object object) {
         return clone((ItemStack) object);
     }
 
-    private void removeNBTTag(ItemStack item) {
+    private void removeNBTTag(final ItemStack item) {
         NBT.modify(item, (Consumer<ReadWriteItemNBT>) nbtItem -> nbtItem.removeKey(NBT_TAG));
     }
 
@@ -164,8 +163,8 @@ public class Kit implements ConfigurationSerializable {
         return item;
     }
 
-    private void setNBTTag(ItemStack @NotNull [] items) {
-        for (ItemStack item : items) {
+    private void setNBTTag(final ItemStack @NotNull [] items) {
+        for (final ItemStack item : items) {
             if (item != null && item.getType() != Material.AIR) {
                 applyNBTTag(item);
             }
@@ -173,9 +172,9 @@ public class Kit implements ConfigurationSerializable {
     }
 
     public ItemStack[] getContentsWithoutNBT() {
-        ItemStack[] items = new ItemStack[contents.length];
+        final ItemStack[] items = new ItemStack[contents.length];
         for (int i = 0; i < contents.length; i++) {
-            ItemStack item = contents[i];
+            final ItemStack item = contents[i];
             if (item != null) {
                 items[i] = item.clone();
                 removeNBTTag(items[i]);

@@ -11,6 +11,8 @@ softdepend:
   - "Essentials"
   - "Multiverse-Core"
   - "ViaVersion"
+  - "FancyNpcs"
+  - "Citizens"
 permissions:
   titansbattle.admin:
     description: "Gives access to administrator commands"
