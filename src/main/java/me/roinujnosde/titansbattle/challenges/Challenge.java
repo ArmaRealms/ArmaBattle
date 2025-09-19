@@ -23,12 +23,12 @@ public class Challenge extends BaseGame {
     private List<Warrior> winners = new ArrayList<>();
     private Warrior lastCasualty;
 
-    public Challenge(@NotNull TitansBattle plugin, @NotNull ArenaConfiguration config) {
+    public Challenge(@NotNull final TitansBattle plugin, @NotNull final ArenaConfiguration config) {
         super(plugin, config);
     }
 
     @Override
-    public @NotNull String getLang(@NotNull String key, Object... args) {
+    public @NotNull String getLang(@NotNull final String key, final Object... args) {
         String lang = null;
         if (!key.startsWith("challenge_")) {
             lang = super.getLang("challenge_" + key, args);
@@ -47,7 +47,7 @@ public class Challenge extends BaseGame {
     }
 
     @Override
-    protected void processRemainingPlayers(@NotNull Warrior warrior) {
+    protected void processRemainingPlayers(@NotNull final Warrior warrior) {
         lastCasualty = warrior;
         if (getConfig().isGroupMode()) {
             if (getGroupParticipants().size() == 1) {
@@ -70,12 +70,12 @@ public class Challenge extends BaseGame {
     }
 
     @Override
-    public boolean shouldClearDropsOnDeath(@NotNull Warrior warrior) {
+    public boolean shouldClearDropsOnDeath(@NotNull final Warrior warrior) {
         return isParticipant(warrior) && config.isClearItemsOnDeath();
     }
 
     @Override
-    public boolean shouldKeepInventoryOnDeath(@NotNull Warrior warrior) {
+    public boolean shouldKeepInventoryOnDeath(@NotNull final Warrior warrior) {
         return false;
     }
 
@@ -85,7 +85,7 @@ public class Challenge extends BaseGame {
     }
 
     @Override
-    public void finish(boolean cancelled) {
+    public void finish(final boolean cancelled) {
         super.finish(cancelled);
         plugin.getChallengeManager().remove(this);
     }
@@ -96,9 +96,9 @@ public class Challenge extends BaseGame {
             Bukkit.getPluginManager().callEvent(new GroupWinEvent(winnerGroup));
             getCasualties().stream().filter(p -> winnerGroup.isMember(p.getUniqueId())).forEach(winners::add);
         }
-        PlayerWinEvent event = new PlayerWinEvent(this, winners);
+        final PlayerWinEvent event = new PlayerWinEvent(this, winners);
         Bukkit.getPluginManager().callEvent(event);
-        String winnerName = getConfig().isGroupMode() ? winnerGroup.getName() : winners.get(0).getName();
+        final String winnerName = getConfig().isGroupMode() ? winnerGroup.getName() : winners.getFirst().getName();
         SoundUtils.playSound(SoundUtils.Type.VICTORY, plugin.getConfig(), winners);
         givePrizes(BaseGameConfiguration.Prize.FIRST, winnerGroup, winners);
         broadcastKey("who_won", winnerName, getLoserName());
@@ -106,7 +106,7 @@ public class Challenge extends BaseGame {
     }
 
     @Override
-    public void setWinner(@NotNull Warrior warrior) {
+    public void setWinner(@NotNull final Warrior warrior) {
         if (!isParticipant(warrior)) {
             return;
         }
@@ -120,7 +120,7 @@ public class Challenge extends BaseGame {
     }
 
     @Override
-    public boolean isInBattle(@NotNull Warrior warrior) {
+    public boolean isInBattle(@NotNull final Warrior warrior) {
         return battle && participants.contains(warrior);
     }
 
@@ -133,12 +133,12 @@ public class Challenge extends BaseGame {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(final Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
 
-        Challenge challenge = (Challenge) o;
+        final Challenge challenge = (Challenge) o;
 
         if (!Objects.equals(winnerGroup, challenge.winnerGroup))
             return false;

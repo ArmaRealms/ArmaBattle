@@ -32,12 +32,12 @@ public class FreeForAllGame extends Game {
     private @Nullable Warrior killer;
     private @NotNull List<Warrior> winners = new ArrayList<>();
 
-    public FreeForAllGame(TitansBattle plugin, GameConfiguration config) {
+    public FreeForAllGame(final TitansBattle plugin, final GameConfiguration config) {
         super(plugin, config);
     }
 
     @Override
-    public boolean isInBattle(@NotNull Warrior warrior) {
+    public boolean isInBattle(@NotNull final Warrior warrior) {
         return battle && participants.contains(warrior);
     }
 
@@ -47,7 +47,7 @@ public class FreeForAllGame extends Game {
     }
 
     @Override
-    protected void processRemainingPlayers(@NotNull Warrior warrior) {
+    protected void processRemainingPlayers(@NotNull final Warrior warrior) {
         if (getConfig().isGroupMode()) {
             if (getGroupParticipants().size() == 1) {
                 killer = findKiller();
@@ -74,8 +74,8 @@ public class FreeForAllGame extends Game {
 
     @Override
     protected void processWinners() {
-        String gameName = getConfig().getName();
-        Winners today = databaseManager.getTodaysWinners();
+        final String gameName = getConfig().getName();
+        final Winners today = databaseManager.getTodaysWinners();
         if (getConfig().isUseKits()) {
             winners.forEach(Kit::clearInventory);
         }
@@ -86,7 +86,7 @@ public class FreeForAllGame extends Game {
             getCasualties().stream().filter(p -> winnerGroup.isMember(p.getUniqueId())).forEach(winners::add);
         }
         SoundUtils.playSound(VICTORY, plugin.getConfig(), winners);
-        PlayerWinEvent event = new PlayerWinEvent(this, winners);
+        final PlayerWinEvent event = new PlayerWinEvent(this, winners);
         Bukkit.getPluginManager().callEvent(event);
         if (killer != null) {
             plugin.getGameManager().setKiller(getConfig(), killer, null);
@@ -95,7 +95,7 @@ public class FreeForAllGame extends Game {
             givePrizes(KILLER, null, Collections.singletonList(killer));
         }
         today.setWinners(gameName, Helper.warriorListToUuidList(winners));
-        String winnerName = getConfig().isGroupMode() ? winnerGroup.getName() : winners.get(0).getName();
+        final String winnerName = getConfig().isGroupMode() ? winnerGroup.getName() : winners.getFirst().getName();
         broadcastKey("who_won", winnerName);
         discordAnnounce("discord_who_won", winnerName);
         winners.forEach(w -> w.increaseVictories(gameName));
@@ -103,7 +103,7 @@ public class FreeForAllGame extends Game {
     }
 
     @Override
-    public void setWinner(@NotNull Warrior warrior) {
+    public void setWinner(@NotNull final Warrior warrior) {
         if (!isParticipant(warrior)) {
             return;
         }
@@ -121,7 +121,7 @@ public class FreeForAllGame extends Game {
     @Override
     protected @NotNull String getGameInfoMessage() {
         String groupsText = "";
-        GroupManager groupManager = plugin.getGroupManager();
+        final GroupManager groupManager = plugin.getGroupManager();
         if (groupManager != null && getConfig().isGroupMode()) {
             groupsText = groupManager.buildStringFrom(getGroupParticipants().keySet());
         }
