@@ -40,26 +40,27 @@ import org.jetbrains.annotations.NotNull;
 public class PlayerQuitListener extends TBListener {
     private final DatabaseManager dm;
 
-    public PlayerQuitListener(@NotNull TitansBattle plugin) {
+    public PlayerQuitListener(@NotNull final TitansBattle plugin) {
         super(plugin);
         dm = plugin.getDatabaseManager();
     }
 
     @EventHandler
-    public void onQuit(PlayerQuitEvent event) {
-        Player player = event.getPlayer();
-        BaseGame game = plugin.getBaseGameFrom(player);
+    public void onQuit(final PlayerQuitEvent event) {
+        final Player player = event.getPlayer();
+        final BaseGame game = plugin.getBaseGameFrom(player);
         if (game != null) {
-            game.onDisconnect(dm.getWarrior(player));
+            final String quitMessage = event.getQuitMessage() == null ? "" : event.getQuitMessage();
+            game.onDisconnect(dm.getWarrior(player), quitMessage);
         }
         sendQuitMessage(player);
     }
 
-    private void sendQuitMessage(Player player) {
+    private void sendQuitMessage(final Player player) {
         if (Helper.isWinner(player) || Helper.isKiller(player)) {
-            boolean killerQuitMessageEnabled = Helper.isKillerQuitMessageEnabled(player);
-            boolean winnerQuitMessageEnabled = Helper.isWinnerQuitMessageEnabled(player);
-            FileConfiguration config = Helper.getConfigFromWinnerOrKiller(player);
+            final boolean killerQuitMessageEnabled = Helper.isKillerQuitMessageEnabled(player);
+            final boolean winnerQuitMessageEnabled = Helper.isWinnerQuitMessageEnabled(player);
+            final FileConfiguration config = Helper.getConfigFromWinnerOrKiller(player);
             if (Helper.isKiller(player) && Helper.isWinner(player)) {
                 if (Helper.isKillerPriority(player) && killerQuitMessageEnabled) {
                     MessageUtils.broadcastKey("killer-has-left", config, player.getName());

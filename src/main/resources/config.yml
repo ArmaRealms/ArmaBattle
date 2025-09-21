@@ -141,6 +141,9 @@ battle:
     maxOfflineTimeMs: 300000  # Maximum time a player can stay offline (5 minutes)
     vanilla:
       mobType: ZOMBIE  # Entity type for vanilla proxy mobs
+    # Reason for not spawning a proxy NPC
+    bypass-reasons:
+      - "banned"
 
 #Data used by the plugin, don't edit it.
 data:

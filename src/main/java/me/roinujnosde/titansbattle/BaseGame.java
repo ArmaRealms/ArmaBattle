@@ -279,13 +279,14 @@ public abstract class BaseGame {
         return participants.contains(warrior);
     }
 
-    public void onDisconnect(@NotNull final Warrior warrior) {
+    public void onDisconnect(@NotNull final Warrior warrior, @NotNull final String quitMessage) {
         if (!isParticipant(warrior)) {
             return;
         }
 
         // Check if player is in combat and should have an NPC proxy created
-        if (!isLobby() && getCurrentFighters().contains(warrior)) {
+        final boolean noProxyNPCReason = plugin.getConfig().getStringList("battle.npcProxy.bypass-reasons").contains(quitMessage);
+        if (!isLobby() && getCurrentFighters().contains(warrior) && !noProxyNPCReason) {
             final Player player = warrior.toOnlinePlayer();
             if (player != null && shouldCreateNpcProxy()) {
                 try {
