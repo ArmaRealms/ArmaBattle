@@ -279,13 +279,28 @@ public abstract class BaseGame {
         return participants.contains(warrior);
     }
 
-    public void onDisconnect(@NotNull final Warrior warrior, @NotNull final String quitMessage) {
+    public void onDisconnect(@NotNull final Warrior warrior, @Nullable final String rawQuitMessage) {
         if (!isParticipant(warrior)) {
             return;
         }
 
+        // check if the quit message contains the char sequence to bypass NPC proxy creation
+        final String quitMessage = rawQuitMessage == null ? "" : ChatColor.stripColor(rawQuitMessage).trim().toLowerCase();
+
+        final List<String> bypassReasons = plugin.getConfig().getStringList("battle.npcProxy.bypass-reasons");
+
+        final boolean noProxyNPCReason = bypassReasons.stream()
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .map(s -> ChatColor.stripColor(s).toLowerCase())
+                .anyMatch(reason -> {
+                    if (quitMessage.isEmpty()) return false;
+                    if (quitMessage.contains(reason)) return true;
+                    return quitMessage.length() >= 3 && reason.contains(quitMessage);
+                });
+
         // Check if player is in combat and should have an NPC proxy created
-        final boolean noProxyNPCReason = plugin.getConfig().getStringList("battle.npcProxy.bypass-reasons").contains(quitMessage);
         if (!isLobby() && getCurrentFighters().contains(warrior) && !noProxyNPCReason) {
             final Player player = warrior.toOnlinePlayer();
             if (player != null && shouldCreateNpcProxy()) {
