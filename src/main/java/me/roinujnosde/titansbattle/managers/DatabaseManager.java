@@ -71,7 +71,7 @@ public class DatabaseManager {
     private Connection connection;
 
     public void setup() {
-        try (Statement statement = getConnection().createStatement()) {
+        try (final Statement statement = getConnection().createStatement()) {
             statement.execute("CREATE TABLE IF NOT EXISTS tb_warriors "
                     + "(displayname varchar(30) NOT NULL,"
                     + " uuid varchar(255) NOT NULL,"
@@ -92,23 +92,23 @@ public class DatabaseManager {
                     + " player_winners text,"
                     + " winner_group varchar(255),"
                     + " game varchar(20) NOT NULL);");
-        } catch (SQLException ex) {
+        } catch (final SQLException ex) {
             plugin.debug("Error while creating the tables: " + ex.getMessage(), false);
         }
     }
 
     private void start() throws SQLException {
-        ConfigManager cm = plugin.getConfigManager();
-        String database = cm.getSqlDatabase();
+        final ConfigManager cm = plugin.getConfigManager();
+        final String database = cm.getSqlDatabase();
         if (cm.isSqlUseMysql()) {
-            String hostname = cm.getSqlHostname();
-            int port = cm.getSqlPort();
-            String username = cm.getSqlUsername();
-            String password = cm.getSqlPassword();
+            final String hostname = cm.getSqlHostname();
+            final int port = cm.getSqlPort();
+            final String username = cm.getSqlUsername();
+            final String password = cm.getSqlPassword();
             connection = DriverManager.getConnection("jdbc:mysql://" + hostname + ":" + port + "/" + database +
                     "?useSSL=false", username, password);
         } else {
-            File dbFile = new File(plugin.getDataFolder().getAbsolutePath() + File.separator + database + ".db");
+            final File dbFile = new File(plugin.getDataFolder().getAbsolutePath() + File.separator + database + ".db");
             connection = DriverManager.getConnection("jdbc:sqlite:" + dbFile.getAbsolutePath());
         }
     }
@@ -129,60 +129,60 @@ public class DatabaseManager {
                 return;
             }
             connection.close();
-        } catch (SQLException ex) {
+        } catch (final SQLException ex) {
             plugin.debug("Error while closing connection: " + ex.getMessage(), true);
         }
     }
 
-    private void update(Winners winners) {
-        HashSet<GameConfiguration> updated = new HashSet<>();
+    private void update(final Winners winners) {
+        final HashSet<GameConfiguration> updated = new HashSet<>();
 
-        String update = "UPDATE tb_winners SET killer=?, player_winners=?, winner_group=? WHERE date=? AND game=?;";
-        try (PreparedStatement statement = getConnection().prepareStatement(update)) {
-            for (GameConfiguration game : getGames()) {
+        final String update = "UPDATE tb_winners SET killer=?, player_winners=?, winner_group=? WHERE date=? AND game=?;";
+        try (final PreparedStatement statement = getConnection().prepareStatement(update)) {
+            for (final GameConfiguration game : getGames()) {
                 if (winners.isEmpty(game.getName())) {
                     continue;
                 }
                 setValues(winners, statement, game);
 
-                int count = statement.executeUpdate();
+                final int count = statement.executeUpdate();
                 if (count != 0) {
                     updated.add(game);
                 }
             }
-        } catch (SQLException ex) {
+        } catch (final SQLException ex) {
             plugin.debug("Error while saving the winners: " + ex.getMessage(), false);
         }
 
-        String insert = "INSERT INTO tb_winners (killer, player_winners, winner_group, date, game) VALUES (?, ?, ?, ?, ?);";
-        try (PreparedStatement statement = getConnection().prepareStatement(insert)) {
-            for (GameConfiguration game : getGames()) {
+        final String insert = "INSERT INTO tb_winners (killer, player_winners, winner_group, date, game) VALUES (?, ?, ?, ?, ?);";
+        try (final PreparedStatement statement = getConnection().prepareStatement(insert)) {
+            for (final GameConfiguration game : getGames()) {
                 if (!updated.contains(game) && !winners.isEmpty(game.getName())) {
                     setValues(winners, statement, game);
 
                     statement.execute();
                 }
             }
-        } catch (SQLException ex) {
+        } catch (final SQLException ex) {
             plugin.debug("Error while saving the winners: " + ex.getMessage(), false);
         }
     }
 
-    private void setValues(@NotNull Winners winners, PreparedStatement statement, @NotNull GameConfiguration game) throws SQLException {
-        String date = new SimpleDateFormat("dd/MM/yyyy").format(winners.getDate());
+    private void setValues(@NotNull final Winners winners, final PreparedStatement statement, @NotNull final GameConfiguration game) throws SQLException {
+        final String date = new SimpleDateFormat("dd/MM/yyyy").format(winners.getDate());
 
-        String name = game.getName();
+        final String name = game.getName();
         String killer = null;
         if (winners.getKiller(name) != null) {
             killer = winners.getKiller(name).toString();
         }
-        String playerWinners;
-        JsonArray ja = new JsonArray();
+        final String playerWinners;
+        final JsonArray ja = new JsonArray();
         if (winners.getPlayerWinners(name) != null) {
             winners.getPlayerWinners(name).stream().map(UUID::toString).forEach(ja::add);
         }
         playerWinners = new Gson().toJson(ja);
-        String winnerGroup = winners.getWinnerGroup(name);
+        final String winnerGroup = winners.getWinnerGroup(name);
 
         statement.setString(1, killer);
         statement.setString(2, playerWinners);
@@ -191,18 +191,18 @@ public class DatabaseManager {
         statement.setString(5, name);
     }
 
-    private void update(@NotNull String id, @NotNull GroupData data) {
-        HashSet<GameConfiguration> updated = new HashSet<>();
+    private void update(@NotNull final String id, @NotNull final GroupData data) {
+        final HashSet<GameConfiguration> updated = new HashSet<>();
 
-        String update = "UPDATE tb_groups SET kills=?, deaths=?, victories=?,"
+        final String update = "UPDATE tb_groups SET kills=?, deaths=?, victories=?,"
                 + " defeats=? WHERE identification=? AND game=?;";
-        try (PreparedStatement statement = getConnection().prepareStatement(update)) {
-            for (GameConfiguration game : getGames()) {
-                String gameName = game.getName();
-                int kills = data.getKills(gameName);
-                int deaths = data.getDeaths(gameName);
-                int victories = data.getVictories(gameName);
-                int defeats = data.getDefeats(gameName);
+        try (final PreparedStatement statement = getConnection().prepareStatement(update)) {
+            for (final GameConfiguration game : getGames()) {
+                final String gameName = game.getName();
+                final int kills = data.getKills(gameName);
+                final int deaths = data.getDeaths(gameName);
+                final int victories = data.getVictories(gameName);
+                final int defeats = data.getDefeats(gameName);
                 statement.setInt(1, kills);
                 statement.setInt(2, deaths);
                 statement.setInt(3, victories);
@@ -210,23 +210,23 @@ public class DatabaseManager {
                 statement.setString(5, id);
                 statement.setString(6, gameName);
 
-                int count = statement.executeUpdate();
+                final int count = statement.executeUpdate();
                 if (count != 0) {
                     updated.add(game);
                 }
             }
-        } catch (SQLException ex) {
+        } catch (final SQLException ex) {
             plugin.debug("Error while saving a Group: " + ex.getMessage(), false);
         }
-        String insert = "INSERT INTO tb_groups (identification, kills, deaths, victories, game, defeats) VALUES (?,?,?,?,?,?);";
-        try (PreparedStatement statement = getConnection().prepareStatement(insert)) {
-            for (GameConfiguration game : getGames()) {
+        final String insert = "INSERT INTO tb_groups (identification, kills, deaths, victories, game, defeats) VALUES (?,?,?,?,?,?);";
+        try (final PreparedStatement statement = getConnection().prepareStatement(insert)) {
+            for (final GameConfiguration game : getGames()) {
                 if (!updated.contains(game)) {
-                    String gameName = game.getName();
-                    int kills = data.getKills(gameName);
-                    int deaths = data.getDeaths(gameName);
-                    int victories = data.getVictories(gameName);
-                    int defeats = data.getDefeats(gameName);
+                    final String gameName = game.getName();
+                    final int kills = data.getKills(gameName);
+                    final int deaths = data.getDeaths(gameName);
+                    final int victories = data.getVictories(gameName);
+                    final int defeats = data.getDefeats(gameName);
                     statement.setString(1, id);
                     statement.setInt(2, kills);
                     statement.setInt(3, deaths);
@@ -237,27 +237,27 @@ public class DatabaseManager {
                     statement.execute();
                 }
             }
-        } catch (SQLException ex) {
+        } catch (final SQLException ex) {
             plugin.debug("Error while saving a Group: " + ex.getMessage(), false);
         }
     }
 
-    private void update(@NotNull Warrior warrior) {
-        ArrayList<GameConfiguration> updated = new ArrayList<>();
-        String uuid = warrior.toPlayer().getUniqueId().toString();
-        String name = warrior.toPlayer().getName();
+    private void update(@NotNull final Warrior warrior) {
+        final ArrayList<GameConfiguration> updated = new ArrayList<>();
+        final String uuid = warrior.toPlayer().getUniqueId().toString();
+        final String name = warrior.toPlayer().getName();
         if (name == null) {
             plugin.debug(String.format("Name not found for %s", uuid));
             return;
         }
 
-        String update = "UPDATE tb_warriors SET kills=?, deaths=?, victories=?, displayname=? WHERE uuid=? AND game=?;";
-        try (PreparedStatement statement = getConnection().prepareStatement(update)) {
-            for (GameConfiguration game : getGames()) {
-                String gameName = game.getName();
-                int kills = warrior.getKills(gameName);
-                int deaths = warrior.getDeaths(gameName);
-                int victories = warrior.getVictories(gameName);
+        final String update = "UPDATE tb_warriors SET kills=?, deaths=?, victories=?, displayname=? WHERE uuid=? AND game=?;";
+        try (final PreparedStatement statement = getConnection().prepareStatement(update)) {
+            for (final GameConfiguration game : getGames()) {
+                final String gameName = game.getName();
+                final int kills = warrior.getKills(gameName);
+                final int deaths = warrior.getDeaths(gameName);
+                final int victories = warrior.getVictories(gameName);
                 statement.setInt(1, kills);
                 statement.setInt(2, deaths);
                 statement.setInt(3, victories);
@@ -265,24 +265,24 @@ public class DatabaseManager {
                 statement.setString(5, uuid);
                 statement.setString(6, gameName);
 
-                int count = statement.executeUpdate();
+                final int count = statement.executeUpdate();
                 if (count != 0) {
                     updated.add(game);
                 }
             }
 
-        } catch (SQLException ex) {
+        } catch (final SQLException ex) {
             plugin.debug("Error while saving a Warrior: " + ex.getMessage(), false);
         }
 
-        String insert = "INSERT INTO tb_warriors (uuid, kills, deaths, victories, game, displayname) VALUES (?, ?, ?, ?, ?, ?)";
-        try (PreparedStatement statement = getConnection().prepareStatement(insert)) {
-            for (GameConfiguration game : getGames()) {
+        final String insert = "INSERT INTO tb_warriors (uuid, kills, deaths, victories, game, displayname) VALUES (?, ?, ?, ?, ?, ?)";
+        try (final PreparedStatement statement = getConnection().prepareStatement(insert)) {
+            for (final GameConfiguration game : getGames()) {
                 if (!updated.contains(game)) {
-                    String gameName = game.getName();
-                    int kills = warrior.getKills(gameName);
-                    int deaths = warrior.getDeaths(gameName);
-                    int victories = warrior.getVictories(gameName);
+                    final String gameName = game.getName();
+                    final int kills = warrior.getKills(gameName);
+                    final int deaths = warrior.getDeaths(gameName);
+                    final int victories = warrior.getVictories(gameName);
                     statement.setString(1, uuid);
                     statement.setInt(2, kills);
                     statement.setInt(3, deaths);
@@ -293,91 +293,90 @@ public class DatabaseManager {
                     statement.execute();
                 }
             }
-        } catch (SQLException ex) {
+        } catch (final SQLException ex) {
             plugin.debug("Error while saving a Warrior: " + ex.getMessage(), false);
         }
     }
 
     @NotNull
-    public GroupData getGroupData(@NotNull String id) {
+    public GroupData getGroupData(@NotNull final String id) {
         return groups.computeIfAbsent(id, k -> new GroupData());
     }
 
     @NotNull
-    public Warrior getWarrior(@NotNull OfflinePlayer player) {
+    public Warrior getWarrior(@NotNull final OfflinePlayer player) {
         return getWarrior(player.getUniqueId());
     }
 
     @NotNull
-    public Warrior getWarrior(@NotNull UUID uuid) {
-        OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(uuid);
-        Warrior warrior = warriors.computeIfAbsent(uuid, (id) -> new Warrior(offlinePlayer, plugin::getGroupManager));
-        if (offlinePlayer instanceof Player player) {
+    public Warrior getWarrior(@NotNull final UUID uuid) {
+        final OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(uuid);
+        final Warrior warrior = warriors.computeIfAbsent(uuid, (id) -> new Warrior(offlinePlayer, plugin::getGroupManager));
+        if (offlinePlayer instanceof final Player player) {
             warrior.setOnlinePlayer(player);
         }
         return warrior;
     }
 
     private void loopThroughGroups() {
-        String sql = "SELECT * FROM tb_groups;";
-        try (PreparedStatement statement = getConnection().prepareStatement(sql)) {
-            ResultSet query = statement.executeQuery();
+        final String sql = "SELECT * FROM tb_groups;";
+        try (final PreparedStatement statement = getConnection().prepareStatement(sql)) {
+            final ResultSet query = statement.executeQuery();
 
-            Map<String, Map<CountType, Map<String, Integer>>> dataMap = new HashMap<>();
+            final Map<String, Map<CountType, Map<String, Integer>>> dataMap = new HashMap<>();
 
             while (query.next()) {
-                String id = query.getString("identification");
-                String game = String.valueOf(query.getString("game"));
+                final String id = query.getString("identification");
+                final String game = String.valueOf(query.getString("game"));
                 dataMap.computeIfAbsent(id, k -> new EnumMap<>(CountType.class));
                 final Map<CountType, Map<String, Integer>> groupData = dataMap.get(id);
-                for (CountType t : CountType.values()) {
+                for (final CountType t : CountType.values()) {
                     groupData.computeIfAbsent(t, k -> new HashMap<>());
                     groupData.get(t).put(game, query.getInt(t.name()));
                 }
             }
 
-            for (Map.Entry<String, Map<CountType, Map<String, Integer>>> entry : dataMap.entrySet()) {
-                Map<CountType, Map<String, Integer>> data = entry.getValue();
+            for (final Map.Entry<String, Map<CountType, Map<String, Integer>>> entry : dataMap.entrySet()) {
+                final Map<CountType, Map<String, Integer>> data = entry.getValue();
 
-                GroupData groupData = new GroupData(data.get(CountType.VICTORIES), data.get(CountType.DEFEATS),
+                final GroupData groupData = new GroupData(data.get(CountType.VICTORIES), data.get(CountType.DEFEATS),
                         data.get(CountType.KILLS), data.get(CountType.DEATHS));
                 groups.put(entry.getKey(), groupData);
             }
-        } catch (SQLException ex) {
+        } catch (final SQLException ex) {
             plugin.debug("Error while getting a Group: " + ex.getMessage(), false);
         }
     }
 
     private void loopThroughWarriors() {
-        String sql = "SELECT * FROM tb_warriors;";
-        try (Statement statement = getConnection().createStatement()) {
-            ResultSet rs = statement.executeQuery(sql);
+        final String sql = "SELECT * FROM tb_warriors;";
+        try (final Statement statement = getConnection().createStatement()) {
+            final ResultSet rs = statement.executeQuery(sql);
 
-            Map<UUID, Map<CountType, Map<String, Integer>>> players = new HashMap<>();
+            final Map<UUID, Map<CountType, Map<String, Integer>>> players = new HashMap<>();
 
             while (rs.next()) {
-                UUID uuid = UUID.fromString(rs.getString("uuid"));
-                String game = String.valueOf(rs.getString("game"));
+                final UUID uuid = UUID.fromString(rs.getString("uuid"));
+                final String game = String.valueOf(rs.getString("game"));
                 players.computeIfAbsent(uuid, k -> new EnumMap<>(CountType.class));
                 final Map<CountType, Map<String, Integer>> playerData = players.get(uuid);
-                for (CountType t : CountType.values()) {
+                for (final CountType t : CountType.values()) {
                     if (t == CountType.DEFEATS) continue;
                     playerData.computeIfAbsent(t, k -> new HashMap<>());
                     playerData.get(t).put(game, rs.getInt(t.name()));
                 }
             }
 
-            for (Map.Entry<UUID, Map<CountType, Map<String, Integer>>> entry : players.entrySet()) {
-                OfflinePlayer player = Bukkit.getOfflinePlayer(entry.getKey());
-                Map<CountType, Map<String, Integer>> playerData = entry.getValue();
+            for (final Map.Entry<UUID, Map<CountType, Map<String, Integer>>> entry : players.entrySet()) {
+                final OfflinePlayer player = Bukkit.getOfflinePlayer(entry.getKey());
+                final Map<CountType, Map<String, Integer>> playerData = entry.getValue();
 
-                Warrior warrior = new Warrior(player, plugin::getGroupManager, playerData.get(CountType.KILLS),
+                final Warrior warrior = new Warrior(player, plugin::getGroupManager, playerData.get(CountType.KILLS),
                         playerData.get(CountType.DEATHS), playerData.get(CountType.VICTORIES));
                 warriors.put(warrior.getUniqueId(), warrior);
             }
 
-
-        } catch (SQLException ex) {
+        } catch (final SQLException ex) {
             plugin.debug("An error ocurred while trying to load the players data! " + ex.getMessage(),
                     false);
         }
@@ -385,40 +384,40 @@ public class DatabaseManager {
 
     @SuppressWarnings("unchecked")
     private void loopThroughWinners() {
-        String sql = "SELECT * FROM tb_winners;";
-        try (Statement statement = getConnection().createStatement()) {
-            ResultSet rs = statement.executeQuery(sql);
+        final String sql = "SELECT * FROM tb_winners;";
+        try (final Statement statement = getConnection().createStatement()) {
+            final ResultSet rs = statement.executeQuery(sql);
 
-            Map<Date, Map<WinnerType, Map<String, Object>>> winnersData = new HashMap<>();
+            final Map<Date, Map<WinnerType, Map<String, Object>>> winnersData = new HashMap<>();
 
             while (rs.next()) {
-                Date date = parseDate(rs.getString("date"));
+                final Date date = parseDate(rs.getString("date"));
                 if (date == null) continue;
 
-                String game = String.valueOf(rs.getString("game"));
+                final String game = String.valueOf(rs.getString("game"));
 
                 winnersData.computeIfAbsent(date, k -> new EnumMap<>(WinnerType.class));
-                Map<WinnerType, Map<String, Object>> data = winnersData.get(date);
-                for (WinnerType wt : WinnerType.values()) {
+                final Map<WinnerType, Map<String, Object>> data = winnersData.get(date);
+                for (final WinnerType wt : WinnerType.values()) {
                     data.computeIfAbsent(wt, k -> new HashMap<>());
                     final Map<String, Object> innerData = data.get(wt);
                     switch (wt) {
                         case KILLER:
                             UUID k = null;
 
-                            String killer = rs.getString("killer");
+                            final String killer = rs.getString("killer");
                             if (killer != null) {
                                 k = UUID.fromString(killer);
                             }
                             innerData.put(game, k);
                             break;
                         case WINNER_GROUP:
-                            String wg = rs.getString("winner_group");
+                            final String wg = rs.getString("winner_group");
                             innerData.put(game, wg);
                             break;
                         case PLAYER_WINNER:
-                            List<UUID> pw = new ArrayList<>();
-                            JsonArray ja = new Gson().fromJson(rs.getString("player_winners"), JsonArray.class);
+                            final List<UUID> pw = new ArrayList<>();
+                            final JsonArray ja = new Gson().fromJson(rs.getString("player_winners"), JsonArray.class);
                             if (ja != null) {
                                 ja.forEach(uuid -> pw.add(UUID.fromString(uuid.getAsString())));
                             }
@@ -428,17 +427,17 @@ public class DatabaseManager {
                 }
             }
 
-            for (Map.Entry<Date, Map<WinnerType, Map<String, Object>>> dateEntry : winnersData.entrySet()) {
-                Map<WinnerType, Map<String, Object>> data = dateEntry.getValue();
+            for (final Map.Entry<Date, Map<WinnerType, Map<String, Object>>> dateEntry : winnersData.entrySet()) {
+                final Map<WinnerType, Map<String, Object>> data = dateEntry.getValue();
 
-                Map<String, UUID> killer = new HashMap<>();
-                Map<String, List<UUID>> playerWinners = new HashMap<>();
-                Map<String, String> winnerGroup = new HashMap<>();
+                final Map<String, UUID> killer = new HashMap<>();
+                final Map<String, List<UUID>> playerWinners = new HashMap<>();
+                final Map<String, String> winnerGroup = new HashMap<>();
 
-                for (Map.Entry<WinnerType, Map<String, Object>> wtEntry : data.entrySet()) {
-                    for (Map.Entry<String, Object> gameEntry : wtEntry.getValue().entrySet()) {
-                        String game = gameEntry.getKey();
-                        Object innerObject = gameEntry.getValue();
+                for (final Map.Entry<WinnerType, Map<String, Object>> wtEntry : data.entrySet()) {
+                    for (final Map.Entry<String, Object> gameEntry : wtEntry.getValue().entrySet()) {
+                        final String game = gameEntry.getKey();
+                        final Object innerObject = gameEntry.getValue();
                         switch (wtEntry.getKey()) {
                             case KILLER:
                                 killer.put(game, (UUID) innerObject);
@@ -453,11 +452,11 @@ public class DatabaseManager {
                     }
                 }
 
-                Winners winner = new Winners(dateEntry.getKey(), killer, playerWinners, winnerGroup);
+                final Winners winner = new Winners(dateEntry.getKey(), killer, playerWinners, winnerGroup);
                 winners.add(winner);
             }
 
-        } catch (SQLException ex) {
+        } catch (final SQLException ex) {
             plugin.debug("An error occurred while trying to load the winner data! " + ex.getMessage(), false);
         }
 
@@ -477,21 +476,21 @@ public class DatabaseManager {
         final List<Winners> winnersList = new ArrayList<>(getWinners());
 
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            for (Map.Entry<String, GroupData> data : groupMap.entrySet()) {
+            for (final Map.Entry<String, GroupData> data : groupMap.entrySet()) {
                 if (data.getValue().isModified()) {
                     update(data.getKey(), data.getValue());
                     data.getValue().setModified(false);
                 }
             }
 
-            for (Warrior warrior : warriorsSet) {
+            for (final Warrior warrior : warriorsSet) {
                 if (warrior.isModified()) {
                     update(warrior);
                     warrior.setModified(false);
                 }
             }
 
-            for (Winners winner : winnersList) {
+            for (final Winners winner : winnersList) {
                 if (winner.isModified()) {
                     update(winner);
                     winner.setModified(false);
@@ -509,13 +508,13 @@ public class DatabaseManager {
 
     public Winners getTodaysWinners() {
         if (!winners.isEmpty()) {
-            Date today = Calendar.getInstance().getTime();
-            Date latest = getLatestWinners().getDate();
+            final Date today = Calendar.getInstance().getTime();
+            final Date latest = getLatestWinners().getDate();
             if (latest != null && Helper.equalDates(today, latest)) {
                 return getLatestWinners();
             }
 
-            for (Winners w : winners) {
+            for (final Winners w : winners) {
                 if (Helper.equalDates(w.getDate(), today)) {
                     return w;
                 }
@@ -529,14 +528,14 @@ public class DatabaseManager {
             date = Calendar.getInstance().getTime();
         }
 
-        Winners w = new Winners(date);
+        final Winners w = new Winners(date);
         winners.add(w);
         winners.sort(Comparator.naturalOrder());
         return w;
     }
 
-    public Winners getWinners(Date date) {
-        for (Winners w : winners) {
+    public Winners getWinners(final Date date) {
+        for (final Winners w : winners) {
             if (Helper.equalDates(date, w.getDate())) {
                 return w;
             }
@@ -560,10 +559,10 @@ public class DatabaseManager {
         return plugin.getConfigurationDao().getConfigurations(GameConfiguration.class);
     }
 
-    private @Nullable Date parseDate(String dateString) {
+    private @Nullable Date parseDate(final String dateString) {
         try {
             return new SimpleDateFormat("dd/MM/yyyy").parse(dateString);
-        } catch (ParseException ex) {
+        } catch (final ParseException ex) {
             plugin.debug("Invalid date! " + ex.getMessage(), false);
             return null;
         }

@@ -27,7 +27,7 @@ public class ListenerManager {
     private final TitansBattle plugin;
     private final Set<TBListener> registered = new HashSet<>();
 
-    public ListenerManager(TitansBattle plugin) {
+    public ListenerManager(final TitansBattle plugin) {
         this.plugin = plugin;
     }
 
@@ -61,26 +61,26 @@ public class ListenerManager {
         if (!plugin.getChallengeManager().getChallenges().isEmpty()) {
             return;
         }
-        for (TBListener listener : registered) {
+        for (final TBListener listener : registered) {
             HandlerList.unregisterAll(listener);
         }
         registered.clear();
         plugin.getLogger().info("Unregistering battle listeners...");
     }
 
-    private void registerListener(TBListener listener, boolean permanent) {
+    private void registerListener(final TBListener listener, final boolean permanent) {
         if (permanent || add(listener)) {
             plugin.getServer().getPluginManager().registerEvents(listener, plugin);
             plugin.debug(String.format("Registering %s", listener.getClass().getName()));
         }
     }
 
-    private void registerListener(TBListener listener) {
+    private void registerListener(final TBListener listener) {
         registerListener(listener, false);
     }
 
-    private boolean add(TBListener listener) {
-        for (TBListener rl : registered) {
+    private boolean add(final TBListener listener) {
+        for (final TBListener rl : registered) {
             if (rl.getClass().equals(listener.getClass())) {
                 return false;
             }

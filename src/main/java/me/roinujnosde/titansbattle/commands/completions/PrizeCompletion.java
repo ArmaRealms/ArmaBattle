@@ -10,9 +10,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-
 public class PrizeCompletion extends AbstractAsyncCompletion {
-    public PrizeCompletion(TitansBattle plugin) {
+    public PrizeCompletion(final TitansBattle plugin) {
         super(plugin);
     }
 
@@ -22,9 +21,9 @@ public class PrizeCompletion extends AbstractAsyncCompletion {
     }
 
     @Override
-    public Collection<String> getCompletions(BukkitCommandCompletionContext context) throws InvalidCommandArgument {
-        List<String> completion = new ArrayList<>();
-        for (Prize prize : Prize.values()) {
+    public Collection<String> getCompletions(final BukkitCommandCompletionContext context) throws InvalidCommandArgument {
+        final List<String> completion = new ArrayList<>();
+        for (final Prize prize : Prize.values()) {
             completion.add(prize.name());
         }
 

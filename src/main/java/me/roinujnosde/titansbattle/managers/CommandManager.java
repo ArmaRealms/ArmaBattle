@@ -58,7 +58,7 @@ import java.util.logging.Level;
 
 public class CommandManager extends PaperCommandManager {
 
-    public CommandManager(TitansBattle plugin) {
+    public CommandManager(final TitansBattle plugin) {
         super(plugin);
         enableUnstableAPI("help");
         setDefaultLocale();
@@ -70,10 +70,10 @@ public class CommandManager extends PaperCommandManager {
         registerCommands();
     }
 
-    public static void dispatchCommand(@NotNull CommandSender sender, @NotNull String commandLine) {
+    public static void dispatchCommand(@NotNull final CommandSender sender, @NotNull final String commandLine) {
         try {
             Bukkit.dispatchCommand(sender, commandLine);
-        } catch (Exception exception) {
+        } catch (final Exception exception) {
             TitansBattle.getInstance().getLogger().log(Level.SEVERE, String.format("Error executing command: %s", commandLine), exception);
         }
     }
@@ -84,11 +84,11 @@ public class CommandManager extends PaperCommandManager {
     }
 
     private void setDefaultLocale() {
-        BukkitLocales locales = getLocales();
-        Locale defaultLocale = Locale.of(getPlugin().getConfigManager().getLanguage().split("_")[0]);
+        final BukkitLocales locales = getLocales();
+        final Locale defaultLocale = Locale.of(getPlugin().getConfigManager().getLanguage().split("_")[0]);
         locales.setDefaultLocale(defaultLocale);
 
-        LanguageManager languageManager = getPlugin().getLanguageManager();
+        final LanguageManager languageManager = getPlugin().getLanguageManager();
         locales.loadLanguage(languageManager.getEnglishLanguageFile(), Locales.ENGLISH);
         locales.loadLanguage(languageManager.getConfig(), defaultLocale);
     }
@@ -130,12 +130,12 @@ public class CommandManager extends PaperCommandManager {
     }
 
     private void registerReplacements() {
-        ConfigurationSection commandsSection = getPlugin().getConfig().getConfigurationSection("commands");
+        final ConfigurationSection commandsSection = getPlugin().getConfig().getConfigurationSection("commands");
         if (commandsSection == null) {
             return;
         }
-        Set<String> commands = commandsSection.getKeys(false);
-        for (String command : commands) {
+        final Set<String> commands = commandsSection.getKeys(false);
+        for (final String command : commands) {
             getCommandReplacements().addReplacement(command, commandsSection.getString(command) + "|" + command);
         }
     }
@@ -163,27 +163,27 @@ public class CommandManager extends PaperCommandManager {
         registerCommand(new RankingCommand());
     }
 
-    private <T> void registerContext(AbstractIssuerOnlyContextResolver<T> resolver) {
+    private <T> void registerContext(final AbstractIssuerOnlyContextResolver<T> resolver) {
         getCommandContexts().registerIssuerOnlyContext(resolver.getType(), resolver);
     }
 
-    private <T> void registerContext(AbstractContextResolver<T> resolver) {
+    private <T> void registerContext(final AbstractContextResolver<T> resolver) {
         getCommandContexts().registerContext(resolver.getType(), resolver);
     }
 
-    private void registerCompletion(AbstractCompletion completion) {
+    private void registerCompletion(final AbstractCompletion completion) {
         getCommandCompletions().registerCompletion(completion.getId(), completion);
     }
 
-    private void registerCompletion(AbstractAsyncCompletion completion) {
+    private void registerCompletion(final AbstractAsyncCompletion completion) {
         getCommandCompletions().registerAsyncCompletion(completion.getId(), completion);
     }
 
-    private void registerCondition(AbstractCommandCondition condition) {
+    private void registerCondition(final AbstractCommandCondition condition) {
         getCommandConditions().addCondition(condition.getId(), condition);
     }
 
-    private <T> void registerCondition(AbstractParameterCondition<T> condition) {
+    private <T> void registerCondition(final AbstractParameterCondition<T> condition) {
         getCommandConditions().addCondition(condition.getType(), condition.getId(), condition);
     }
 

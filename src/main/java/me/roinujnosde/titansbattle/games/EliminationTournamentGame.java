@@ -46,19 +46,19 @@ public class EliminationTournamentGame extends Game {
     private @Nullable List<Warrior> secondPlaceWinners;
     private @Nullable List<Warrior> thirdPlaceWinners;
 
-    public EliminationTournamentGame(TitansBattle plugin, GameConfiguration config) {
+    public EliminationTournamentGame(final TitansBattle plugin, final GameConfiguration config) {
         super(plugin, config);
     }
 
     @Override
-    public boolean isInBattle(@NotNull Warrior warrior) {
+    public boolean isInBattle(@NotNull final Warrior warrior) {
         if (!battle) {
             return false;
         }
         return isCurrentDuelist(warrior);
     }
 
-    private boolean isCurrentDuelist(@NotNull Warrior warrior) {
+    private boolean isCurrentDuelist(@NotNull final Warrior warrior) {
         if (!getConfig().isGroupMode()) {
             return getFirstWarriorDuel().map(d -> d.isDuelist(warrior)).orElse(false);
         } else {
@@ -66,33 +66,33 @@ public class EliminationTournamentGame extends Game {
         }
     }
 
-    private List<Warrior> getDuelLosers(@NotNull Warrior defeated) {
-        Group group = getGroup(defeated);
+    private List<Warrior> getDuelLosers(@NotNull final Warrior defeated) {
+        final Group group = getGroup(defeated);
         if (group != null && getConfig().isGroupMode()) {
             return casualties.stream().filter(p -> isMember(group, p)).collect(Collectors.toCollection(ArrayList::new));
         }
-        List<Warrior> single = new ArrayList<>();
+        final List<Warrior> single = new ArrayList<>();
         single.add(defeated);
         return single;
     }
 
-    private List<Warrior> getDuelWinners(@NotNull Warrior warrior) {
+    private List<Warrior> getDuelWinners(@NotNull final Warrior warrior) {
         if (getConfig().isGroupMode()) {
-            Optional<Duel<Group>> firstGroupDuel = getFirstGroupDuel();
+            final Optional<Duel<Group>> firstGroupDuel = getFirstGroupDuel();
             if (firstGroupDuel.isPresent()) {
-                Group winnerGroup = Objects.requireNonNull(firstGroupDuel.get().getOther(getGroup(warrior)));
+                final Group winnerGroup = Objects.requireNonNull(firstGroupDuel.get().getOther(getGroup(warrior)));
                 return getParticipants().stream()
                         .filter(p -> isMember(winnerGroup, p))
                         .collect(Collectors.toCollection(ArrayList::new));
             }
         } else {
-            Optional<Duel<Warrior>> firstWarriorDuel = getFirstWarriorDuel();
+            final Optional<Duel<Warrior>> firstWarriorDuel = getFirstWarriorDuel();
             if (firstWarriorDuel.isPresent()) {
-                Warrior other = firstWarriorDuel.get().getOther(warrior);
+                final Warrior other = firstWarriorDuel.get().getOther(warrior);
                 if (other == null) {
                     return new ArrayList<>();
                 }
-                List<Warrior> single = new ArrayList<>();
+                final List<Warrior> single = new ArrayList<>();
                 single.add(other);
                 return single;
             }
@@ -101,14 +101,14 @@ public class EliminationTournamentGame extends Game {
     }
 
     @Override
-    public boolean isParticipant(@NotNull Warrior warrior) {
+    public boolean isParticipant(@NotNull final Warrior warrior) {
         return super.isParticipant(warrior) || waitingThirdPlace.contains(warrior);
     }
 
-    private void removeDuelist(@NotNull Warrior warrior) {
+    private void removeDuelist(@NotNull final Warrior warrior) {
         if (getConfig().isGroupMode()) {
             if (lost(warrior)) {
-                Group group = getGroup(warrior);
+                final Group group = getGroup(warrior);
                 groupDuelists.forEach(d -> d.remove(group));
                 groupDuelists.removeIf(d -> d.getDuelists().isEmpty());
             }
@@ -119,8 +119,8 @@ public class EliminationTournamentGame extends Game {
     }
 
     @Override
-    protected void processRemainingPlayers(@NotNull Warrior warrior) {
-        Player player = warrior.toOnlinePlayer();
+    protected void processRemainingPlayers(@NotNull final Warrior warrior) {
+        final Player player = warrior.toOnlinePlayer();
         if (player != null) {
             Bukkit.getScheduler().runTaskLater(plugin, () -> player.spigot().respawn(), 1L);
         }
@@ -128,7 +128,7 @@ public class EliminationTournamentGame extends Game {
         if (lost(warrior)) {
             if (isCurrentDuelist(warrior)) {
                 battle = false;
-                List<Warrior> duelWinners = getDuelWinners(warrior);
+                final List<Warrior> duelWinners = getDuelWinners(warrior);
                 healAndClearEffects(duelWinners);
                 runCommandsAfterBattle(duelWinners);
 
@@ -146,7 +146,7 @@ public class EliminationTournamentGame extends Game {
                     secondPlaceWinners = getDuelLosers(warrior);
                 } else {
                     //not third place or final battle, winners will fight again
-                    for (Warrior dw : duelWinners) {
+                    for (final Warrior dw : duelWinners) {
                         setKit(dw);
                     }
                     teleport(duelWinners, getConfig().getLobby());
@@ -159,7 +159,7 @@ public class EliminationTournamentGame extends Game {
             //died during semi-finals, goes for third place
             if (getDuelsCount() == 2) {
                 if (config.isGroupMode()) {
-                    Group group = getGroup(warrior);
+                    final Group group = getGroup(warrior);
                     //noinspection DataFlowIssue
                     casualties.stream().filter(p -> isMember(group, p)).forEach(waitingThirdPlace::add);
                 } else {
@@ -172,7 +172,7 @@ public class EliminationTournamentGame extends Game {
         removeDuelist(warrior);
     }
 
-    private boolean lost(@NotNull Warrior warrior) {
+    private boolean lost(@NotNull final Warrior warrior) {
         if (getConfig().isGroupMode()) {
             return !getGroupParticipants().containsKey(getGroup(warrior));
         }
@@ -180,11 +180,11 @@ public class EliminationTournamentGame extends Game {
     }
 
     @Override
-    public void onRespawn(PlayerRespawnEvent event, @NotNull Warrior warrior) {
+    public void onRespawn(final PlayerRespawnEvent event, @NotNull final Warrior warrior) {
         plugin.debug("Respawning in EliminationTournamentGame for " + warrior.getName());
         if (waitingThirdPlace.contains(warrior)) {
             plugin.debug("Respawning in EliminationTournamentGame for " + warrior.getName() + " in third place battle");
-            Player player = warrior.toOnlinePlayer();
+            final Player player = warrior.toOnlinePlayer();
             if (player == null) return;
             setKit(warrior);
             event.setRespawnLocation(getConfig().getLobby());
@@ -195,7 +195,7 @@ public class EliminationTournamentGame extends Game {
     }
 
     @Override
-    public boolean shouldKeepInventoryOnDeath(@NotNull Warrior warrior) {
+    public boolean shouldKeepInventoryOnDeath(@NotNull final Warrior warrior) {
         if (!isCurrentDuelist(warrior)) {
             return false;
         }
@@ -203,7 +203,7 @@ public class EliminationTournamentGame extends Game {
     }
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-    private boolean isPowerOfTwo(int x) {
+    private boolean isPowerOfTwo(final int x) {
         return x > 0 && (x & (x - 1)) == 0;
     }
 
@@ -226,7 +226,7 @@ public class EliminationTournamentGame extends Game {
     }
 
     private void kickExcessivePlayers() {
-        Set<Warrior> toKick = new HashSet<>();
+        final Set<Warrior> toKick = new HashSet<>();
         for (int i = participants.size(); i > 2; i--) {
             if (!isPowerOfTwo(i)) {
                 toKick.add(participants.get(i - 1));
@@ -238,8 +238,8 @@ public class EliminationTournamentGame extends Game {
     }
 
     private void kickExcessiveGroups() {
-        Set<Group> toKick = new HashSet<>();
-        List<Group> groups = new ArrayList<>(getGroupParticipants().keySet());
+        final Set<Group> toKick = new HashSet<>();
+        final List<Group> groups = new ArrayList<>(getGroupParticipants().keySet());
         for (int i = groups.size(); i > 2; i--) {
             if (!isPowerOfTwo(i)) {
                 toKick.add(groups.get(i - 1));
@@ -247,14 +247,14 @@ public class EliminationTournamentGame extends Game {
             }
             break;
         }
-        for (Group group : toKick) {
+        for (final Group group : toKick) {
             kickExcessive(participants.stream().filter(p -> isMember(group, p)).collect(Collectors.toSet()));
         }
     }
 
-    private void kickExcessive(@NotNull Set<Warrior> warriors) {
+    private void kickExcessive(@NotNull final Set<Warrior> warriors) {
         participants.removeIf(warriors::contains);
-        Set<Player> players = warriors.stream()
+        final Set<Player> players = warriors.stream()
                 .map(Warrior::toOnlinePlayer)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
@@ -306,7 +306,7 @@ public class EliminationTournamentGame extends Game {
         }
     }
 
-    private <T> void generateDuelist(List<T> list, List<Duel<T>> duelList) {
+    private <T> void generateDuelist(final List<T> list, final List<Duel<T>> duelList) {
         Collections.shuffle(list);
         duelList.clear();
         for (int i = 0; i < list.size(); i = i + 2) {
@@ -344,7 +344,7 @@ public class EliminationTournamentGame extends Game {
     }
 
     private boolean isNextDuelReady() {
-        List<? extends Duel<?>> duels = getConfig().isGroupMode() ? groupDuelists : playerDuelists;
+        final List<? extends Duel<?>> duels = getConfig().isGroupMode() ? groupDuelists : playerDuelists;
         return duels.stream().anyMatch(Duel::isValid);
     }
 
@@ -357,7 +357,7 @@ public class EliminationTournamentGame extends Game {
     }
 
     private int getPlayerOrGroupCount() {
-        int participants;
+        final int participants;
         if (getConfig().isGroupMode()) {
             participants = getGroupParticipants().size();
         } else {
@@ -372,8 +372,8 @@ public class EliminationTournamentGame extends Game {
     }
 
     private void informOtherDuelists() {
-        String message = getLang("wait_for_your_turn");
-        Consumer<Warrior> sendMessage = warrior -> {
+        final String message = getLang("wait_for_your_turn");
+        final Consumer<Warrior> sendMessage = warrior -> {
             if (!isCurrentDuelist(warrior)) {
                 warrior.sendMessage(message);
             }
@@ -386,10 +386,10 @@ public class EliminationTournamentGame extends Game {
         teleportToArena(new ArrayList<>(getCurrentFighters()));
     }
 
-    private @Nullable Group getAnyGroup(@Nullable List<Warrior> warriors) {
+    private @Nullable Group getAnyGroup(@Nullable final List<Warrior> warriors) {
         if (warriors != null && getConfig().isGroupMode()) {
-            for (Warrior warrior : warriors) {
-                Group group = getGroup(warrior);
+            for (final Warrior warrior : warriors) {
+                final Group group = getGroup(warrior);
                 if (group != null) {
                     return group;
                 }
@@ -399,10 +399,10 @@ public class EliminationTournamentGame extends Game {
     }
 
     @NotNull
-    private String getWinnerName(@Nullable List<Warrior> warriors) {
+    private String getWinnerName(@Nullable final List<Warrior> warriors) {
         String name = getLang("no_winner_tournament");
         if (getConfig().isGroupMode()) {
-            Group group = getAnyGroup(warriors);
+            final Group group = getAnyGroup(warriors);
             if (group != null) {
                 name = group.getName();
             }
@@ -414,9 +414,9 @@ public class EliminationTournamentGame extends Game {
 
     @Override
     protected void processWinners() {
-        Winners todayWinners = databaseManager.getTodaysWinners();
+        final Winners todayWinners = databaseManager.getTodaysWinners();
 
-        Group firstGroup = getAnyGroup(firstPlaceWinners);
+        final Group firstGroup = getAnyGroup(firstPlaceWinners);
         //we must clear the inventory before adding the casualties, otherwise the already dead would lose their items again
         if (getConfig().isUseKits()) {
             firstPlaceWinners.forEach(Kit::clearInventory);
@@ -426,11 +426,11 @@ public class EliminationTournamentGame extends Game {
             casualties.stream().filter(p -> isMember(firstGroup, p)).forEach(firstPlaceWinners::add);
             firstPlaceWinners = firstPlaceWinners.stream().distinct().collect(Collectors.toCollection(ArrayList::new));
             todayWinners.setWinnerGroup(getConfig().getName(), firstGroup.getName());
-            GroupWinEvent event = new GroupWinEvent(firstGroup);
+            final GroupWinEvent event = new GroupWinEvent(firstGroup);
             Bukkit.getPluginManager().callEvent(event);
         }
 
-        PlayerWinEvent event = new PlayerWinEvent(this, firstPlaceWinners);
+        final PlayerWinEvent event = new PlayerWinEvent(this, firstPlaceWinners);
         Bukkit.getPluginManager().callEvent(event);
 
         todayWinners.setWinners(getConfig().getName(), Helper.warriorListToUuidList(firstPlaceWinners));
@@ -440,7 +440,7 @@ public class EliminationTournamentGame extends Game {
         SoundUtils.playSound(SoundUtils.Type.VICTORY, plugin.getConfig(), firstPlaceWinners, secondPlaceWinners,
                 thirdPlaceWinners);
 
-        Warrior killer = findKiller();
+        final Warrior killer = findKiller();
         if (killer != null) {
             givePrizes(KILLER, null, Collections.singletonList(killer));
             gameManager.setKiller(getConfig(), killer, null);
@@ -459,25 +459,25 @@ public class EliminationTournamentGame extends Game {
     }
 
     @Override
-    public void setWinner(@NotNull Warrior warrior) throws CommandNotSupportedException {
+    public void setWinner(@NotNull final Warrior warrior) throws CommandNotSupportedException {
         throw new CommandNotSupportedException();
     }
 
     @Override
     protected @NotNull String getGameInfoMessage() {
         String gameInfo = getLang("game_info_duels");
-        String nextDuels = getLang("game_info_next_duels");
+        final String nextDuels = getLang("game_info_next_duels");
         String[] firstDuel = new String[2];
-        StringBuilder builder = new StringBuilder();
+        final StringBuilder builder = new StringBuilder();
 
         if (getConfig().isGroupMode()) {
-            Optional<Duel<Group>> firstGroupDuel = getFirstGroupDuel();
+            final Optional<Duel<Group>> firstGroupDuel = getFirstGroupDuel();
             if (firstGroupDuel.isPresent()) {
                 firstDuel = duelToNameArray(firstGroupDuel.get(), Group::getName);
             }
             populateDuelsMessage(builder, groupDuelists, Group::getName);
         } else {
-            Optional<Duel<Warrior>> firstWarriorDuel = getFirstWarriorDuel();
+            final Optional<Duel<Warrior>> firstWarriorDuel = getFirstWarriorDuel();
             if (firstWarriorDuel.isPresent()) {
                 firstDuel = duelToNameArray(firstWarriorDuel.get(), Warrior::getName);
             }
@@ -491,40 +491,40 @@ public class EliminationTournamentGame extends Game {
         return MessageFormat.format(gameInfo, firstDuel[0], firstDuel[1], builder.toString());
     }
 
-    private <D> void populateDuelsMessage(StringBuilder builder, @NotNull List<Duel<D>> list, Function<D, String> getName) {
-        String nextDuelsLineMessage = getLang("game_info_duels_line");
+    private <D> void populateDuelsMessage(final StringBuilder builder, @NotNull final List<Duel<D>> list, final Function<D, String> getName) {
+        final String nextDuelsLineMessage = getLang("game_info_duels_line");
         if (list.size() > 1) {
             for (int i = 1; i < list.size(); i++) {
-                Duel<D> duel = list.get(i);
+                final Duel<D> duel = list.get(i);
                 if (!duel.isValid()) {
                     plugin.debug("Skipping duel " + i + " because it is not valid");
                     continue;
                 }
-                String[] names = duelToNameArray(duel, getName);
+                final String[] names = duelToNameArray(duel, getName);
                 builder.append(MessageFormat.format(nextDuelsLineMessage, i, names[0], names[1]));
             }
         }
     }
 
     private boolean isMultipleDuels() {
-        List<? extends Duel<?>> duels = getConfig().isGroupMode() ? groupDuelists : playerDuelists;
+        final List<? extends Duel<?>> duels = getConfig().isGroupMode() ? groupDuelists : playerDuelists;
         return duels.stream().filter(Duel::isValid).count() > 1;
     }
 
-    private <D> String[] duelToNameArray(Duel<D> duel, Function<D, String> getName) {
+    private <D> String[] duelToNameArray(final Duel<D> duel, final Function<D, String> getName) {
         return duel.getDuelists().stream()
                 .filter(Objects::nonNull)
                 .map(getName)
                 .toArray(String[]::new);
     }
 
-    private boolean isMember(Group group, Warrior warrior) {
+    private boolean isMember(final Group group, final Warrior warrior) {
         return group.equals(getGroup(warrior));
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (!(o instanceof EliminationTournamentGame that)) return false;
+    public boolean equals(final Object o) {
+        if (!(o instanceof final EliminationTournamentGame that)) return false;
         if (!super.equals(o)) return false;
 
         return thirdPlaceBattle == that.thirdPlaceBattle && playerDuelists.equals(that.playerDuelists) && groupDuelists.equals(that.groupDuelists) && waitingThirdPlace.equals(that.waitingThirdPlace) && firstPlaceWinners.equals(that.firstPlaceWinners) && Objects.equals(secondPlaceWinners, that.secondPlaceWinners) && Objects.equals(thirdPlaceWinners, that.thirdPlaceWinners);
