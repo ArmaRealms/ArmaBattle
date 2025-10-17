@@ -131,6 +131,20 @@ scheduler:
       hour: 18
       minute: 30
 
+#NPC Proxy System Configuration
+battle:
+  npcProxy:
+    enabled: true
+    provider: auto  # auto | fancynpcs | citizens | vanilla
+    # Disconnection limits and timeout settings
+    maxDisconnections: 3  # Maximum times a player can disconnect during the same event
+    maxOfflineTimeMs: 300000  # Maximum time a player can stay offline (5 minutes)
+    vanilla:
+      mobType: ZOMBIE  # Entity type for vanilla proxy mobs
+    # Reason for not spawning a proxy NPC
+    bypass-reasons:
+      - "banned"
+
 #Data used by the plugin, don't edit it.
 data:
   respawn: [ ]

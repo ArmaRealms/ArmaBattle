@@ -307,7 +307,7 @@ public abstract class BaseGameConfiguration implements ConfigurationSerializable
         return minimumPlaytime;
     }
 
-    public List<Integer> getBlockedProtocols() {
+    public @Nullable List<Integer> getBlockedProtocols() {
         return blockedProtocols;
     }
 
