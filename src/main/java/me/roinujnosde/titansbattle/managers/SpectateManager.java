@@ -7,6 +7,7 @@ import me.roinujnosde.titansbattle.challenges.ArenaConfiguration;
 import me.roinujnosde.titansbattle.games.Game;
 import me.roinujnosde.titansbattle.types.Kit;
 import me.roinujnosde.titansbattle.utils.SoundUtils;
+import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerTeleportEvent;
@@ -14,6 +15,7 @@ import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Unmodifiable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -109,8 +111,19 @@ public class SpectateManager {
         }
     }
 
-    public boolean isSpectating(final Player player) {
+    public boolean isSpectating(final @NotNull Player player) {
         return spectators.contains(player.getUniqueId());
+    }
+
+    public @NotNull List<Player> getSpectators() {
+        final List<Player> spectators = new ArrayList<>();
+        for (final UUID uuid : this.spectators) {
+            final Player player = Bukkit.getPlayer(uuid);
+            if (player != null) {
+                spectators.add(player);
+            }
+        }
+        return spectators;
     }
 
     public void remove(final Player player) {

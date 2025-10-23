@@ -1,6 +1,7 @@
 package me.roinujnosde.titansbattle.listeners;
 
 import com.destroystokyo.paper.event.player.PlayerPickupExperienceEvent;
+import me.roinujnosde.titansbattle.BaseGame;
 import me.roinujnosde.titansbattle.TitansBattle;
 import me.roinujnosde.titansbattle.events.GameFinishEvent;
 import me.roinujnosde.titansbattle.events.GroupWinEvent;
@@ -8,15 +9,18 @@ import me.roinujnosde.titansbattle.events.PlayerWinEvent;
 import me.roinujnosde.titansbattle.managers.ConfigManager;
 import me.roinujnosde.titansbattle.managers.SpectateManager;
 import me.roinujnosde.titansbattle.utils.Helper;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityCombustEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityPotionEffectEvent;
+import org.bukkit.event.entity.EntityShootBowEvent;
 import org.bukkit.event.entity.FoodLevelChangeEvent;
 import org.bukkit.event.entity.PotionSplashEvent;
 import org.bukkit.event.player.PlayerAttemptPickupItemEvent;
@@ -25,10 +29,11 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerPickupArrowEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
+import org.jetbrains.annotations.NotNull;
 
 import java.text.MessageFormat;
 
-public class SpectateListener extends TBListener {
+public class SpectateListener extends TBListener implements Listener {
 
     private final ConfigManager configManager;
     private final SpectateManager spectateManager;
@@ -55,7 +60,7 @@ public class SpectateListener extends TBListener {
     }
 
     @EventHandler
-    public void onPlayerQuit(final PlayerQuitEvent event) {
+    public void onPlayerQuit(final @NotNull PlayerQuitEvent event) {
         final Player player = event.getPlayer();
         if (spectateManager.isSpectating(player)) {
             plugin.debug(String.format("Player %s quit while spectating. Removing from spectator list.", player.getName()));
@@ -64,7 +69,7 @@ public class SpectateListener extends TBListener {
     }
 
     @EventHandler(ignoreCancelled = true)
-    public void onPlayerCommandPreprocess(final PlayerCommandPreprocessEvent event) {
+    public void onPlayerCommandPreprocess(final @NotNull PlayerCommandPreprocessEvent event) {
         final Player player = event.getPlayer();
         if (!spectateManager.isSpectating(player)) return;
 
@@ -79,7 +84,7 @@ public class SpectateListener extends TBListener {
     }
 
     @EventHandler(ignoreCancelled = true)
-    public void onPlayerTeleport(final PlayerTeleportEvent event) {
+    public void onPlayerTeleport(final @NotNull PlayerTeleportEvent event) {
         if (event.getCause() != PlayerTeleportEvent.TeleportCause.COMMAND) {
             return;
         }
@@ -101,7 +106,7 @@ public class SpectateListener extends TBListener {
     }
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
-    public void onEntityDamageByEntity(final EntityDamageByEntityEvent event) {
+    public void onEntityDamageByEntity(final @NotNull EntityDamageByEntityEvent event) {
         final Player damager = Helper.getPlayerAttackerOrKiller(event.getDamager());
         if (damager != null) {
             cancelSpectatorAction(event, damager);
@@ -109,7 +114,7 @@ public class SpectateListener extends TBListener {
     }
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
-    public void onEntityDamage(final EntityDamageEvent event) {
+    public void onEntityDamage(final @NotNull EntityDamageEvent event) {
         if (event.getEntity() instanceof final Player player && spectateManager.isSpectating(player)) {
             player.setFireTicks(0);
             event.setCancelled(true);
@@ -117,14 +122,14 @@ public class SpectateListener extends TBListener {
     }
 
     @EventHandler
-    public void onFoodLevelChange(final FoodLevelChangeEvent event) {
+    public void onFoodLevelChange(final @NotNull FoodLevelChangeEvent event) {
         if (event.getEntity() instanceof final Player player) {
             cancelSpectatorAction(event, player);
         }
     }
 
     @EventHandler(ignoreCancelled = true)
-    public void onEntityCombust(final EntityCombustEvent event) {
+    public void onEntityCombust(final @NotNull EntityCombustEvent event) {
         if (event.getEntity() instanceof final Player player) {
             cancelSpectatorAction(event, player);
         }
@@ -141,7 +146,7 @@ public class SpectateListener extends TBListener {
     }
 
     @EventHandler(ignoreCancelled = true)
-    public void onPotionSplash(final PotionSplashEvent event) {
+    public void onPotionSplash(final @NotNull PotionSplashEvent event) {
         for (final LivingEntity ent : event.getAffectedEntities()) {
             if (ent instanceof final Player player && spectateManager.isSpectating(player)) {
                 // Define a intensidade só para este jogador como zero
@@ -151,11 +156,24 @@ public class SpectateListener extends TBListener {
     }
 
     @EventHandler(ignoreCancelled = true)
-    public void onEntityPotionEffect(final EntityPotionEffectEvent event) {
+    public void onEntityPotionEffect(final @NotNull EntityPotionEffectEvent event) {
         if (event.getEntity() instanceof final Player player
                 && event.getCause() != EntityPotionEffectEvent.Cause.PLUGIN
                 && event.getAction() == EntityPotionEffectEvent.Action.ADDED) {
             cancelSpectatorAction(event, player);
+        }
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onEntityShootBow(final @NotNull EntityShootBowEvent event) {
+        if (!(event.getEntity() instanceof final Player player)) return;
+
+        final BaseGame baseGame = plugin.getBaseGameFrom(player);
+        if (baseGame == null) return;
+
+        final Entity projectile = event.getProjectile();
+        for (final Player spectator : spectateManager.getSpectators()) {
+            spectator.hideEntity(plugin, projectile);
         }
     }
 
