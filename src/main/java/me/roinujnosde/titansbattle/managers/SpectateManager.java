@@ -115,7 +115,7 @@ public class SpectateManager {
         return spectators.contains(player.getUniqueId());
     }
 
-    public @Unmodifiable @NotNull List<Player> getSpectators() {
+    public @NotNull List<Player> getSpectators() {
         final List<Player> spectators = new ArrayList<>();
         for (final UUID uuid : this.spectators) {
             final Player player = Bukkit.getPlayer(uuid);
