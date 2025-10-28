@@ -62,8 +62,8 @@ public class TaskManager {
         schedulerTimer = new Timer("TitansBattle Scheduler", true);
 
         boolean loggedMonthly = false;
-        for (Event event : plugin.getConfigManager().getEvents()) {
-            TimerTask task = createTimerTask(event);
+        for (final Event event : plugin.getConfigManager().getEvents()) {
+            final TimerTask task = createTimerTask(event);
             if (event.frequency() == Event.Frequency.MONTHLY) {
                 schedulerTimer.schedule(task, event.getDelay());
                 if (!loggedMonthly) {
@@ -85,20 +85,16 @@ public class TaskManager {
     }
 
     @Contract(value = "_ -> new", pure = true)
-    private @NotNull TimerTask createTimerTask(Event event) {
+    private @NotNull TimerTask createTimerTask(final Event event) {
         return new TimerTask() {
             @Override
             public void run() {
-                Optional<GameConfiguration> config = plugin.getConfigurationDao()
+                final Optional<GameConfiguration> config = plugin.getConfigurationDao()
                         .getConfiguration(event.gameName(), GameConfiguration.class);
                 if (config.isEmpty()) {
                     plugin.getLogger().warning(String.format("Game %s not found!", event.gameName()));
                     return;
                 }
-//                if (plugin.getGameManager().getCurrentGame().isPresent()) {
-//                    plugin.getLogger().info("There is a game running. Skipping event.");
-//                    return;
-//                }
                 Bukkit.getScheduler().runTask(plugin, () -> {
                     plugin.getGameManager().getCurrentGame().ifPresent(game -> game.cancel(Bukkit.getConsoleSender()));
                     plugin.getGameManager().start(config.get());
@@ -112,12 +108,12 @@ public class TaskManager {
         @Override
         public void run() {
             if (!Prizes.getPlayersWithItemsToReceive().isEmpty()) {
-                Iterator<Entry<Player, Collection<ItemStack>>> iterator = Prizes.getPlayersWithItemsToReceive()
+                final Iterator<Entry<Player, Collection<ItemStack>>> iterator = Prizes.getPlayersWithItemsToReceive()
                         .entrySet().iterator();
                 while (iterator.hasNext()) {
-                    Entry<Player, Collection<ItemStack>> entry = iterator.next();
-                    Player player = entry.getKey();
-                    Collection<ItemStack> remainingItems = player.getInventory().addItem(entry.getValue()
+                    final Entry<Player, Collection<ItemStack>> entry = iterator.next();
+                    final Player player = entry.getKey();
+                    final Collection<ItemStack> remainingItems = player.getInventory().addItem(entry.getValue()
                             .toArray(new ItemStack[0])).values();
                     if (remainingItems.isEmpty()) {
                         iterator.remove();
