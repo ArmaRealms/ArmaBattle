@@ -60,44 +60,64 @@ public class EliminationTournamentGame extends Game {
 
     private boolean isCurrentDuelist(@NotNull final Warrior warrior) {
         if (!getConfig().isGroupMode()) {
-            return getFirstWarriorDuel().map(d -> d.isDuelist(warrior)).orElse(false);
+            return getFirstWarriorDuel()
+                    .map(d -> d.isDuelist(warrior))
+                    .orElse(false);
         } else {
-            return getFirstGroupDuel().map(d -> d.isDuelist(getGroup(warrior))).orElse(false);
+            final Group group = getGroup(warrior);
+            if (group == null) {
+                return false;
+            }
+            return getFirstGroupDuel()
+                    .map(d -> d.isDuelist(group))
+                    .orElse(false);
         }
     }
 
     private List<Warrior> getDuelLosers(@NotNull final Warrior defeated) {
         final Group group = getGroup(defeated);
         if (group != null && getConfig().isGroupMode()) {
-            return casualties.stream().filter(p -> isMember(group, p)).collect(Collectors.toCollection(ArrayList::new));
+            return casualties.stream()
+                    .filter(p -> isMember(group, p))
+                    .collect(Collectors.toCollection(ArrayList::new));
         }
         final List<Warrior> single = new ArrayList<>();
         single.add(defeated);
         return single;
     }
 
-    private List<Warrior> getDuelWinners(@NotNull final Warrior warrior) {
+    private @NotNull List<Warrior> getDuelWinners(@NotNull final Warrior warrior) {
+        final List<Warrior> warriors = new ArrayList<>();
         if (getConfig().isGroupMode()) {
             final Optional<Duel<Group>> firstGroupDuel = getFirstGroupDuel();
             if (firstGroupDuel.isPresent()) {
-                final Group winnerGroup = Objects.requireNonNull(firstGroupDuel.get().getOther(getGroup(warrior)));
-                return getParticipants().stream()
+                final Duel<Group> groupDuel = firstGroupDuel.get();
+                final Group group = getGroup(warrior);
+                if (group == null) {
+                    return warriors;
+                }
+                final Group winnerGroup = groupDuel.getOther(group);
+                if (winnerGroup == null) {
+                    return warriors;
+                }
+                getParticipants().stream()
                         .filter(p -> isMember(winnerGroup, p))
-                        .collect(Collectors.toCollection(ArrayList::new));
+                        .forEach(warriors::add);
+                return warriors;
             }
         } else {
             final Optional<Duel<Warrior>> firstWarriorDuel = getFirstWarriorDuel();
             if (firstWarriorDuel.isPresent()) {
-                final Warrior other = firstWarriorDuel.get().getOther(warrior);
+                final Duel<Warrior> warriorDuel = firstWarriorDuel.get();
+                final Warrior other = warriorDuel.getOther(warrior);
                 if (other == null) {
-                    return new ArrayList<>();
+                    return warriors;
                 }
-                final List<Warrior> single = new ArrayList<>();
-                single.add(other);
-                return single;
+                warriors.add(other);
+                return warriors;
             }
         }
-        return new ArrayList<>();
+        return warriors;
     }
 
     @Override
