@@ -70,6 +70,11 @@ date-format: "dd/MM/yyyy"
 page-limit:
     help: 7
     ranking: 10
+
+#Minimum playtime required to join games (in seconds). Set to 0 to disable.
+#This is a global setting. You can override it in individual game files.
+#Examples: 1 hour = 3600, 1 day = 86400, 7 days = 604800
+minimum_playtime: 0
     
 #List here commands that the plugin will not block in battle phase
 allowed_commands: ["/tb exit", "/tb winners"]

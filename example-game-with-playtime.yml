@@ -1,0 +1,46 @@
+# EXEMPLO DE CONFIGURAÇÃO DE JOGO COM PLAYTIME MÍNIMO
+
+# Nome do jogo
+name: "Arena PvP"
+
+# Configurações de participantes
+minimum:
+  players: 2
+  # Tempo mínimo de jogo em SEGUNDOS (OPCIONAL)
+  # Se não definido ou = 0, usa o valor global do config.yml
+  # Se definido aqui, sobrescreve o valor global apenas para este jogo
+  # Exemplos:
+  # - 1 dia = 86400 segundos
+  # - 12 horas = 43200 segundos
+  # - 6 horas = 21600 segundos
+  # - 1 hora = 3600 segundos
+  # Deixe como 0 ou remova a linha para usar a configuração global
+  playtime: 0  # Usa a configuração global do config.yml
+
+maximum:
+  players: 20
+
+# Modo de grupo
+group-mode: false
+
+# Outras configurações...
+pvp: true
+damage-type:
+  melee: true
+  ranged: true
+
+# Tempo de preparação e expiração
+time:
+  preparation: 30
+  expiration: 3600
+
+# Itens
+clear-items-on-death: false
+keep-exp: false
+use-kits: false
+
+# Anúncios
+announcement:
+  starting:
+    times: 5
+    interval: 20

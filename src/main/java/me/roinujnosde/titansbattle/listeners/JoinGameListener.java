@@ -176,6 +176,30 @@ public class JoinGameListener extends TBListener {
         }
     }
 
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGHEST)
+    public void playtimeCheck(PlayerJoinGameEvent event) {
+        Player player = event.getPlayer();
+        BaseGameConfiguration config = event.getGame().getConfig();
+        
+        // Use game-specific playtime if set (> 0), otherwise use global config
+        int minimumPlaytime = config.getMinimumPlaytime();
+        if (minimumPlaytime <= 0) {
+            minimumPlaytime = plugin.getConfig().getInt("minimum_playtime", 0);
+        }
+        
+        if (minimumPlaytime <= 0) {
+            return;
+        }
+
+        if (!plugin.getEssentialsHook().hasMinimumPlaytime(player, minimumPlaytime)) {
+            long currentPlaytime = plugin.getEssentialsHook().getPlaytime(player);
+            String currentFormatted = plugin.getEssentialsHook().formatPlaytime(currentPlaytime);
+            String requiredFormatted = plugin.getEssentialsHook().formatPlaytime(minimumPlaytime);
+            
+            cancelWithMessage(event, "insufficient-playtime", currentFormatted, requiredFormatted);
+        }
+    }
+
     private void cancelWithMessage(PlayerJoinGameEvent event, String key, Object... args) {
         Player player = event.getPlayer();
         String message = event.getGame().getLang(key, args);
