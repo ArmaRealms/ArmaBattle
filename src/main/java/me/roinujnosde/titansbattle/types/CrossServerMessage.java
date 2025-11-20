@@ -95,12 +95,12 @@ public class CrossServerMessage {
      * Message types for cross-server communication
      */
     public static class MessageType {
-        public static final String GAME_STARTING = "game_starting";
-        public static final String GAME_STARTED = "game_started";
-        public static final String GAME_ENDED = "game_ended";
-        public static final String PLAYER_JOINED = "player_joined";
-        public static final String PLAYER_DIED = "player_died";
-        public static final String NEW_KILLER = "new_killer";
-        public static final String ANNOUNCEMENT = "announcement";
+        public static final String GAME_STARTING = "GAME_STARTING";
+        public static final String GAME_STARTED = "GAME_STARTED";
+        public static final String GAME_ENDED = "GAME_ENDED";
+        public static final String PLAYER_JOINED = "PLAYER_JOINED";
+        public static final String PLAYER_DIED = "PLAYER_DIED";
+        public static final String NEW_KILLER = "NEW_KILLER";
+        public static final String ANNOUNCEMENT = "ANNOUNCEMENT";
     }
 }

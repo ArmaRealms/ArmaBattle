@@ -1,6 +1,7 @@
 package me.roinujnosde.titansbattle.managers;
 
 import me.roinujnosde.titansbattle.TitansBattle;
+import me.roinujnosde.titansbattle.games.Game;
 import me.roinujnosde.titansbattle.types.CrossServerMessage;
 import me.roinujnosde.titansbattle.types.TargetServerConfig;
 import org.bukkit.Bukkit;
@@ -134,6 +135,12 @@ public class RedisManager {
             return;
         }
         
+        // Check if this message type is enabled
+        java.util.List<String> enabledTypes = plugin.getConfigManager().getEnabledMessageTypes();
+        if (!enabledTypes.contains(messageType)) {
+            return;
+        }
+        
         CompletableFuture.runAsync(() -> {
             try (Jedis jedis = jedisPool.getResource()) {
                 Map<String, TargetServerConfig> targetServers = plugin.getConfigManager().getRedisTargetServers();
@@ -222,6 +229,15 @@ public class RedisManager {
             return;
         }
         
+        // Check if this message type is enabled on this slave server
+        java.util.List<String> enabledTypes = plugin.getConfigManager().getEnabledMessageTypes();
+        if (!enabledTypes.contains(message.getType())) {
+            return;
+        }
+        
+        DatabaseManager databaseManager = plugin.getDatabaseManager();
+        GameManager gameManager = plugin.getGameManager();
+        
         // Filter by world if specified
         if (message.getTargetWorlds() != null && !message.getTargetWorlds().isEmpty()) {
             // Only broadcast to players in specified worlds
@@ -229,13 +245,30 @@ public class RedisManager {
                 World world = Bukkit.getWorld(worldName);
                 if (world != null) {
                     for (Player player : world.getPlayers()) {
-                        player.sendMessage(message.getMessage());
+                        // Players in games always see messages, others only if enabled
+                        boolean isInGame = gameManager.getCurrentGame()
+                            .map(game -> game.getParticipants().stream()
+                                .anyMatch(w -> w.getUniqueId().equals(player.getUniqueId())))
+                            .orElse(false);
+                        
+                        if (isInGame || databaseManager.hasMessagesEnabled(player.getUniqueId())) {
+                            player.sendMessage(message.getMessage());
+                        }
                     }
                 }
             }
         } else {
-            // Broadcast to all online players
-            Bukkit.broadcastMessage(message.getMessage());
+            // Broadcast to all online players who have messages enabled or are in a game
+            for (Player player : Bukkit.getOnlinePlayers()) {
+                boolean isInGame = gameManager.getCurrentGame()
+                    .map(game -> game.getParticipants().stream()
+                        .anyMatch(w -> w.getUniqueId().equals(player.getUniqueId())))
+                    .orElse(false);
+                
+                if (isInGame || databaseManager.hasMessagesEnabled(player.getUniqueId())) {
+                    player.sendMessage(message.getMessage());
+                }
+            }
         }
         
         plugin.getLogger().info(String.format("Processed cross-server message from %s: %s", 

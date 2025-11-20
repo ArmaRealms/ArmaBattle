@@ -51,6 +51,7 @@ commands:
     info: "info"
     setwinner: "setwinner"
     config: "config"
+    messages: "messages"
 
 #Sounds used in games, to disable one leave it ""
 sounds:
@@ -103,16 +104,31 @@ redis:
   network:
     master: false
     server_name: "server1"
-    target_servers:
-      lobby:
-        enabled: true
-        worlds: []  #empty = all worlds
-      survival:
-        enabled: true
-        worlds: ["world", "world_nether"]
-      skyblock:
-        enabled: false
-        worlds: ["skyblock_world"]
+    
+    #Message types to send/receive (master sends, slaves receive)
+    #Available types: GAME_STARTING, GAME_STARTED, GAME_ENDED, PLAYER_JOINED, PLAYER_DIED, NEW_KILLER, ANNOUNCEMENT
+    enabled_message_types:
+      - GAME_STARTING
+      - GAME_STARTED
+      - GAME_ENDED
+      - PLAYER_JOINED
+      - PLAYER_DIED
+      - NEW_KILLER
+      - ANNOUNCEMENT
+    
+    #Target servers (only used by master server)
+    #Configure which servers will receive messages from this master server
+    target_servers: {}
+      #Example configuration (uncomment and edit as needed):
+      #lobby:
+      #  enabled: true
+      #  worlds: []  #empty = all worlds
+      #survival:
+      #  enabled: true
+      #  worlds: ["world", "world_nether"]
+      #skyblock:
+      #  enabled: false
+      #  worlds: ["skyblock_world"]
 
 #Destinations
 destinations:

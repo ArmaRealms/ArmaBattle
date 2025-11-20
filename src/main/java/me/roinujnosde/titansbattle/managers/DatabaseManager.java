@@ -102,6 +102,9 @@ public class DatabaseManager {
                               + " player_winners text,"
                               + " winner_group varchar(255),"
                               + " game varchar(20) NOT NULL);");
+            statement.execute("CREATE TABLE IF NOT EXISTS tb_player_preferences "
+                              + "(uuid varchar(255) NOT NULL PRIMARY KEY,"
+                              + " messages_enabled boolean NOT NULL DEFAULT 1);");
         } catch (SQLException ex) {
             plugin.debug("Error while creating the tables: " + ex.getMessage(), false);
         }
@@ -120,6 +123,50 @@ public class DatabaseManager {
         } else {
             File dbFile = new File(plugin.getDataFolder().getAbsolutePath() + File.separator + database + ".db");
             connection = DriverManager.getConnection("jdbc:sqlite:" + dbFile.getAbsolutePath());
+        }
+    }
+    
+    /**
+     * Checks if a player has event messages enabled
+     */
+    public boolean hasMessagesEnabled(@NotNull UUID uuid) {
+        try (PreparedStatement ps = getConnection().prepareStatement(
+                "SELECT messages_enabled FROM tb_player_preferences WHERE uuid=?")) {
+            ps.setString(1, uuid.toString());
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getBoolean("messages_enabled");
+            }
+        } catch (SQLException ex) {
+            plugin.debug("Error checking messages preference: " + ex.getMessage(), false);
+        }
+        return true; // Default: messages enabled
+    }
+    
+    /**
+     * Sets whether a player has event messages enabled
+     */
+    public void setMessagesEnabled(@NotNull UUID uuid, boolean enabled) {
+        try {
+            // Try update first
+            try (PreparedStatement ps = getConnection().prepareStatement(
+                    "UPDATE tb_player_preferences SET messages_enabled=? WHERE uuid=?")) {
+                ps.setBoolean(1, enabled);
+                ps.setString(2, uuid.toString());
+                int rowsAffected = ps.executeUpdate();
+                
+                // If no rows updated, insert new record
+                if (rowsAffected == 0) {
+                    try (PreparedStatement insertPs = getConnection().prepareStatement(
+                            "INSERT INTO tb_player_preferences (uuid, messages_enabled) VALUES (?, ?)")) {
+                        insertPs.setString(1, uuid.toString());
+                        insertPs.setBoolean(2, enabled);
+                        insertPs.executeUpdate();
+                    }
+                }
+            }
+        } catch (SQLException ex) {
+            plugin.debug("Error setting messages preference: " + ex.getMessage(), false);
         }
     }
 

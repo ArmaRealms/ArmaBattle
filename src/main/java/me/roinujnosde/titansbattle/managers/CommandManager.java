@@ -120,6 +120,7 @@ public class CommandManager extends PaperCommandManager {
         registerCommand(new ChallengeCommand());
         registerCommand(new ConfigCommands());
         registerCommand(new RankingCommand());
+        registerCommand(new me.roinujnosde.titansbattle.commands.MessagesCommand());
     }
 
     private <T> void registerContext(AbstractIssuerOnlyContextResolver<T> resolver) {

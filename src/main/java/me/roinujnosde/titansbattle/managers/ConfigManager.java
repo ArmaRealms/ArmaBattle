@@ -300,4 +300,12 @@ public final class ConfigManager {
         
         return targetServers;
     }
+    
+    /**
+     * Gets the enabled message types for Redis cross-server messaging
+     */
+    @NotNull
+    public List<String> getEnabledMessageTypes() {
+        return config.getStringList("redis.network.enabled_message_types");
+    }
 }
