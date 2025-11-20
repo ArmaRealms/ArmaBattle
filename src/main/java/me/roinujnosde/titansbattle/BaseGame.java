@@ -7,6 +7,7 @@ import me.roinujnosde.titansbattle.hooks.papi.PlaceholderHook;
 import me.roinujnosde.titansbattle.managers.CommandManager;
 import me.roinujnosde.titansbattle.managers.GameManager;
 import me.roinujnosde.titansbattle.managers.GroupManager;
+import me.roinujnosde.titansbattle.managers.RedisManager;
 import me.roinujnosde.titansbattle.types.Group;
 import me.roinujnosde.titansbattle.types.Kit;
 import me.roinujnosde.titansbattle.types.Warrior;
@@ -295,7 +296,51 @@ public abstract class BaseGame {
     }
 
     public void broadcastKey(@NotNull String key, Object... args) {
-        broadcast(getLang(key), args);
+        // Determine message type first to check if players want to see it
+        String messageType = determineMessageType(key);
+        String formattedMessage = getLang(key, args);
+        
+        // Broadcast to local players who have messages enabled
+        if (formattedMessage != null && !formattedMessage.isEmpty()) {
+            String finalMessage = MessageFormat.format(formattedMessage, args);
+            if (finalMessage.startsWith("!!broadcast")) {
+                // Global broadcast - send to all online players who want messages OR are participants
+                String cleanMessage = finalMessage.replace("!!broadcast", "");
+                for (Player player : Bukkit.getOnlinePlayers()) {
+                    boolean isParticipant = getParticipants().stream()
+                        .anyMatch(w -> w.getUniqueId().equals(player.getUniqueId()));
+                    
+                    if (isParticipant || plugin.getDatabaseManager().hasMessagesEnabled(player.getUniqueId())) {
+                        player.sendMessage(cleanMessage);
+                    }
+                }
+            } else {
+                // Send to participants (they always see messages while in game)
+                for (Warrior warrior : getParticipants()) {
+                    Player player = warrior.toOnlinePlayer();
+                    if (player != null) {
+                        player.sendMessage(finalMessage);
+                    }
+                }
+            }
+        }
+        
+        // Send to other servers via Redis if this is a master server
+        RedisManager redisManager = plugin.getRedisManager();
+        if (redisManager != null && redisManager.isEnabled() && plugin.getConfigManager().isRedisMaster()) {
+            if (messageType != null) {
+                // Check if this message type is enabled in config
+                List<String> enabledTypes = plugin.getConfigManager().getEnabledMessageTypes();
+                if (enabledTypes.contains(messageType)) {
+                    String redisMessage = formattedMessage;
+                    // Remove !!broadcast prefix for Redis messages
+                    if (redisMessage.startsWith("!!broadcast")) {
+                        redisMessage = redisMessage.replace("!!broadcast", "").trim();
+                    }
+                    redisManager.publishMessage(messageType, redisMessage, getConfig().getName());
+                }
+            }
+        }
     }
 
     public void discordAnnounce(@NotNull String key, Object... args) {
@@ -313,6 +358,30 @@ public abstract class BaseGame {
             for (Warrior warrior : getParticipants()) {
                 warrior.sendMessage(message);
             }
+        }
+    }
+    
+    /**
+     * Determines the appropriate message type for Redis based on the message key
+     */
+    private String determineMessageType(@NotNull String key) {
+        switch (key) {
+            case "starting_game":
+                return me.roinujnosde.titansbattle.types.CrossServerMessage.MessageType.GAME_STARTING;
+            case "game_started":
+                return me.roinujnosde.titansbattle.types.CrossServerMessage.MessageType.GAME_STARTED;
+            case "cancelled":
+            case "not_enough_participants":
+                return me.roinujnosde.titansbattle.types.CrossServerMessage.MessageType.GAME_ENDED;
+            case "player_joined":
+                return me.roinujnosde.titansbattle.types.CrossServerMessage.MessageType.PLAYER_JOINED;
+            case "killed_by":
+            case "died_by_himself":
+                return me.roinujnosde.titansbattle.types.CrossServerMessage.MessageType.PLAYER_DIED;
+            case "new_killer":
+                return me.roinujnosde.titansbattle.types.CrossServerMessage.MessageType.NEW_KILLER;
+            default:
+                return me.roinujnosde.titansbattle.types.CrossServerMessage.MessageType.ANNOUNCEMENT;
         }
     }
 

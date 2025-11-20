@@ -46,6 +46,8 @@ public abstract class BaseGameConfiguration implements ConfigurationSerializable
     protected Integer minimumPlayers = 2;
     @Path("maximum.players")
     protected Integer maximumPlayers = 100;
+    @Path("minimum.playtime")
+    protected Integer minimumPlaytime = 0;
 
     @Path("announcement.starting.times")
     protected Integer announcementStartingTimes = 5;
@@ -183,6 +185,10 @@ public abstract class BaseGameConfiguration implements ConfigurationSerializable
 
     public Integer getMaximumPlayers() {
         return maximumPlayers;
+    }
+
+    public Integer getMinimumPlaytime() {
+        return minimumPlaytime;
     }
 
     public Integer getAnnouncementStartingInterval() {

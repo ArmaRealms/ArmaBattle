@@ -26,6 +26,7 @@ package me.roinujnosde.titansbattle.managers;
 import me.roinujnosde.titansbattle.TitansBattle;
 import me.roinujnosde.titansbattle.types.Event;
 import me.roinujnosde.titansbattle.types.Event.Frequency;
+import me.roinujnosde.titansbattle.types.TargetServerConfig;
 import me.roinujnosde.titansbattle.utils.Helper;
 import org.bukkit.Location;
 import org.bukkit.configuration.ConfigurationSection;
@@ -33,7 +34,9 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Level;
@@ -199,5 +202,110 @@ public final class ConfigManager {
 
     public String getDateFormat() {
         return config.getString("date-format");
+    }
+
+    // ==================== REDIS CONFIGURATION ====================
+    
+    /**
+     * Checks if Redis is enabled
+     */
+    public boolean isRedisEnabled() {
+        return config.getBoolean("redis.enabled", false);
+    }
+    
+    /**
+     * Gets the Redis host
+     */
+    @NotNull
+    public String getRedisHost() {
+        return config.getString("redis.host", "localhost");
+    }
+    
+    /**
+     * Gets the Redis port
+     */
+    public int getRedisPort() {
+        return config.getInt("redis.port", 6379);
+    }
+    
+    /**
+     * Gets the Redis password
+     */
+    @NotNull
+    public String getRedisPassword() {
+        return config.getString("redis.password", "");
+    }
+    
+    /**
+     * Gets the Redis username
+     */
+    @NotNull
+    public String getRedisUsername() {
+        return config.getString("redis.username", "");
+    }
+    
+    /**
+     * Gets the Redis database number
+     */
+    public int getRedisDatabase() {
+        return config.getInt("redis.database", 0);
+    }
+    
+    /**
+     * Gets the Redis timeout
+     */
+    public int getRedisTimeout() {
+        return config.getInt("redis.timeout", 2000);
+    }
+    
+    /**
+     * Checks if this server is the master server
+     */
+    public boolean isRedisMaster() {
+        return config.getBoolean("redis.network.master", false);
+    }
+    
+    /**
+     * Gets this server's name
+     */
+    @NotNull
+    public String getRedisServerName() {
+        return config.getString("redis.network.server_name", "server1");
+    }
+    
+    /**
+     * Gets the target servers configuration
+     */
+    @NotNull
+    public Map<String, TargetServerConfig> getRedisTargetServers() {
+        Map<String, TargetServerConfig> targetServers = new HashMap<>();
+        
+        ConfigurationSection networkSection = config.getConfigurationSection("redis.network.target_servers");
+        if (networkSection == null) {
+            return targetServers;
+        }
+        
+        for (String serverName : networkSection.getKeys(false)) {
+            ConfigurationSection serverSection = networkSection.getConfigurationSection(serverName);
+            if (serverSection != null) {
+                Map<String, Object> serverData = new HashMap<>();
+                for (String key : serverSection.getKeys(false)) {
+                    serverData.put(key, serverSection.get(key));
+                }
+                
+                TargetServerConfig serverConfig = TargetServerConfig.fromMap(serverName, serverData);
+                targetServers.put(serverName, serverConfig);
+            }
+        }
+        
+        return targetServers;
+    }
+    
+    /**
+     * Gets the enabled message types for Redis cross-server messaging
+     */
+    @NotNull
+    public List<String> getEnabledMessageTypes() {
+        return config.getStringList("redis.network.enabled_message_types");
     }
 }

@@ -25,6 +25,7 @@ import me.roinujnosde.titansbattle.challenges.Challenge;
 import me.roinujnosde.titansbattle.challenges.ChallengeRequest;
 import me.roinujnosde.titansbattle.dao.ConfigurationDao;
 import me.roinujnosde.titansbattle.games.Game;
+import me.roinujnosde.titansbattle.hooks.essentials.EssentialsHook;
 import me.roinujnosde.titansbattle.hooks.discord.DiscordWebhook;
 import me.roinujnosde.titansbattle.hooks.papi.PlaceholderHook;
 import me.roinujnosde.titansbattle.managers.*;
@@ -64,6 +65,8 @@ public final class TitansBattle extends JavaPlugin {
     private ListenerManager listenerManager;
     private ConfigurationDao configurationDao;
     private PlaceholderHook placeholderHook;
+    private RedisManager redisManager;
+    private EssentialsHook essentialsHook;
 
     @Override
     public void onEnable() {
@@ -78,10 +81,13 @@ public final class TitansBattle extends JavaPlugin {
         challengeManager = new ChallengeManager(this);
         listenerManager = new ListenerManager(this);
         configurationDao = new ConfigurationDao(getDataFolder());
+        redisManager = new RedisManager(this);
+        essentialsHook = new EssentialsHook();
 
         configManager.load();
         languageManager.setup();
         databaseManager.setup();
+        redisManager.initialize();
 
         loadGroupsPlugin();
 
@@ -121,6 +127,7 @@ public final class TitansBattle extends JavaPlugin {
         challengeManager.getChallenges().forEach(c -> c.cancel(Bukkit.getConsoleSender()));
         gameManager.getCurrentGame().ifPresent(g -> g.cancel(Bukkit.getConsoleSender()));
         databaseManager.close();
+        redisManager.shutdown();
     }
 
     public static TitansBattle getInstance() {
@@ -171,6 +178,14 @@ public final class TitansBattle extends JavaPlugin {
 
     public PlaceholderHook getPlaceholderHook() {
         return placeholderHook;
+    }
+
+    public RedisManager getRedisManager() {
+        return redisManager;
+    }
+
+    public EssentialsHook getEssentialsHook() {
+        return essentialsHook;
     }
 
     /**

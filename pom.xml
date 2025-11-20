@@ -67,6 +67,14 @@
                             <pattern>org.bstats</pattern>
                             <shadedPattern>me.roinujnosde.titansbattle.shaded.bstats</shadedPattern>
                         </relocation>
+                        <relocation>
+                            <pattern>redis.clients.jedis</pattern>
+                            <shadedPattern>me.roinujnosde.titansbattle.shaded.jedis</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>org.apache.commons.pool2</pattern>
+                            <shadedPattern>me.roinujnosde.titansbattle.shaded.pool2</shadedPattern>
+                        </relocation>
                     </relocations>
                 </configuration>
                 <executions>
@@ -167,6 +175,12 @@
             <groupId>org.bstats</groupId>
             <artifactId>bstats-bukkit</artifactId>
             <version>3.0.2</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>redis.clients</groupId>
+            <artifactId>jedis</artifactId>
+            <version>5.1.5</version>
             <scope>compile</scope>
         </dependency>
         <dependency>

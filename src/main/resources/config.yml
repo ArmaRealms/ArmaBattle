@@ -51,6 +51,7 @@ commands:
     info: "info"
     setwinner: "setwinner"
     config: "config"
+    messages: "messages"
 
 #Sounds used in games, to disable one leave it ""
 sounds:
@@ -70,6 +71,11 @@ date-format: "dd/MM/yyyy"
 page-limit:
     help: 7
     ranking: 10
+
+#Minimum playtime required to join games (in seconds). Set to 0 to disable.
+#This is a global setting. You can override it in individual game files.
+#Examples: 1 hour = 3600, 1 day = 86400, 7 days = 604800
+minimum_playtime: 0
     
 #List here commands that the plugin will not block in battle phase
 allowed_commands: ["/tb exit", "/tb winners"]
@@ -83,6 +89,46 @@ blocked_commands_everyone:
 
 #Send a webhook in game start, leave empty to disable
 discord_webhook_url: ""
+
+#Redis configuration for cross-server messaging
+redis:
+  enabled: false
+  host: "localhost"
+  port: 6379
+  username: ""
+  password: ""
+  database: 0
+  timeout: 2000
+  
+  #Server configuration
+  network:
+    master: false
+    server_name: "server1"
+    
+    #Message types to send/receive (master sends, slaves receive)
+    #Available types: GAME_STARTING, GAME_STARTED, GAME_ENDED, PLAYER_JOINED, PLAYER_DIED, NEW_KILLER, ANNOUNCEMENT
+    enabled_message_types:
+      - GAME_STARTING
+      - GAME_STARTED
+      - GAME_ENDED
+      - PLAYER_JOINED
+      - PLAYER_DIED
+      - NEW_KILLER
+      - ANNOUNCEMENT
+    
+    #Target servers (only used by master server)
+    #Configure which servers will receive messages from this master server
+    target_servers: {}
+      #Example configuration (uncomment and edit as needed):
+      #lobby:
+      #  enabled: true
+      #  worlds: []  #empty = all worlds
+      #survival:
+      #  enabled: true
+      #  worlds: ["world", "world_nether"]
+      #skyblock:
+      #  enabled: false
+      #  worlds: ["skyblock_world"]
 
 #Destinations
 destinations:
