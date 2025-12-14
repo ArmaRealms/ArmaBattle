@@ -243,8 +243,8 @@ public class TBCommands extends BaseCommand {
 
         final String timeFormat = configManager.getTimeFormat();
         final String elapsedTime = Helper.formatTime(elapsedSeconds, timeFormat);
-        final String maxTime = (maxDurationSeconds < 0) ? "N/A" : Helper.formatTime(maxDurationSeconds, timeFormat);
-        final String remainingTime = (remainingSeconds < 0) ? "N/A" : Helper.formatTime(remainingSeconds, timeFormat);
+        final String maxTime = Helper.formatTime(maxDurationSeconds, timeFormat);
+        final String remainingTime = Helper.formatTime(remainingSeconds, timeFormat);
 
         if (game.getConfig().isGroupMode()) {
             sender.sendMessage(plugin.getLang("game_status_group", game, Helper.buildStringFrom(game.getGroupParticipants()),
