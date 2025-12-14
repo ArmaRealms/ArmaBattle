@@ -28,12 +28,12 @@ import me.roinujnosde.titansbattle.types.Warrior;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Unmodifiable;
 
 import java.util.Collections;
 import java.util.List;
 
 /**
- *
  * @author RoinujNosde
  */
 public class PlayerWinEvent extends Event {
@@ -42,9 +42,14 @@ public class PlayerWinEvent extends Event {
     private final BaseGame game;
     private final List<Warrior> players;
 
-    public PlayerWinEvent(@NotNull BaseGame game, @NotNull List<Warrior> players) {
+    public PlayerWinEvent(@NotNull final BaseGame game, @NotNull final List<Warrior> players) {
         this.game = game;
         this.players = players;
+    }
+
+    @SuppressWarnings("unused")
+    public static HandlerList getHandlerList() {
+        return HANDLERS;
     }
 
     public @NotNull BaseGame getGame() {
@@ -53,27 +58,24 @@ public class PlayerWinEvent extends Event {
 
     /**
      * Returns the winner of the event (or the first of the list, if there are more than one winner)
+     *
      * @return the winner of the event
      */
     public Warrior getPlayer() {
-        return players.get(0);
+        return players.getFirst();
     }
 
     /**
      * Returns an Unmodifiable List of the Winners
+     *
      * @return an Unmodifiable List of the Winners
      */
-    public List<Warrior> getPlayers() {
+    public @Unmodifiable List<Warrior> getPlayers() {
         return Collections.unmodifiableList(players);
     }
 
     @Override
-    public HandlerList getHandlers() {
-        return HANDLERS;
-    }
-
-    @SuppressWarnings("unused")
-    public static HandlerList getHandlerList() {
+    public @NotNull HandlerList getHandlers() {
         return HANDLERS;
     }
 }

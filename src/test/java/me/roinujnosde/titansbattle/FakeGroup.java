@@ -15,17 +15,17 @@ public class FakeGroup extends Group {
     private final int id;
     private final List<UUID> members = new ArrayList<>();
 
-    public FakeGroup(@NotNull GroupData data) {
+    public FakeGroup(@NotNull final GroupData data) {
         super(data);
         id = ++lastId;
     }
 
     @Override
-    public boolean equals(Object object) {
+    public boolean equals(final Object object) {
         if (this == object) return true;
         if (object == null || getClass() != object.getClass()) return false;
         if (!super.equals(object)) return false;
-        FakeGroup fakeGroup = (FakeGroup) object;
+        final FakeGroup fakeGroup = (FakeGroup) object;
         return getId() == fakeGroup.getId();
     }
 
@@ -50,16 +50,16 @@ public class FakeGroup extends Group {
     }
 
     @Override
-    public boolean isMember(@NotNull UUID uuid) {
+    public boolean isMember(@NotNull final UUID uuid) {
         return members.contains(uuid);
     }
 
-    public void addMember(@NotNull UUID uuid) {
+    public void addMember(@NotNull final UUID uuid) {
         members.add(uuid);
     }
 
     @Override
-    public boolean isLeaderOrOfficer(@NotNull UUID uuid) {
-        return members.contains(uuid) && members.get(0) == uuid;
+    public boolean isLeaderOrOfficer(@NotNull final UUID uuid) {
+        return members.contains(uuid) && members.getFirst() == uuid;
     }
 }

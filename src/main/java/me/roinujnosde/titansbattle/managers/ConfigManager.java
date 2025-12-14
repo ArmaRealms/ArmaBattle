@@ -41,15 +41,13 @@ import java.util.logging.Level;
 import static java.lang.String.format;
 
 /**
- *
  * @author RoinujNosde
  */
 public final class ConfigManager {
 
     private final TitansBattle plugin = TitansBattle.getInstance();
-    private FileConfiguration config;
-
     private final List<Event> events = new ArrayList<>();
+    private FileConfiguration config;
     private List<UUID> respawn = new ArrayList<>();
     private List<UUID> clearInventory = new ArrayList<>();
 
@@ -65,30 +63,28 @@ public final class ConfigManager {
 
         if (isScheduler()) {
             events.clear();
-            ConfigurationSection schedulersSection = config.getConfigurationSection("scheduler.events");
-            if (schedulersSection != null) {
-                Set<String> ids = schedulersSection.getKeys(false);
-                String pathPrefix = "scheduler.events.";
-                for (String id : ids) {
-                    try {
-                        String game = config.getString(pathPrefix + id + ".game");
-                        Frequency frequency = Frequency.valueOf(config.getString(pathPrefix + id + ".frequency"));
-                        int day = config.getInt(pathPrefix + id + ".day");
-                        int hour = config.getInt(pathPrefix + id + ".hour");
-                        int minute = config.getInt(pathPrefix + id + ".minute");
-                        events.add(new Event(game, frequency, day, hour, minute));
-                    } catch (IllegalArgumentException ex) {
-                        plugin.getLogger().log(Level.SEVERE, format("Invalid event configuration for ID %s: %s", id, ex.getMessage()));
-                    }
+            final ConfigurationSection schedulersSection = config.getConfigurationSection("scheduler.events");
+            if (schedulersSection == null) {
+                return;
+            }
+            final Set<String> ids = schedulersSection.getKeys(false);
+            final String pathPrefix = "scheduler.events.";
+            for (final String id : ids) {
+                try {
+                    final String game = config.getString(pathPrefix + id + ".game");
+                    final Frequency frequency = Frequency.valueOf(config.getString(pathPrefix + id + ".frequency"));
+                    final int day = config.getInt(pathPrefix + id + ".day");
+                    final int hour = config.getInt(pathPrefix + id + ".hour");
+                    final int minute = config.getInt(pathPrefix + id + ".minute");
+                    if (game == null) continue;
+                    events.add(new Event(game, frequency, day, hour, minute));
+                } catch (final IllegalArgumentException ex) {
+                    plugin.getLogger().log(Level.SEVERE, format("Invalid event configuration for ID %s: %s", id, ex.getMessage()));
                 }
             }
         }
         clearInventory = Helper.stringListToUuidList(config.getStringList("data.clear_inv"));
         respawn = Helper.stringListToUuidList(config.getStringList("data.respawn"));
-    }
-
-    public void setGeneralExit(Location generalExit) {
-        config.set("destinations.general_exit", generalExit);
     }
 
     public boolean isDebug() {
@@ -112,12 +108,12 @@ public final class ConfigManager {
         return (Location) config.get("destinations.general_exit");
     }
 
+    public void setGeneralExit(final Location generalExit) {
+        config.set("destinations.general_exit", generalExit);
+    }
+
     public List<String> getBlockedCommandsEveryone() {
-        List<String> blockedCommandsEveryone = config.getStringList("blocked_commands_everyone");
-        if (blockedCommandsEveryone == null) {
-            blockedCommandsEveryone = new ArrayList<>();
-        }
-        return blockedCommandsEveryone;
+        return config.getStringList("blocked_commands_everyone");
     }
 
     /**
@@ -126,11 +122,7 @@ public final class ConfigManager {
      * @return the allowed commands
      */
     public List<String> getAllowedCommands() {
-        List<String> allowedCommands = config.getStringList("allowed_commands");
-        if (allowedCommands == null) {
-            allowedCommands = new ArrayList<>();
-        }
-        return allowedCommands;
+        return config.getStringList("allowed_commands");
     }
 
     /**
@@ -139,8 +131,27 @@ public final class ConfigManager {
      * @param allowedCommands the allowed commands
      */
     @SuppressWarnings("unused")
-    public void setAllowedCommands(@NotNull List<String> allowedCommands) {
+    public void setAllowedCommands(@NotNull final List<String> allowedCommands) {
         config.set("allowed_commands", allowedCommands);
+    }
+
+    /**
+     * Gets the commands allowed in spectator
+     *
+     * @return the allowed commands in spectator
+     */
+    public @NotNull List<String> getAllowedCommandsInSpectator() {
+        return config.getStringList("allowed_commands_in_spectator");
+    }
+
+    /**
+     * Sets the commands allowed in spectator
+     *
+     * @param allowedCommandsInSpectator the allowed commands in spectator
+     */
+    @SuppressWarnings("unused")
+    public void setAllowedCommandsInSpectator(@NotNull final List<String> allowedCommandsInSpectator) {
+        config.set("allowed_commands_in_spectator", allowedCommandsInSpectator);
     }
 
     /**
@@ -199,6 +210,12 @@ public final class ConfigManager {
 
     public String getDateFormat() {
         return config.getString("date-format");
+    }
+
+    public List<Integer> getBlockedProtocols() {
+        return config.getStringList("viaversion.block-protocols").stream()
+                .map(Integer::parseInt)
+                .toList();
     }
 
     public String getTimeFormat() {

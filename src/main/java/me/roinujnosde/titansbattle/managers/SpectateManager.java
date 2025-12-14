@@ -1,0 +1,136 @@
+package me.roinujnosde.titansbattle.managers;
+
+import co.aikar.commands.annotation.Optional;
+import me.roinujnosde.titansbattle.BaseGameConfiguration;
+import me.roinujnosde.titansbattle.TitansBattle;
+import me.roinujnosde.titansbattle.challenges.ArenaConfiguration;
+import me.roinujnosde.titansbattle.games.Game;
+import me.roinujnosde.titansbattle.types.Kit;
+import me.roinujnosde.titansbattle.utils.SoundUtils;
+import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
+import org.bukkit.entity.Player;
+import org.bukkit.event.player.PlayerTeleportEvent;
+import org.bukkit.metadata.FixedMetadataValue;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Unmodifiable;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+import static me.roinujnosde.titansbattle.utils.SoundUtils.Type.LEAVE_GAME;
+
+public class SpectateManager {
+    private final TitansBattle plugin;
+    private final ConfigManager configManager;
+    private final List<UUID> spectators = new ArrayList<>();
+
+    public SpectateManager(@NotNull final TitansBattle plugin) {
+        this.plugin = plugin;
+        this.configManager = plugin.getConfigManager();
+    }
+
+    public void addSpectator(final Player player, final Game game, @Optional final ArenaConfiguration arena) {
+        if (Kit.inventoryHasItems(player) && !player.hasPermission("titansbattle.inventory-bypass")) {
+            player.sendMessage(plugin.getLang("clear-your-inventory-before-spectating"));
+            return;
+        }
+
+        final BaseGameConfiguration config;
+        if (arena == null && game == null) {
+            player.sendMessage(plugin.getLang("not-starting-or-started"));
+            return;
+        }
+        config = (arena == null) ? game.getConfig() : arena;
+
+        player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, Integer.MAX_VALUE, 1, false, false));
+        if (!player.teleport(config.getWatchroom())) {
+            player.removePotionEffect(PotionEffectType.INVISIBILITY);
+            player.sendMessage(plugin.getLang("teleport-failed"));
+            plugin.debug(String.format("Failed to teleport player %s to watchroom location.", player.getName()));
+            return;
+        }
+
+        spectators.add(player.getUniqueId());
+        SoundUtils.playSound(SoundUtils.Type.WATCH, plugin.getConfig(), player);
+        for (final Player onlinePlayer : plugin.getServer().getOnlinePlayers()) {
+            onlinePlayer.hidePlayer(plugin, player);
+        }
+        player.setMetadata("vanished", new FixedMetadataValue(plugin, true));
+        player.setGameMode(GameMode.ADVENTURE);
+        player.setCollidable(false);
+        player.setFallDistance(0f);
+        player.setAllowFlight(true);
+        player.sendMessage(plugin.getLang("spectator-enter"));
+        plugin.debug(String.format("Player %s has entered spectator mode and was teleported to the watchroom.", player.getName()));
+    }
+
+    public void removeSpectator(final Player player) {
+        if (player == null) {
+            plugin.debug("Player is null, cannot remove spectator.");
+            return;
+        }
+        if (!isSpectating(player)) {
+            player.sendMessage(plugin.getLang("not-spectating"));
+            plugin.debug(String.format("Player %s is not a spectator, cannot remove.", player.getName()));
+            return;
+        }
+        final boolean removed = spectators.remove(player.getUniqueId());
+        if (!removed) {
+            plugin.debug(String.format("Player %s was not removed from spectators list.", player.getName()));
+            return;
+        }
+        if (!player.teleport(configManager.getGeneralExit(), PlayerTeleportEvent.TeleportCause.PLUGIN)) {
+            plugin.debug(String.format("Failed to teleport player %s to exit location after spectating.", player.getName()));
+            player.sendMessage(plugin.getLang("teleport-failed"));
+            spectators.add(player.getUniqueId());
+        }
+        SoundUtils.playSound(LEAVE_GAME, plugin.getConfig(), player);
+        for (final Player onlinePlayer : plugin.getServer().getOnlinePlayers()) {
+            onlinePlayer.showPlayer(plugin, player);
+        }
+        player.setMetadata("vanished", new FixedMetadataValue(plugin, false));
+        player.setGameMode(GameMode.SURVIVAL);
+        player.setCollidable(true);
+        player.setAllowFlight(false);
+        player.removePotionEffect(PotionEffectType.INVISIBILITY);
+        player.sendMessage(plugin.getLang("spectator-exit"));
+        plugin.debug(String.format("Player %s has exited spectator mode and was teleported to the exit location.", player.getName()));
+    }
+
+    public void removeAllSpectators() {
+        final List<UUID> copy = new ArrayList<>(spectators);
+        for (final UUID uuid : copy) {
+            final Player player = plugin.getServer().getPlayer(uuid);
+            if (player != null) {
+                removeSpectator(player);
+            }
+        }
+    }
+
+    public boolean isSpectating(final @NotNull Player player) {
+        return spectators.contains(player.getUniqueId());
+    }
+
+    public @NotNull List<Player> getSpectators() {
+        final List<Player> spectators = new ArrayList<>();
+        for (final UUID uuid : this.spectators) {
+            final Player player = Bukkit.getPlayer(uuid);
+            if (player != null) {
+                spectators.add(player);
+            }
+        }
+        return spectators;
+    }
+
+    public void remove(final Player player) {
+        if (!isSpectating(player)) {
+            plugin.debug(String.format("Player %s is not a spectator, cannot remove.", player.getName()));
+            return;
+        }
+        spectators.remove(player.getUniqueId());
+    }
+}

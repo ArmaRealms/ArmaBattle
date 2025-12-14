@@ -43,8 +43,13 @@ public class ParticipantDeathEvent extends Event {
         this.killer = killer;
     }
 
+    public static HandlerList getHandlerList() {
+        return HANDLERS;
+    }
+
     /**
      * Returns the victim
+     *
      * @return the Warrior
      */
     public Warrior getWarrior() {
@@ -56,11 +61,7 @@ public class ParticipantDeathEvent extends Event {
     }
 
     @Override
-    public HandlerList getHandlers() {
-        return HANDLERS;
-    }
-
-    public static HandlerList getHandlerList() {
+    public @NotNull HandlerList getHandlers() {
         return HANDLERS;
     }
 }

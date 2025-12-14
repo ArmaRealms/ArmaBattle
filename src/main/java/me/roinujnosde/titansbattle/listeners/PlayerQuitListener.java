@@ -25,7 +25,7 @@ package me.roinujnosde.titansbattle.listeners;
 
 import me.roinujnosde.titansbattle.BaseGame;
 import me.roinujnosde.titansbattle.TitansBattle;
-import me.roinujnosde.titansbattle.types.Warrior;
+import me.roinujnosde.titansbattle.managers.DatabaseManager;
 import me.roinujnosde.titansbattle.utils.Helper;
 import me.roinujnosde.titansbattle.utils.MessageUtils;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -35,31 +35,31 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.jetbrains.annotations.NotNull;
 
 /**
- *
  * @author RoinujNosde
  */
 public class PlayerQuitListener extends TBListener {
+    private final DatabaseManager dm;
 
-    public PlayerQuitListener(@NotNull TitansBattle plugin) {
+    public PlayerQuitListener(@NotNull final TitansBattle plugin) {
         super(plugin);
+        dm = plugin.getDatabaseManager();
     }
 
     @EventHandler
-    public void onQuit(PlayerQuitEvent event) {
-        Player player = event.getPlayer();
-        Warrior warrior = plugin.getDatabaseManager().getWarrior(player);
-        BaseGame game = plugin.getBaseGameFrom(player);
+    public void onQuit(final PlayerQuitEvent event) {
+        final Player player = event.getPlayer();
+        final BaseGame game = plugin.getBaseGameFrom(player);
         if (game != null) {
-            game.onDisconnect(warrior);
+            game.onDisconnect(dm.getWarrior(player), event.getQuitMessage());
         }
         sendQuitMessage(player);
     }
 
-    private void sendQuitMessage(Player player) {
+    private void sendQuitMessage(final Player player) {
         if (Helper.isWinner(player) || Helper.isKiller(player)) {
-            boolean killerQuitMessageEnabled = Helper.isKillerQuitMessageEnabled(player);
-            boolean winnerQuitMessageEnabled = Helper.isWinnerQuitMessageEnabled(player);
-            FileConfiguration config = Helper.getConfigFromWinnerOrKiller(player);
+            final boolean killerQuitMessageEnabled = Helper.isKillerQuitMessageEnabled(player);
+            final boolean winnerQuitMessageEnabled = Helper.isWinnerQuitMessageEnabled(player);
+            final FileConfiguration config = Helper.getConfigFromWinnerOrKiller(player);
             if (Helper.isKiller(player) && Helper.isWinner(player)) {
                 if (Helper.isKillerPriority(player) && killerQuitMessageEnabled) {
                     MessageUtils.broadcastKey("killer-has-left", config, player.getName());

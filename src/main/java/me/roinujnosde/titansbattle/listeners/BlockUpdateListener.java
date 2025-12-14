@@ -1,8 +1,8 @@
 package me.roinujnosde.titansbattle.listeners;
 
-import me.roinujnosde.titansbattle.BaseGame;
 import me.roinujnosde.titansbattle.TitansBattle;
-import me.roinujnosde.titansbattle.types.Warrior;
+import me.roinujnosde.titansbattle.managers.DatabaseManager;
+import me.roinujnosde.titansbattle.managers.GameManager;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.EventHandler;
@@ -12,9 +12,13 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import org.jetbrains.annotations.NotNull;
 
 public class BlockUpdateListener extends TBListener {
+    private final GameManager gm;
+    private final DatabaseManager dm;
 
     public BlockUpdateListener(@NotNull TitansBattle plugin) {
         super(plugin);
+        this.gm = plugin.getGameManager();
+        this.dm = plugin.getDatabaseManager();
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
@@ -28,15 +32,11 @@ public class BlockUpdateListener extends TBListener {
     }
 
     private void cancel(Player player, Cancellable event) {
-        BaseGame game = plugin.getBaseGameFrom(player);
-        if (game == null) {
-            return;
-        }
-
-        Warrior warrior = plugin.getDatabaseManager().getWarrior(player);
-        if (!game.isInBattle(warrior)) {
-            event.setCancelled(true);
-        }
+        gm.getCurrentGame().ifPresent(game -> {
+            if (game.getConfig().isCancelBlockInteract() && game.isInBattle(dm.getWarrior(player))) {
+                event.setCancelled(true);
+            }
+        });
     }
 
 }

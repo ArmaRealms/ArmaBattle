@@ -7,23 +7,24 @@ import me.roinujnosde.titansbattle.types.Prizes;
 import org.bukkit.Location;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Unmodifiable;
 
 import java.io.File;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 
 @SuppressWarnings("FieldMayBeFinal")
 public abstract class BaseGameConfiguration implements ConfigurationSerializable {
 
-    public enum Destination {
-        EXIT, LOBBY, WATCHROOM, BORDER_CENTER
-    }
-
     protected transient File file;
     protected transient FileConfiguration fileConfiguration;
-
     protected String name;
     protected Boolean groupMode = false;
     protected Boolean clearItemsOnDeath = false;
@@ -34,9 +35,6 @@ public abstract class BaseGameConfiguration implements ConfigurationSerializable
     protected List<String> whitelistedItems;
     @Path("items.blacklist")
     protected List<String> blacklistedItems;
-    @Path("prizes")
-    private Map<String, Prizes> prizesMap = createPrizesMap();
-
     protected Boolean pvp = true;
     @Path("damage-type.melee")
     protected Boolean meleeDamage = true;
@@ -46,12 +44,10 @@ public abstract class BaseGameConfiguration implements ConfigurationSerializable
     protected Integer minimumPlayers = 2;
     @Path("maximum.players")
     protected Integer maximumPlayers = 100;
-
     @Path("announcement.starting.times")
     protected Integer announcementStartingTimes = 5;
     @Path("announcement.starting.interval")
     protected Integer announcementStartingInterval = 20;
-
     @Path("destination.watchroom")
     protected Location watchroom;
     @Path("destination.exit")
@@ -62,17 +58,14 @@ public abstract class BaseGameConfiguration implements ConfigurationSerializable
     protected Map<Integer, Location> arenaEntrances = new HashMap<>();
     @Path("destination.border_center")
     protected Location borderCenter;
-
     @Path("time.preparation")
     protected Integer preparationTime = 30;
     @Path("time.expiration")
     protected Integer expirationTime = 3600;
-
     @Path("run_commands.before_battle")
     protected @Nullable List<String> commandsBeforeBattle;
     @Path("run_commands.after_battle")
     protected @Nullable List<String> commandsAfterBattle;
-
     @Path("worldborder.enable")
     protected Boolean worldBorder = false;
     @Path("worldborder.initial_size")
@@ -85,6 +78,18 @@ public abstract class BaseGameConfiguration implements ConfigurationSerializable
     protected Integer borderInterval = 120;
     @Path("worldborder.damage")
     protected Double borderDamage = 5.0;
+    @Path("cancel-block-interact")
+    protected Boolean cancelBlockInteract = true;
+    @Path("hit.amount")
+    protected Integer hitAmount = 100;
+    @Path("minimum.playtime")
+    protected int minimumPlaytime = 86400;
+    @Path("viaversion.block-protocols")
+    protected List<Integer> blockedProtocols;
+    @Path("minimum.y.height")
+    protected Integer minimumYHeight = 0;
+    @Path("prizes")
+    private Map<String, Prizes> prizesMap = createPrizesMap();
 
     public @NotNull FileConfiguration getFileConfiguration() {
         if (fileConfiguration == null) {
@@ -93,7 +98,7 @@ public abstract class BaseGameConfiguration implements ConfigurationSerializable
         return fileConfiguration;
     }
 
-    public void setFileConfiguration(@NotNull FileConfiguration fileConfiguration) {
+    public void setFileConfiguration(@NotNull final FileConfiguration fileConfiguration) {
         this.fileConfiguration = fileConfiguration;
     }
 
@@ -104,12 +109,12 @@ public abstract class BaseGameConfiguration implements ConfigurationSerializable
         return file;
     }
 
-    public void setFile(@NotNull File file) {
+    public void setFile(@NotNull final File file) {
         this.file = file;
     }
 
     @Override
-    public Map<String, Object> serialize() {
+    public @NotNull Map<String, Object> serialize() {
         return ConfigUtils.serialize(this);
     }
 
@@ -118,7 +123,7 @@ public abstract class BaseGameConfiguration implements ConfigurationSerializable
         return name;
     }
 
-    public void setName(String name) {
+    public void setName(final String name) {
         this.name = name;
     }
 
@@ -153,16 +158,16 @@ public abstract class BaseGameConfiguration implements ConfigurationSerializable
         return kit;
     }
 
+    public void setKit(final Kit kit) {
+        this.kit = kit;
+    }
+
     public @Nullable List<String> getWhitelistedItems() {
         return whitelistedItems;
     }
 
     public List<String> getBlacklistedItems() {
         return blacklistedItems;
-    }
-
-    public void setKit(Kit kit) {
-        this.kit = kit;
     }
 
     public Boolean isPvP() {
@@ -197,12 +202,24 @@ public abstract class BaseGameConfiguration implements ConfigurationSerializable
         return watchroom;
     }
 
+    public void setWatchroom(final Location watchroom) {
+        this.watchroom = watchroom;
+    }
+
     public Location getExit() {
         return exit;
     }
 
+    public void setExit(final Location exit) {
+        this.exit = exit;
+    }
+
     public Location getLobby() {
         return lobby;
+    }
+
+    public void setLobby(final Location lobby) {
+        this.lobby = lobby;
     }
 
     public Map<Integer, Location> getArenaEntrances() {
@@ -213,24 +230,12 @@ public abstract class BaseGameConfiguration implements ConfigurationSerializable
         return borderCenter;
     }
 
-    public void setExit(Location exit) {
-        this.exit = exit;
-    }
-
-    public void setLobby(Location lobby) {
-        this.lobby = lobby;
-    }
-
-    public void setArenaEntrance(int index, Location entrance) {
-        arenaEntrances.put(index, entrance);
-    }
-
-    public void setWatchroom(Location watchroom) {
-        this.watchroom = watchroom;
-    }
-
-    public void setBorderCenter(Location borderCenter) {
+    public void setBorderCenter(final Location borderCenter) {
         this.borderCenter = borderCenter;
+    }
+
+    public void setArenaEntrance(final int index, final Location entrance) {
+        arenaEntrances.put(index, entrance);
     }
 
     public Integer getPreparationTime() {
@@ -273,7 +278,7 @@ public abstract class BaseGameConfiguration implements ConfigurationSerializable
         return borderDamage;
     }
 
-    public Prizes getPrizes(@NotNull Prize prize) {
+    public Prizes getPrizes(@NotNull final Prize prize) {
         Prizes prizes = prizesMap.get(prize.name());
         if (prizes == null) {
             Logger.getLogger("TitansBattle").warning(String.format("Prizes not set for %s!", prize.name()));
@@ -282,24 +287,49 @@ public abstract class BaseGameConfiguration implements ConfigurationSerializable
         return prizes;
     }
 
-    private Map<String, Prizes> createPrizesMap() {
-        LinkedHashMap<String, Prizes> map = new LinkedHashMap<>();
-        for (Prize p : Prize.values()) {
+    private @NotNull Map<String, Prizes> createPrizesMap() {
+        final LinkedHashMap<String, Prizes> map = new LinkedHashMap<>();
+        for (final Prize p : Prize.values()) {
             map.put(p.name(), new Prizes());
         }
         return map;
+    }
+
+    public boolean isCancelBlockInteract() {
+        return cancelBlockInteract;
+    }
+
+    public Integer getHitAmount() {
+        return hitAmount;
+    }
+
+    public int getMinimumPlaytimeInSeconds() {
+        return minimumPlaytime;
+    }
+
+    public @Nullable List<Integer> getBlockedProtocols() {
+        return blockedProtocols;
+    }
+
+    public Integer getMinimumYHeight() {
+        return minimumYHeight;
+    }
+
+    public enum Destination {
+        EXIT, LOBBY, WATCHROOM, BORDER_CENTER
     }
 
     public enum Prize implements ConfigurationSerializable {
         FIRST, SECOND, THIRD, KILLER;
 
         @SuppressWarnings("unused")
-        public static Prize deserialize(Map<String, Object> data) {
+        public static Prize deserialize(@NotNull final Map<String, Object> data) {
             return Prize.valueOf((String) data.get("prize"));
         }
 
+        @Contract(" -> new")
         @Override
-        public Map<String, Object> serialize() {
+        public @NotNull @Unmodifiable Map<String, Object> serialize() {
             return Collections.singletonMap("prize", this.name());
         }
     }

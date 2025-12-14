@@ -1,8 +1,8 @@
 package me.roinujnosde.titansbattle.managers;
 
+import me.roinujnosde.titansbattle.TitansBattle;
 import me.roinujnosde.titansbattle.games.Game;
 import me.roinujnosde.titansbattle.types.Group;
-import me.roinujnosde.titansbattle.TitansBattle;
 import me.roinujnosde.titansbattle.types.GroupData;
 import me.roinujnosde.titansbattle.types.Warrior;
 import me.roinujnosde.titansbattle.utils.Helper;
@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 
 /**
  * Class that manages the {@link Group}s required by group {@link Game}s.
- *
+ * <p>
  * An instance of this class should be registered using {@link TitansBattle#setGroupManager(GroupManager)}.
  *
  * @see SimpleClansGroupManager
@@ -52,6 +52,7 @@ public abstract class GroupManager {
 
     /**
      * Checks whether two {@link Player}s are in the same {@link Group}
+     *
      * @param player1 UUID of a Player
      * @param player2 UUID of a Player
      * @return true if they belong to the same {@link Group}
@@ -60,6 +61,7 @@ public abstract class GroupManager {
 
     /**
      * Returns the members of the {@link Group}
+     *
      * @param group the Group
      * @return the members
      */
@@ -78,8 +80,7 @@ public abstract class GroupManager {
     public @NotNull String buildStringFrom(@NotNull Collection<Group> groups) {
         return Helper.buildStringFrom(groups.stream()
                 .filter(Objects::nonNull)
-                .map(Group::getName)
-                .collect(Collectors.toList()));
+                .map(Group::getName).toList());
     }
 
 }

@@ -3,8 +3,10 @@ package me.roinujnosde.titansbattle.listeners;
 import me.roinujnosde.titansbattle.BaseGame;
 import me.roinujnosde.titansbattle.BaseGameConfiguration;
 import me.roinujnosde.titansbattle.TitansBattle;
+import me.roinujnosde.titansbattle.games.Boxing;
 import me.roinujnosde.titansbattle.managers.DatabaseManager;
 import me.roinujnosde.titansbattle.managers.GroupManager;
+import me.roinujnosde.titansbattle.managers.SpectateManager;
 import me.roinujnosde.titansbattle.types.Warrior;
 import me.roinujnosde.titansbattle.utils.Helper;
 import org.bukkit.entity.Entity;
@@ -17,9 +19,15 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.jetbrains.annotations.NotNull;
 
 public class EntityDamageListener extends TBListener {
+    private final SpectateManager sm;
+    private final DatabaseManager dm;
+    private final GroupManager gm;
 
     public EntityDamageListener(@NotNull TitansBattle plugin) {
         super(plugin);
+        this.sm = plugin.getSpectateManager();
+        this.dm = plugin.getDatabaseManager();
+        this.gm = plugin.getGroupManager();
     }
 
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
@@ -35,12 +43,10 @@ public class EntityDamageListener extends TBListener {
     //Aurellium / Auraskills is on HIGH
     @EventHandler(priority = EventPriority.NORMAL)
     public void onDamage(EntityDamageEvent event) {
-        DatabaseManager dm = plugin.getDatabaseManager();
-
-        if (!(event.getEntity() instanceof Player)) {
+        if (!(event.getEntity() instanceof Player defender)) {
             return;
         }
-        Player defender = (Player) event.getEntity();
+
         BaseGame game = plugin.getBaseGameFrom(defender);
         if (game == null) {
             return;
@@ -50,6 +56,7 @@ public class EntityDamageListener extends TBListener {
             event.setCancelled(true);
             return;
         }
+
         event.setCancelled(false);
         if (event instanceof EntityDamageByEntityEvent) {
             processEntityDamageByEntityEvent(event, defender, game);
@@ -57,28 +64,36 @@ public class EntityDamageListener extends TBListener {
     }
 
     private void processEntityDamageByEntityEvent(EntityDamageEvent event, Player defender, BaseGame game) {
-        DatabaseManager dm = plugin.getDatabaseManager();
-
         EntityDamageByEntityEvent subEvent = (EntityDamageByEntityEvent) event;
         Player attacker = Helper.getPlayerAttackerOrKiller(subEvent.getDamager());
         if (!isDamageTypeAllowed(subEvent, game)) {
             event.setCancelled(true);
             return;
         }
-        if (attacker != null) {
-            Warrior warrior = dm.getWarrior(attacker);
-            if (!game.getConfig().isPvP() || !game.isInBattle(warrior)) {
-                event.setCancelled(true);
-                return;
-            }
-        }
-        if (attacker == null || !game.getConfig().isGroupMode()) {
+
+        if (attacker == null) return;
+
+        if (sm.isSpectating(attacker)) {
+            event.setCancelled(true);
             return;
         }
 
-        GroupManager groupManager = TitansBattle.getInstance().getGroupManager();
-        if (groupManager != null) {
-            event.setCancelled(groupManager.sameGroup(defender.getUniqueId(), attacker.getUniqueId()));
+        Warrior warrior = dm.getWarrior(attacker);
+        if (!game.getConfig().isPvP() || !game.isInBattle(warrior)) {
+            event.setCancelled(true);
+            return;
+        }
+
+        if (game instanceof Boxing boxing) {
+            if (boxing.onHit(attacker, defender)) {
+                event.setDamage(0.0);
+            } else {
+                event.setDamage(1000.0);
+            }
+        }
+
+        if (game.getConfig().isGroupMode() && gm != null) {
+            event.setCancelled(gm.sameGroup(defender.getUniqueId(), attacker.getUniqueId()));
         }
     }
 
@@ -92,8 +107,8 @@ public class EntityDamageListener extends TBListener {
     }
 
     private boolean isParticipant(Entity entity) {
-        if (entity instanceof Player) {
-            return plugin.getBaseGameFrom((Player) entity) != null;
+        if (entity instanceof Player player) {
+            return plugin.getBaseGameFrom(player) != null;
         }
         return false;
     }

@@ -13,7 +13,11 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @SuppressWarnings({"FieldCanBeLocal", "unused", "FieldMayBeFinal"})
 @SerializableAs("prize")
@@ -56,8 +60,13 @@ public class Prizes implements ConfigurationSerializable {
         ConfigUtils.deserialize(this, data);
     }
 
+    public static Map<Player, Collection<ItemStack>> getPlayersWithItemsToReceive() {
+        ITEMS_NOT_GIVEN.keySet().removeIf(p -> !p.isOnline());
+        return ITEMS_NOT_GIVEN;
+    }
+
     @Override
-    public Map<String, Object> serialize() {
+    public @NotNull Map<String, Object> serialize() {
         return ConfigUtils.serialize(this);
     }
 
@@ -113,10 +122,5 @@ public class Prizes implements ConfigurationSerializable {
                 CommandManager.dispatchCommand(Bukkit.getConsoleSender(), command);
             }
         }
-    }
-
-    public static Map<Player, Collection<ItemStack>> getPlayersWithItemsToReceive() {
-        ITEMS_NOT_GIVEN.keySet().removeIf(p -> !p.isOnline());
-        return ITEMS_NOT_GIVEN;
     }
 }

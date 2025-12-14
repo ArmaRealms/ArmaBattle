@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.stream.Collectors;
 
 public class ConfigUtils {
 
@@ -70,7 +69,7 @@ public class ConfigUtils {
 
     public static List<String> getEditableFields(@NotNull Class<?> clazz) {
         return getFields(clazz).stream().filter(ConfigUtils::isEditable).map(Field::getName)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public static String getPath(Field field) {
@@ -79,7 +78,7 @@ public class ConfigUtils {
             return path.value();
         }
         String name = field.getName();
-        for (int i = 0; i < name.toCharArray().length; i++) {
+        for (int i = 0; i < name.length(); i++) {
             char c = name.charAt(i);
             if (Character.isUpperCase(c)) {
                 name = name.replaceFirst(String.valueOf(c), "_" + Character.toLowerCase(c));
