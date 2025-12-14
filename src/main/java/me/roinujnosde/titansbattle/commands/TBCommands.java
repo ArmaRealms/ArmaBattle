@@ -12,8 +12,8 @@ import co.aikar.commands.annotation.Dependency;
 import co.aikar.commands.annotation.Description;
 import co.aikar.commands.annotation.Optional;
 import co.aikar.commands.annotation.Subcommand;
-import co.aikar.commands.annotation.Values;
 import co.aikar.commands.annotation.Syntax;
+import co.aikar.commands.annotation.Values;
 import co.aikar.commands.bukkit.contexts.OnlinePlayer;
 import me.roinujnosde.titansbattle.BaseGame;
 import me.roinujnosde.titansbattle.TitansBattle;
@@ -221,30 +221,30 @@ public class TBCommands extends BaseCommand {
     @CommandPermission("titansbattle.status")
     @Conditions("happening")
     @Description("{@@command.description.status}")
-    public void status(Player sender) {
+    public void status(final Player sender) {
         plugin.debug(String.format("%s used /tb status", sender.getName()));
-        java.util.Optional<Game> currentGame = gameManager.getCurrentGame();
+        final java.util.Optional<Game> currentGame = gameManager.getCurrentGame();
         if (currentGame.isEmpty()) {
             sender.sendMessage(plugin.getLang("not-starting-or-started"));
             return;
         }
 
-        Game game = currentGame.get();
+        final Game game = currentGame.get();
 
-        long battleStartTime = game.getBattleStartTime();
+        final long battleStartTime = game.getBattleStartTime();
         long elapsedSeconds = 0;
         if (battleStartTime > 0) {
             elapsedSeconds = (System.currentTimeMillis() - battleStartTime) / 1000;
         }
 
-        Integer expiration = game.getConfig().getExpirationTime();
-        long maxDurationSeconds = (expiration != null) ? expiration : -1L; // -1 = sem limite / N/A
-        long remainingSeconds = (maxDurationSeconds < 0) ? -1L : Math.max(0, maxDurationSeconds - elapsedSeconds);
+        final Integer expiration = game.getConfig().getExpirationTime();
+        final long maxDurationSeconds = (expiration != null) ? expiration : -1L; // -1 = sem limite / N/A
+        final long remainingSeconds = (maxDurationSeconds < 0) ? -1L : Math.max(0, maxDurationSeconds - elapsedSeconds);
 
-        String timeFormat = configManager.getTimeFormat();
-        String elapsedTime = formatTime(elapsedSeconds, timeFormat);
-        String maxTime = (maxDurationSeconds < 0) ? "N/A" : formatTime(maxDurationSeconds, timeFormat);
-        String remainingTime = (remainingSeconds < 0) ? "N/A" : formatTime(remainingSeconds, timeFormat);
+        final String timeFormat = configManager.getTimeFormat();
+        final String elapsedTime = Helper.formatTime(elapsedSeconds, timeFormat);
+        final String maxTime = (maxDurationSeconds < 0) ? "N/A" : Helper.formatTime(maxDurationSeconds, timeFormat);
+        final String remainingTime = (remainingSeconds < 0) ? "N/A" : Helper.formatTime(remainingSeconds, timeFormat);
 
         if (game.getConfig().isGroupMode()) {
             sender.sendMessage(plugin.getLang("game_status_group", game, Helper.buildStringFrom(game.getGroupParticipants()),
@@ -254,15 +254,4 @@ public class TBCommands extends BaseCommand {
                     elapsedTime, maxTime, remainingTime));
         }
     }
-
-    private String formatTime(long totalSeconds, String format) {
-        long hours = totalSeconds / 3600;
-        long minutes = (totalSeconds % 3600) / 60;
-        long seconds = totalSeconds % 60;
-
-        return format.replace("HH", String.format("%02d", hours))
-                .replace("mm", String.format("%02d", minutes))
-                .replace("ss", String.format("%02d", seconds));
-    }
-
 }

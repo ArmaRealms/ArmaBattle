@@ -323,9 +323,9 @@ public class Helper {
         return sb.toString();
     }
 
-    public static @NotNull String buildStringFrom(@NotNull Map<Group, Integer> groupIntegerMap) {
-        StringBuilder sb = new StringBuilder();
-        for (Map.Entry<Group, Integer> entry : groupIntegerMap.entrySet()) {
+    public static @NotNull String buildStringFrom(@NotNull final Map<Group, Integer> groupIntegerMap) {
+        final StringBuilder sb = new StringBuilder();
+        for (final Map.Entry<Group, Integer> entry : groupIntegerMap.entrySet()) {
             sb.append(entry.getKey().getId().toUpperCase())
                     .append("(")
                     .append(entry.getValue())
@@ -383,5 +383,15 @@ public class Helper {
             treeMap.putAll(map);
         }
         return treeMap;
+    }
+
+    public static String formatTime(final long totalSeconds, final String format) {
+        final long hours = totalSeconds / 3600;
+        final long minutes = (totalSeconds % 3600) / 60;
+        final long seconds = totalSeconds % 60;
+
+        return format.replace("HH", String.format("%02d", hours))
+                .replace("mm", String.format("%02d", minutes))
+                .replace("ss", String.format("%02d", seconds));
     }
 }
