@@ -26,9 +26,9 @@ package me.roinujnosde.titansbattle.events;
 import me.roinujnosde.titansbattle.types.Group;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
 
 /**
- *
  * @author RoinujNosde
  */
 public class GroupWinEvent extends Event {
@@ -43,8 +43,13 @@ public class GroupWinEvent extends Event {
         this.group = group;
     }
 
+    public static HandlerList getHandlerList() {
+        return HANDLERS;
+    }
+
     /**
      * Returns the Group
+     *
      * @return the Group
      */
     public Group getGroup() {
@@ -52,11 +57,7 @@ public class GroupWinEvent extends Event {
     }
 
     @Override
-    public HandlerList getHandlers() {
-        return HANDLERS;
-    }
-
-    public static HandlerList getHandlerList() {
+    public @NotNull HandlerList getHandlers() {
         return HANDLERS;
     }
 }

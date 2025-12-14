@@ -8,7 +8,7 @@ public abstract class TBListener implements Listener {
 
     protected TitansBattle plugin;
 
-    public TBListener(@NotNull TitansBattle plugin) {
+    protected TBListener(@NotNull TitansBattle plugin) {
         this.plugin = plugin;
     }
 

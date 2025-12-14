@@ -1,0 +1,38 @@
+name: Build and Upload
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4.2.2
+
+      - name: Set up Java
+        uses: actions/setup-java@v4.7.0
+        with:
+          distribution: 'adopt'
+          java-version: '21'
+
+      - name: Cache Maven repo
+        uses: actions/cache@v4.2.0
+        id: cache
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+
+      - name: Install SimpleClans
+        run: mvn install:install-file -Dfile=libs/SimpleClans-2.19.3-SNAPSHOT.jar -DgroupId=net.sacredlabyrinth.phaed.simpleclans -DartifactId=SimpleClans -Dversion=2.19.3-SNAPSHOT -Dpackaging=jar -f pom.xml
+
+      - name: Build with Maven
+        run: mvn clean package --file pom.xml
+
+      - name: Upload
+        uses: actions/upload-artifact@v4.6.0
+        with:
+          name: TitansBattle
+          path: target/TitansBattle*.jar

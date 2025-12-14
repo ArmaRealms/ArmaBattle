@@ -43,10 +43,10 @@ public class Warrior {
 
     private final Supplier<GroupManager> groupManager;
     private final OfflinePlayer offlinePlayer;
-    private @Nullable WeakReference<Player> playerReference;
     private final Map<String, Integer> kills;
     private final Map<String, Integer> deaths;
     private final Map<String, Integer> victories;
+    private @Nullable WeakReference<Player> playerReference;
     private boolean isModified;
 
     public Warrior(@NotNull OfflinePlayer offlinePlayer, @NotNull Supplier<GroupManager> groupManager) {
@@ -72,9 +72,9 @@ public class Warrior {
 
     @Override
     public boolean equals(Object o) {
-        if (o instanceof Warrior) {
+        if (o instanceof Warrior warrior) {
             final UUID uniqueId = toPlayer().getUniqueId();
-            final UUID uniqueId2 = ((Warrior) o).toPlayer().getUniqueId();
+            final UUID uniqueId2 = warrior.toPlayer().getUniqueId();
             return uniqueId.equals(uniqueId2);
         }
         return false;
@@ -101,9 +101,9 @@ public class Warrior {
     @Override
     public String toString() {
         return "Warrior{" +
-               "name=" + offlinePlayer.getName() +
-               ", uuid=" + offlinePlayer.getUniqueId() +
-               '}';
+                "name=" + offlinePlayer.getName() +
+                ", uuid=" + offlinePlayer.getUniqueId() +
+                '}';
     }
 
     @Nullable
@@ -134,11 +134,11 @@ public class Warrior {
 
     @Nullable
     public Group getGroup() {
-        GroupManager groupManager = this.groupManager.get();
-        if (groupManager == null) {
+        GroupManager gm = this.groupManager.get();
+        if (gm == null) {
             return null;
         }
-        return groupManager.getGroup(offlinePlayer.getUniqueId());
+        return gm.getGroup(offlinePlayer.getUniqueId());
     }
 
     public int getTotalKills() {
@@ -203,7 +203,7 @@ public class Warrior {
         isModified = true;
     }
 
-    private <T> int getSum(Map<T, Integer> map) {
+    private <T> int getSum(@NotNull Map<T, Integer> map) {
         return map.values().stream().mapToInt(i -> i).sum();
     }
 

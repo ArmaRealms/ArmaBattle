@@ -4,9 +4,9 @@ import co.aikar.commands.BukkitCommandCompletionContext;
 import co.aikar.commands.InvalidCommandArgument;
 import me.roinujnosde.titansbattle.TitansBattle;
 import me.roinujnosde.titansbattle.challenges.ArenaConfiguration;
+import me.roinujnosde.titansbattle.serialization.ConfigUtils;
 import me.roinujnosde.titansbattle.types.GameConfiguration;
 import me.roinujnosde.titansbattle.types.Prizes;
-import me.roinujnosde.titansbattle.serialization.ConfigUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;

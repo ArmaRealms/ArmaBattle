@@ -19,39 +19,43 @@ debug: false
 
 #Change the commands
 commands:
-    titansbattle: "titansbattle"
-    create: "create"
-    join: "join"
-    kick: "kick"
-    exit: "exit"
-    start: "start"
-    cancel: "cancel"
-    setdestination: "setdestination"
-    setinventory: "setinventory"
-    setkit: "setkit"
-    setprize: "setprize"
-    help: "help"
-    reload: "reload"
-    watch: "watch"
-    winners: "winners"
-    ranking: "ranking"
-    edit: "edit"
-    prize: "prize"
-    game: "game"
-    members: "members"
-    leaders: "leaders"
-    killer: "killer"
-    groups: "groups"
-    players: "players"
-    challenge: "challenge"
-    group: "group"
-    player: "player"
-    accept: "accept"
-    deny: "deny"
-    info: "info"
-    setwinner: "setwinner"
-    config: "config"
-    status: "status"
+  titansbattle: "titansbattle"
+  create: "create"
+  join: "join"
+  kick: "kick"
+  exit: "exit"
+  start: "start"
+  cancel: "cancel"
+  setdestination: "setdestination"
+  setinventory: "setinventory"
+  setkit: "setkit"
+  setprize: "setprize"
+  help: "help"
+  reload: "reload"
+  watch: "watch"
+  winners: "winners"
+  ranking: "ranking"
+  edit: "edit"
+  prize: "prize"
+  game: "game"
+  members: "members"
+  leaders: "leaders"
+  killer: "killer"
+  groups: "groups"
+  players: "players"
+  challenge: "challenge"
+  group: "group"
+  player: "player"
+  accept: "accept"
+  deny: "deny"
+  info: "info"
+  setwinner: "setwinner"
+  config: "config"
+  x1clan: "x1clan"
+  spec: "spec"
+  getkit: "getkit"
+  teleport: "teleport"
+  status: "status"
 
 #Sounds used in games, to disable one leave it ""
 sounds:
@@ -87,11 +91,15 @@ time-format: "{HH}:{mm}:{ss}"
 
 #Set how many lines should be displayed on those commands
 page-limit:
-    help: 7
-    ranking: 10
-    
+  help: 7
+  ranking: 10
+
 #List here commands that the plugin will not block in battle phase
-allowed_commands: ["/tb exit", "/tb winners"]
+allowed_commands: [ "/tb exit", "/tb winners" ]
+
+#List here commands that the plugin will not block in spectator phase
+allowed_commands_in_spectator: [ "/tb watchroom", "/tb watch", "/tb spec" ]
+
 #Commands that NO ONE will be able to use, not even players who didn't join the game
 blocked_commands_everyone:
   - "/clan disband"
@@ -100,13 +108,16 @@ blocked_commands_everyone:
   - "/f kick"
   - "/marry tp"
 
+viaversion:
+  block-protocols: [ ]
+
 #Send a webhook in game start, leave empty to disable
 discord_webhook_url: ""
 
 #Destinations
 destinations:
-    general_exit:
-    
+  general_exit:
+
 #Will the game begin automatically? Which game? When?
 #Game: the name of the game file
 #Frequency: HOURLY, DAILY, WEEKLY, MONTHLY
@@ -138,8 +149,22 @@ scheduler:
       day: 15
       hour: 18
       minute: 30
-          
+
+#NPC Proxy System Configuration
+battle:
+  npcProxy:
+    enabled: true
+    provider: auto  # auto | fancynpcs | citizens | vanilla
+    # Disconnection limits and timeout settings
+    maxDisconnections: 3  # Maximum times a player can disconnect during the same event
+    maxOfflineTimeMs: 300000  # Maximum time a player can stay offline (5 minutes)
+    vanilla:
+      mobType: ZOMBIE  # Entity type for vanilla proxy mobs
+    # Reason for not spawning a proxy NPC
+    bypass-reasons:
+      - "banned"
+
 #Data used by the plugin, don't edit it.
 data:
-    respawn: []
-    clear_inv: []
+  respawn: [ ]
+  clear_inv: [ ]

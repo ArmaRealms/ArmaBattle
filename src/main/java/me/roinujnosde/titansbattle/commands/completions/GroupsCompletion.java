@@ -7,8 +7,7 @@ import me.roinujnosde.titansbattle.types.Group;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
-import java.util.Collections;
-import java.util.stream.Collectors;
+import java.util.List;
 
 public class GroupsCompletion extends AbstractCompletion {
     public GroupsCompletion(TitansBattle plugin) {
@@ -22,8 +21,7 @@ public class GroupsCompletion extends AbstractCompletion {
 
     @Override
     public Collection<String> getCompletions(BukkitCommandCompletionContext context) throws InvalidCommandArgument {
-        if (getGroupManager() == null)
-            return Collections.emptyList();
-        return getGroupManager().getGroups().stream().map(Group::getUniqueName).collect(Collectors.toList());
+        if (getGroupManager() == null) return List.of();
+        return getGroupManager().getGroups().stream().map(Group::getUniqueName).toList();
     }
 }

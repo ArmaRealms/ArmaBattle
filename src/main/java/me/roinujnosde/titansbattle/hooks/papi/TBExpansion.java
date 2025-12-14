@@ -12,7 +12,11 @@ import me.roinujnosde.titansbattle.types.Winners;
 import org.bukkit.OfflinePlayer;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -21,8 +25,6 @@ import java.util.stream.Collectors;
 import static java.lang.String.valueOf;
 
 public class TBExpansion extends PlaceholderExpansion {
-
-    private final TitansBattle plugin;
 
     private static final List<String> PLACEHOLDERS;
     private static final Pattern PARTICIPANTS_SIZE;
@@ -39,10 +41,12 @@ public class TBExpansion extends PlaceholderExpansion {
         LAST_WINNER_GROUP_PATTERN = Pattern.compile("last_winner_group_(?<game>\\S+)");
         LAST_WINNER_KILLER_PATTERN = Pattern.compile("last_(?<type>winner|killer)_(?<game>\\S+)");
         PREFIX_PATTERN = Pattern.compile("(?<game>^\\S+)_(?<type>winner|killer)_prefix");
-        PLACEHOLDERS = Arrays.asList("%titansbattle_groups_size%" ,"%titansbattle_participants_size%" ,"%titansbattle_arena_in_use_<arena>%", "%titansbattle_last_winner_group_<game>%",
+        PLACEHOLDERS = Arrays.asList("%titansbattle_groups_size%", "%titansbattle_participants_size%", "%titansbattle_arena_in_use_<arena>%", "%titansbattle_last_winner_group_<game>%",
                 "%titansbattle_last_<killer|winner>_<game>%", "%titansbattle_<game>_<killer|winner>_prefix%",
                 "%titansbattle_group_total_victories%", "%titansbattle_total_kills%", "%titansbattle_total_deaths%");
     }
+
+    private final TitansBattle plugin;
 
     public TBExpansion(TitansBattle plugin) {
         this.plugin = plugin;
@@ -148,7 +152,7 @@ public class TBExpansion extends PlaceholderExpansion {
     @NotNull
     private String getWinnerPrefix(@NotNull OfflinePlayer player, @NotNull String game) {
         Optional<GameConfiguration> config = plugin.getConfigurationDao().getConfiguration(game, GameConfiguration.class);
-        if (!config.isPresent()) {
+        if (config.isEmpty()) {
             plugin.debug(String.format("game %s not found", game));
             return "";
         }
@@ -166,7 +170,7 @@ public class TBExpansion extends PlaceholderExpansion {
     @NotNull
     private String getKillerPrefix(@NotNull OfflinePlayer player, @NotNull String game) {
         Optional<GameConfiguration> config = plugin.getConfigurationDao().getConfiguration(game, GameConfiguration.class);
-        if (!config.isPresent()) {
+        if (config.isEmpty()) {
             return "";
         }
         Winners latestWinners = plugin.getDatabaseManager().getLatestWinners();
@@ -191,7 +195,7 @@ public class TBExpansion extends PlaceholderExpansion {
 
     private @NotNull String getLastKiller(String game) {
         Optional<Winners> winners = getLastWinnersMatching(w -> w.getKiller(game) != null);
-        if (!winners.isPresent()) {
+        if (winners.isEmpty()) {
             return "";
         }
         UUID killer = winners.get().getKiller(game);
@@ -200,7 +204,7 @@ public class TBExpansion extends PlaceholderExpansion {
 
     private @NotNull String getLastWinnerGroup(String game) {
         Optional<Winners> winner = getLastWinnersMatching(w -> w.getWinnerGroup(game) != null);
-        if (!winner.isPresent()) {
+        if (winner.isEmpty()) {
             return "";
         }
         return winner.get().getWinnerGroup(game);

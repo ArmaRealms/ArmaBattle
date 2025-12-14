@@ -1,4 +1,5 @@
 # TitansBattle
+
 Highly customizable battle plugin for Spigot servers
 
 [![Spiget Downloads](https://img.shields.io/spiget/downloads/47145)](https://www.spigotmc.org/resources/47145/)

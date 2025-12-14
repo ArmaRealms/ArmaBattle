@@ -9,7 +9,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
-public class OnlinePlayerContext extends AbstractContextResolver<OnlinePlayer>  {
+public class OnlinePlayerContext extends AbstractContextResolver<OnlinePlayer> {
 
     public OnlinePlayerContext(@NotNull TitansBattle plugin) {
         super(plugin);
