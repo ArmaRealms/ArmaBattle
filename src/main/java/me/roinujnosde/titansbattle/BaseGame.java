@@ -900,7 +900,7 @@ public abstract class BaseGame {
             runCommandsBeforeBattle(getCurrentFighters());
             preparation = false;
             battle = true;
-battleStartTime = System.currentTimeMillis();
+            battleStartTime = System.currentTimeMillis();
 
             if (getConfig().isWorldBorder()) {
                 final long borderInterval = getConfig().getBorderInterval() * 20L;
