@@ -21,40 +21,34 @@ public class SoundUtils {
     }
 
     @SafeVarargs
-    public static void playSound(@NotNull Type type,
-                                 @NotNull FileConfiguration config,
-                                 @Nullable Collection<Warrior>... args) {
+    public static void playSound(@NotNull final Type type,
+                                 @NotNull final FileConfiguration config,
+                                 @Nullable final Collection<Warrior>... args) {
         if (args != null) {
-            for (Collection<Warrior> warriors : args) {
+            for (final Collection<Warrior> warriors : args) {
                 if (warriors == null) continue;
                 warriors.stream().map(Warrior::toOnlinePlayer).forEach(player -> playSound(type, config, player));
             }
         }
     }
 
-    public static void playSound(@NotNull Type type, @NotNull FileConfiguration config, @Nullable Player player) {
+    public static void playSound(@NotNull final Type type, @NotNull final FileConfiguration config, @Nullable final Player player) {
         if (player == null) {
             return;
         }
-        String soundName = config.getString("sounds." + type.name().toLowerCase(Locale.ROOT), "");
+        final String soundName = config.getString("sounds." + type.name().toLowerCase(Locale.ROOT), "");
         if (soundName.isEmpty()) return;
-        Sound sound = null;
-        try {
-            sound = getSound(soundName.toUpperCase(Locale.ROOT));
-        } catch (IllegalArgumentException e) {
-            LOGGER.warning(String.format("Invalid sound: %s", soundName));
-        }
+        final Sound sound = getSound(soundName.toUpperCase(Locale.ROOT));
         if (sound == null) {
             return;
         }
         player.playSound(player.getLocation(), sound, 1F, 1F);
     }
 
-    private static Sound getSound(String name) {
+    private static Sound getSound(final String name) {
         try {
-            Method valueOf = Sound.class.getMethod("valueOf", String.class);
-            return (Sound) valueOf.invoke(null, name);
-        } catch (ReflectiveOperationException ex) {
+            return Sound.valueOf(name);
+        } catch (final IllegalArgumentException ex) {
             LOGGER.log(Level.SEVERE, "Error getting sound object", ex);
             return null;
         }
