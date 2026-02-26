@@ -7,7 +7,6 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.Locale;
 import java.util.logging.Level;
@@ -45,7 +44,7 @@ public class SoundUtils {
         player.playSound(player.getLocation(), sound, 1F, 1F);
     }
 
-    private static Sound getSound(final String name) {
+    private static @Nullable Sound getSound(final String name) {
         try {
             return Sound.valueOf(name);
         } catch (final IllegalArgumentException ex) {
