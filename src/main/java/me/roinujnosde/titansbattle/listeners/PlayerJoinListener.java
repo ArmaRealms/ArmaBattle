@@ -23,87 +23,135 @@
  */
 package me.roinujnosde.titansbattle.listeners;
 
+import me.roinujnosde.titansbattle.BaseGame;
 import me.roinujnosde.titansbattle.TitansBattle;
+import me.roinujnosde.titansbattle.combat.DisconnectTrackingManager;
+import me.roinujnosde.titansbattle.hooks.viaversion.ViaVersionHook;
 import me.roinujnosde.titansbattle.managers.ConfigManager;
+import me.roinujnosde.titansbattle.npc.NpcProvider;
 import me.roinujnosde.titansbattle.types.Kit;
+import me.roinujnosde.titansbattle.types.Warrior;
 import me.roinujnosde.titansbattle.utils.Helper;
 import me.roinujnosde.titansbattle.utils.MessageUtils;
 import me.roinujnosde.titansbattle.utils.SoundUtils;
+import org.bukkit.Location;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.logging.Level;
 
 /**
- *
  * @author RoinujNosde
  */
 public class PlayerJoinListener extends TBListener {
 
     private final ConfigManager cm;
 
-    public PlayerJoinListener(@NotNull TitansBattle plugin) {
+    public PlayerJoinListener(@NotNull final TitansBattle plugin) {
         super(plugin);
-        cm = plugin.getConfigManager();
+        this.cm = plugin.getConfigManager();
     }
 
-    @EventHandler
-    public void onJoin(PlayerJoinEvent event) {
-        Player player = event.getPlayer();
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void onJoin(final @NotNull PlayerJoinEvent event) {
+        final Player player = event.getPlayer();
+        handleNpcProxyRestoration(player);
         teleportToExit(player);
         clearInventory(player);
         sendJoinMessage(player);
     }
 
-    private void sendJoinMessage(Player player) {
+    private void handleNpcProxyRestoration(final Player player) {
+        final String playerName = player.getName();
+        try {
+            // Check if player is allowed to return first
+            final UUID playerId = player.getUniqueId();
+            final BaseGame game = plugin.getBaseGameFrom(player);
+            if (game == null) {
+                return;
+            }
+
+            final ViaVersionHook vvh = plugin.getViaVersionHook();
+            if (vvh != null && vvh.isPlayerVersionBlocked(player, game.getConfig())) {
+                final Warrior warrior = plugin.getDatabaseManager().getWarrior(player);
+                game.eliminate(warrior, "incompatible-version");
+                return;
+            }
+
+            final DisconnectTrackingManager dtm = plugin.getDisconnectTrackingManager();
+            if (!dtm.canPlayerReturn(playerId)) {
+                final Warrior warrior = plugin.getDatabaseManager().getWarrior(player);
+                game.eliminate(warrior, "disconnect-limit-exceeded");
+                return;
+            }
+
+            // Check if player has an active NPC proxy
+            final NpcProvider np = plugin.getNpcProvider();
+            np.getProxyByOwner(playerId).ifPresent(npcHandle -> {
+                final Location proxyLocation = npcHandle.getLocation();
+                player.teleport(proxyLocation);
+                np.despawnProxy(playerId, "owner-rejoined");
+                dtm.clearPlayerReconnected(playerId);
+            });
+        } catch (final Exception e) {
+            plugin.getLogger().log(Level.WARNING, "Failed to restore NPC proxy for " + playerName, e);
+        }
+    }
+
+    private void sendJoinMessage(final Player player) {
         if (Helper.isWinner(player) || Helper.isKiller(player)) {
-            boolean killerJoinMessageEnabled = Helper.isKillerJoinMessageEnabled(player);
-            boolean winnerJoinMessageEnabled = Helper.isWinnerJoinMessageEnabled(player);
-            FileConfiguration config = Helper.getConfigFromWinnerOrKiller(player);
+            final boolean killerJoinMessageEnabled = Helper.isKillerJoinMessageEnabled(player);
+            final boolean winnerJoinMessageEnabled = Helper.isWinnerJoinMessageEnabled(player);
+            final FileConfiguration config = Helper.getConfigFromWinnerOrKiller(player);
+            final String playerName = player.getName();
             if (Helper.isKiller(player) && Helper.isWinner(player)) {
                 if (Helper.isKillerPriority(player) && killerJoinMessageEnabled) {
-                    MessageUtils.broadcastKey("killer-has-joined", config, player.getName());
+                    MessageUtils.broadcastKey("killer-has-joined", config, playerName);
                     return;
                 }
                 if (winnerJoinMessageEnabled) {
-                    MessageUtils.broadcastKey("winner-has-joined", config, player.getName());
+                    MessageUtils.broadcastKey("winner-has-joined", config, playerName);
                 }
                 return;
             }
             if (Helper.isKiller(player) && killerJoinMessageEnabled) {
-                MessageUtils.broadcastKey("killer-has-joined", config, player.getName());
+                MessageUtils.broadcastKey("killer-has-joined", config, playerName);
             }
             if (Helper.isWinner(player) && winnerJoinMessageEnabled) {
-                MessageUtils.broadcastKey("winner-has-joined", config, player.getName());
+                MessageUtils.broadcastKey("winner-has-joined", config, playerName);
             }
         }
     }
 
-    private void clearInventory(Player player) {
-        List<UUID> toClear = cm.getClearInventory();
-        if (toClear.contains(player.getUniqueId())) {
+    private void clearInventory(final @NotNull Player player) {
+        final List<UUID> toClear = cm.getClearInventory();
+        final UUID playerId = player.getUniqueId();
+        if (toClear.contains(playerId)) {
             Kit.clearInventory(player);
-            toClear.remove(player.getUniqueId());
+            toClear.remove(playerId);
             cm.save();
         }
     }
 
-    private void teleportToExit(Player player) {
-        if (!cm.getRespawn().contains(player.getUniqueId())) {
+    private void teleportToExit(final @NotNull Player player) {
+        final UUID playerId = player.getUniqueId();
+        if (!cm.getRespawn().contains(playerId)) {
             return;
         }
         if (cm.getGeneralExit() != null) {
             SoundUtils.playSound(SoundUtils.Type.TELEPORT, plugin.getConfig(), player);
             player.teleport(cm.getGeneralExit());
         } else {
-            plugin.getLogger().warning(String.format("GENERAL_EXIT is not set, it was not possible to teleport %s",
-                    player.getName()));
+            final String playerName = player.getName();
+            plugin.getLogger().warning(String.format("GENERAL_EXIT is not set, it was not possible to teleport %s", playerName));
         }
-        cm.getRespawn().remove(player.getUniqueId());
+        cm.getRespawn().remove(playerId);
         cm.save();
     }
 }

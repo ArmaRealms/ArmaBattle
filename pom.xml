@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>me.roinujnosde</groupId>
     <artifactId>TitansBattle</artifactId>
@@ -7,17 +8,19 @@
     <packaging>jar</packaging>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
     </properties>
 
     <build>
         <plugins>
             <plugin>
-                <version>3.7.0</version>
+                <version>3.10.1</version>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <source>11</source>
-                    <target>11</target>
+                    <source>21</source>
+                    <target>21</target>
                     <compilerArgs>
                         <arg>-parameters</arg>
                     </compilerArgs>
@@ -26,7 +29,7 @@
             <plugin>
                 <groupId>pl.project13.maven</groupId>
                 <artifactId>git-commit-id-plugin</artifactId>
-                <version>3.0.0</version>
+                <version>4.9.10</version>
                 <executions>
                     <execution>
                         <goals>
@@ -42,10 +45,11 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <version>3.2.4</version>
+                <version>3.6.0</version>
                 <configuration>
                     <dependencyReducedPomLocation>${project.build.directory}/dependency-reduced-pom.xml
                     </dependencyReducedPomLocation>
+                    <minimizeJar>true</minimizeJar>
                     <relocations>
                         <relocation>
                             <pattern>com.google.gson</pattern>
@@ -106,6 +110,10 @@
             <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
         </repository>
         <repository>
+            <id>papermc</id>
+            <url>https://repo.papermc.io/repository/maven-public/</url>
+        </repository>
+        <repository>
             <id>roinujnosde-repo</id>
             <name>RoinujNosde's Repository</name>
             <url>https://repo.roinujnosde.me/releases</url>
@@ -122,6 +130,14 @@
             <id>codemc-repo</id>
             <url>https://repo.codemc.io/repository/maven-public/</url>
         </repository>
+        <repository>
+            <id>viaversion-repo</id>
+            <url>https://repo.viaversion.com</url>
+        </repository>
+        <repository>
+            <id>fancynpcs-repo</id>
+            <url>https://repo.fancyinnovations.com/releases</url>
+        </repository>
     </repositories>
     <dependencies>
         <dependency>
@@ -132,13 +148,20 @@
         <dependency>
             <groupId>net.sacredlabyrinth.phaed.simpleclans</groupId>
             <artifactId>SimpleClans</artifactId>
-            <version>2.18.1</version>
-            <scope>provided</scope>
+            <version>2.19.3-SNAPSHOT</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/libs/SimpleClans-2.19.3-SNAPSHOT.jar</systemPath>
         </dependency>
+        <!--        <dependency>-->
+        <!--            <groupId>org.spigotmc</groupId>-->
+        <!--            <artifactId>spigot-api</artifactId>-->
+        <!--            <version>1.9.4-R0.1-SNAPSHOT</version>-->
+        <!--            <scope>provided</scope>-->
+        <!--        </dependency>-->
         <dependency>
-            <groupId>org.spigotmc</groupId>
-            <artifactId>spigot-api</artifactId>
-            <version>1.9.4-R0.1-SNAPSHOT</version>
+            <groupId>io.papermc.paper</groupId>
+            <artifactId>paper-api</artifactId>
+            <version>1.21.11-R0.1-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -191,6 +214,18 @@
             <artifactId>mockito-core</artifactId>
             <version>5.14.2</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.viaversion</groupId>
+            <artifactId>viaversion-api</artifactId>
+            <version>5.3.1</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>de.oliver</groupId>
+            <artifactId>FancyNpcs</artifactId>
+            <version>2.7.0</version>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
     <name>TitansBattle</name>

@@ -54,11 +54,6 @@ public class GameConfiguration extends BaseGameConfiguration {
         ConfigUtils.deserialize(this, data);
     }
 
-    @Override
-    public Map<String, Object> serialize() {
-        return ConfigUtils.serialize(this);
-    }
-
     /**
      * The name of the class responsible for managing this game
      *
@@ -68,6 +63,7 @@ public class GameConfiguration extends BaseGameConfiguration {
         return type;
     }
 
+    @Override
     public void setName(@NotNull String name) {
         this.name = name;
     }
@@ -90,14 +86,6 @@ public class GameConfiguration extends BaseGameConfiguration {
     @Override
     public Integer getMinimumPlayers() {
         return Math.max(2, minimumPlayers);
-    }
-
-    public Integer getPreparationTime() {
-        return preparationTime;
-    }
-
-    public Integer getExpirationTime() {
-        return expirationTime;
     }
 
     public Integer getAnnouncementGameInfoInterval() {
@@ -155,8 +143,8 @@ public class GameConfiguration extends BaseGameConfiguration {
 
     @Override
     public boolean equals(@Nullable Object other) {
-        if (other instanceof GameConfiguration) {
-            return getName().equals(((GameConfiguration) other).getName());
+        if (other instanceof GameConfiguration config) {
+            return getName().equals(config.getName());
         }
         return false;
     }

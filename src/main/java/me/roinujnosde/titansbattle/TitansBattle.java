@@ -23,11 +23,25 @@ package me.roinujnosde.titansbattle;
 
 import me.roinujnosde.titansbattle.challenges.Challenge;
 import me.roinujnosde.titansbattle.challenges.ChallengeRequest;
+import me.roinujnosde.titansbattle.combat.DisconnectTrackingManager;
 import me.roinujnosde.titansbattle.dao.ConfigurationDao;
 import me.roinujnosde.titansbattle.games.Game;
 import me.roinujnosde.titansbattle.hooks.discord.DiscordWebhook;
 import me.roinujnosde.titansbattle.hooks.papi.PlaceholderHook;
-import me.roinujnosde.titansbattle.managers.*;
+import me.roinujnosde.titansbattle.hooks.viaversion.ViaVersionHook;
+import me.roinujnosde.titansbattle.managers.ChallengeManager;
+import me.roinujnosde.titansbattle.managers.CommandManager;
+import me.roinujnosde.titansbattle.managers.ConfigManager;
+import me.roinujnosde.titansbattle.managers.DatabaseManager;
+import me.roinujnosde.titansbattle.managers.GameManager;
+import me.roinujnosde.titansbattle.managers.GroupManager;
+import me.roinujnosde.titansbattle.managers.LanguageManager;
+import me.roinujnosde.titansbattle.managers.ListenerManager;
+import me.roinujnosde.titansbattle.managers.SimpleClansGroupManager;
+import me.roinujnosde.titansbattle.managers.SpectateManager;
+import me.roinujnosde.titansbattle.managers.TaskManager;
+import me.roinujnosde.titansbattle.npc.NpcProvider;
+import me.roinujnosde.titansbattle.npc.NpcProviderResolver;
 import me.roinujnosde.titansbattle.types.GameConfiguration;
 import me.roinujnosde.titansbattle.types.Kit;
 import me.roinujnosde.titansbattle.types.Prizes;
@@ -64,6 +78,14 @@ public final class TitansBattle extends JavaPlugin {
     private ListenerManager listenerManager;
     private ConfigurationDao configurationDao;
     private PlaceholderHook placeholderHook;
+    private ViaVersionHook viaVersionHook;
+    private SpectateManager spectateManager;
+    private NpcProvider npcProvider;
+    private DisconnectTrackingManager disconnectTrackingManager;
+
+    public static TitansBattle getInstance() {
+        return instance;
+    }
 
     @Override
     public void onEnable() {
@@ -78,6 +100,9 @@ public final class TitansBattle extends JavaPlugin {
         challengeManager = new ChallengeManager(this);
         listenerManager = new ListenerManager(this);
         configurationDao = new ConfigurationDao(getDataFolder());
+        spectateManager = new SpectateManager(this);
+        npcProvider = NpcProviderResolver.resolve(this);
+        disconnectTrackingManager = new DisconnectTrackingManager(this);
 
         configManager.load();
         languageManager.setup();
@@ -90,21 +115,43 @@ public final class TitansBattle extends JavaPlugin {
         databaseManager.loadDataToMemory();
         taskManager.setupScheduler();
         placeholderHook = new PlaceholderHook(this);
+        if (Bukkit.getPluginManager().isPluginEnabled("ViaVersion")) {
+            viaVersionHook = new ViaVersionHook();
+        }
         new Metrics(this, 14875);
     }
 
-    public @Nullable BaseGame getBaseGameFrom(@NotNull Player player) {
-        Warrior warrior = getDatabaseManager().getWarrior(player);
+    public @Nullable BaseGame getBaseGameFrom(@NotNull final Player player) {
+        final Warrior warrior = getDatabaseManager().getWarrior(player);
 
-        Optional<Game> currentGame = getGameManager().getCurrentGame();
-        if (currentGame.isPresent()) {
-            if (currentGame.get().isParticipant(warrior)) {
-                return currentGame.get();
+        final Optional<Game> currentGame = getGameManager().getCurrentGame();
+        if (currentGame.isPresent() && currentGame.get().isParticipant(warrior)) {
+            return currentGame.get();
+        }
+        final List<ChallengeRequest<?>> requests = getChallengeManager().getRequests();
+        for (final ChallengeRequest<?> request : requests) {
+            final Challenge challenge = request.getChallenge();
+            if (challenge.isParticipant(warrior)) {
+                return challenge;
             }
         }
-        List<ChallengeRequest<?>> requests = getChallengeManager().getRequests();
-        for (ChallengeRequest<?> request : requests) {
-            Challenge challenge = request.getChallenge();
+        return null;
+    }
+
+    /**
+     * Get the base game that a warrior is participating in
+     *
+     * @param warrior the warrior to check
+     * @return the base game or null if not participating
+     */
+    public @Nullable BaseGame getBaseGameFrom(@NotNull final Warrior warrior) {
+        final Optional<Game> currentGame = getGameManager().getCurrentGame();
+        if (currentGame.isPresent() && currentGame.get().isParticipant(warrior)) {
+            return currentGame.get();
+        }
+        final List<ChallengeRequest<?>> requests = getChallengeManager().getRequests();
+        for (final ChallengeRequest<?> request : requests) {
+            final Challenge challenge = request.getChallenge();
             if (challenge.isParticipant(warrior)) {
                 return challenge;
             }
@@ -120,11 +167,13 @@ public final class TitansBattle extends JavaPlugin {
     public void onDisable() {
         challengeManager.getChallenges().forEach(c -> c.cancel(Bukkit.getConsoleSender()));
         gameManager.getCurrentGame().ifPresent(g -> g.cancel(Bukkit.getConsoleSender()));
+        if (npcProvider != null) {
+            npcProvider.onDisable();
+        }
+        if (disconnectTrackingManager != null) {
+            disconnectTrackingManager.clearAll();
+        }
         databaseManager.close();
-    }
-
-    public static TitansBattle getInstance() {
-        return instance;
     }
 
     public @Nullable GroupManager getGroupManager() {
@@ -136,7 +185,7 @@ public final class TitansBattle extends JavaPlugin {
      *
      * @param groupManager the GroupManager
      */
-    public void setGroupManager(@NotNull GroupManager groupManager) {
+    public void setGroupManager(@NotNull final GroupManager groupManager) {
         this.groupManager = groupManager;
         getLogger().info(String.format("Registered %s", groupManager.getClass().getSimpleName()));
     }
@@ -173,6 +222,14 @@ public final class TitansBattle extends JavaPlugin {
         return placeholderHook;
     }
 
+    public ViaVersionHook getViaVersionHook() {
+        return viaVersionHook;
+    }
+
+    public SpectateManager getSpectateManager() {
+        return spectateManager;
+    }
+
     /**
      * Returns the language for the path on the config
      *
@@ -180,7 +237,8 @@ public final class TitansBattle extends JavaPlugin {
      * @param config a FileConfiguration to access
      * @return the language from the config, with its color codes (&) translated
      */
-    public @NotNull String getLang(@NotNull String path, @Nullable FileConfiguration config, Object... args) {
+    @SuppressWarnings("deprecation")
+    public @NotNull String getLang(@NotNull final String path, @Nullable final FileConfiguration config, final Object... args) {
         String language = null;
         if (config != null) {
             language = config.getString("language." + path);
@@ -192,7 +250,7 @@ public final class TitansBattle extends JavaPlugin {
         return ChatColor.translateAlternateColorCodes('&', MessageFormat.format(language, args));
     }
 
-    public String getLang(@NotNull String path, Object... args) {
+    public String getLang(@NotNull final String path, final Object... args) {
         return getLang(path, (FileConfiguration) null, args);
     }
 
@@ -204,14 +262,14 @@ public final class TitansBattle extends JavaPlugin {
      * @return the overrider language if found, or from the default language file
      */
     @NotNull
-    public String getLang(@NotNull String path, @Nullable BaseGame game, Object... args) {
+    public String getLang(@NotNull final String path, @Nullable final BaseGame game, final Object... args) {
         if (game == null) {
             return getLang(path, (FileConfiguration) null, args);
         }
         return getLang(path, game.getConfig().getFileConfiguration(), args);
     }
 
-    public String getLang(@NotNull String path, @NotNull BaseGameConfiguration config, Object... args) {
+    public String getLang(@NotNull final String path, @NotNull final BaseGameConfiguration config, final Object... args) {
         return getLang(path, config.getFileConfiguration(), args);
     }
 
@@ -221,14 +279,14 @@ public final class TitansBattle extends JavaPlugin {
      * @param message             message to send
      * @param respectUserDecision should the message be sent if debug is false?
      */
-    public void debug(String message, boolean respectUserDecision) {
+    public void debug(final String message, final boolean respectUserDecision) {
         if (respectUserDecision && !configManager.isDebug()) {
             return;
         }
         getLogger().info(message);
     }
 
-    public void debug(String message) {
+    public void debug(final String message) {
         debug(message, true);
     }
 
@@ -253,19 +311,40 @@ public final class TitansBattle extends JavaPlugin {
         }
     }
 
-    public void sendDiscordMessage(String message) {
+    public void sendDiscordMessage(final String message) {
         Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
-            String url = getConfig().getString("discord_webhook_url");
+            final String url = getConfig().getString("discord_webhook_url");
             if (url != null && !url.isEmpty()) {
-                DiscordWebhook webhook = new DiscordWebhook(url);
+                final DiscordWebhook webhook = new DiscordWebhook(url);
                 webhook.setContent(message.replace("§", "&"));
                 try {
                     webhook.execute();
-                } catch (IOException e) {
-                    getLogger().log(Level.SEVERE, "Error sending webhook message", e);
+                } catch (final IOException e) {
+                    if (configManager.isDebug()) {
+                        getLogger().log(Level.SEVERE, "Error sending webhook message", e);
+                    }
                 }
             }
         });
     }
 
+    /**
+     * Get the NPC provider for creating proxy NPCs
+     *
+     * @return the NPC provider
+     */
+    @NotNull
+    public NpcProvider getNpcProvider() {
+        return npcProvider;
+    }
+
+    /**
+     * Get the disconnect tracking service for managing player reconnection limits
+     *
+     * @return the disconnect tracking service
+     */
+    @NotNull
+    public DisconnectTrackingManager getDisconnectTrackingManager() {
+        return disconnectTrackingManager;
+    }
 }

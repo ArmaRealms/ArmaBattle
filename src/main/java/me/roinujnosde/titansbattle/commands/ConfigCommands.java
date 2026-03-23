@@ -1,11 +1,19 @@
 package me.roinujnosde.titansbattle.commands;
 
 import co.aikar.commands.BaseCommand;
-import co.aikar.commands.annotation.*;
+import co.aikar.commands.annotation.CommandAlias;
+import co.aikar.commands.annotation.CommandCompletion;
+import co.aikar.commands.annotation.CommandPermission;
+import co.aikar.commands.annotation.Conditions;
+import co.aikar.commands.annotation.Dependency;
+import co.aikar.commands.annotation.Description;
+import co.aikar.commands.annotation.Subcommand;
+import co.aikar.commands.annotation.Values;
 import me.roinujnosde.titansbattle.BaseGameConfiguration;
 import me.roinujnosde.titansbattle.BaseGameConfiguration.Prize;
 import me.roinujnosde.titansbattle.TitansBattle;
 import me.roinujnosde.titansbattle.challenges.ArenaConfiguration;
+import me.roinujnosde.titansbattle.challenges.Challenge;
 import me.roinujnosde.titansbattle.dao.ConfigurationDao;
 import me.roinujnosde.titansbattle.managers.ConfigManager;
 import me.roinujnosde.titansbattle.serialization.ConfigUtils;
@@ -22,7 +30,6 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 import static me.roinujnosde.titansbattle.BaseGameConfiguration.Destination;
 
@@ -61,10 +68,18 @@ public class ConfigCommands extends BaseCommand {
         saveInventory(sender, config);
     }
 
+    private void getKit(@NotNull Player sender, @NotNull BaseGameConfiguration config) {
+        sender.getInventory().clear();
+        Kit kit = config.getKit();
+        if (kit != null) {
+            sender.getInventory().setContents(kit.getContentsWithoutNBT());
+        }
+    }
+
     private void setPrize(Player sender, BaseGameConfiguration config, Prize prize, PrizeReceiver receiver) {
         Prizes prizes = config.getPrizes(prize);
         List<ItemStack> items = Arrays.stream(sender.getInventory().getContents()).filter(Objects::nonNull)
-                .filter(item -> item.getType() != Material.AIR).collect(Collectors.toList());
+                .filter(item -> item.getType() != Material.AIR).toList();
         switch (receiver) {
             case LEADERS:
                 prizes.setLeaderItems(items);
@@ -103,7 +118,7 @@ public class ConfigCommands extends BaseCommand {
         }
     }
 
-    private void setArenaEntrance(Player sender, BaseGameConfiguration config, int index) {
+    private void setArenaEntrance(@NotNull Player sender, BaseGameConfiguration config, int index) {
         config.setArenaEntrance(index, sender.getLocation());
         configDao.save(config);
         sender.sendMessage(plugin.getLang("destination_set", "ARENA_ENTRANCE"));
@@ -129,6 +144,25 @@ public class ConfigCommands extends BaseCommand {
         player.sendMessage(plugin.getLang("destination_set", destination));
     }
 
+    private void teleportPlayer(Player player, BaseGameConfiguration baseconfig, Destination destination) {
+        Location location = null;
+        switch (destination) {
+            case EXIT -> location = baseconfig.getExit();
+            case LOBBY -> location = baseconfig.getLobby();
+            case WATCHROOM -> location = baseconfig.getWatchroom();
+            case BORDER_CENTER -> location = baseconfig.getBorderCenter();
+        }
+        if (location == null) {
+            player.sendMessage(plugin.getLang("no-entrance"));
+            return;
+        }
+        player.teleport(location);
+    }
+
+    public enum PrizeReceiver {
+        LEADERS, MEMBERS
+    }
+
     @Subcommand("%game|game")
     public class GameCommand extends BaseCommand {
 
@@ -145,6 +179,14 @@ public class ConfigCommands extends BaseCommand {
         @Description("{@@command.description.setkit}")
         public void setKit(Player sender, @Values("@games") GameConfiguration game) {
             ConfigCommands.this.setKit(sender, game);
+        }
+
+        @Subcommand("%getkit|getkit")
+        @CommandPermission("titansbattle.getinventory")
+        @CommandCompletion("@games")
+        @Description("{@@command.description.getkit}")
+        public void getKit(Player sender, @Values("@games") GameConfiguration game) {
+            ConfigCommands.this.getKit(sender, game);
         }
 
         @Subcommand("%setprize|setprize")
@@ -181,12 +223,13 @@ public class ConfigCommands extends BaseCommand {
             ConfigCommands.this.editConfig(sender, game, field, value);
         }
 
-
         @Subcommand("%setdestination|setdestination")
         @CommandPermission("titansbattle.setdestination")
         @CommandCompletion("@games @destinations|ARENA_ENTRANCE")
         @Description("{@@command.description.setdestination.game}")
-        public void setDestination(Player player, @Values("@games") GameConfiguration game,  @Values("@destinations") Destination destination) {
+        public void setDestination(Player player,
+                                   @Values("@games") GameConfiguration game,
+                                   @Values("@destinations") Destination destination) {
             ConfigCommands.this.setDestination(player, game, destination);
         }
 
@@ -201,6 +244,15 @@ public class ConfigCommands extends BaseCommand {
             ConfigCommands.this.setArenaEntrance(player, game, index);
         }
 
+        @Subcommand("%teleport|teleport")
+        @CommandPermission("titansbattle.teleport")
+        @CommandCompletion("@games @destinations|ARENA_ENTRANCE")
+        @Description("{@@command.description.teleport}")
+        public void teleport(Player player,
+                             @Values("@games") GameConfiguration game,
+                             @Values("@destinations") Destination destination) {
+            ConfigCommands.this.teleportPlayer(player, game, destination);
+        }
     }
 
     @Subcommand("%challenge|challenge")
@@ -219,6 +271,14 @@ public class ConfigCommands extends BaseCommand {
         @Description("{@@command.description.challenge.setkit}")
         public void setKit(Player sender, @Values("@arenas") ArenaConfiguration arena) {
             ConfigCommands.this.setKit(sender, arena);
+        }
+
+        @Subcommand("%getkit|getkit")
+        @CommandPermission("titansbattle.getinventory")
+        @CommandCompletion("@arenas")
+        @Description("{@@command.description.challenge.getkit}")
+        public void getKit(Player sender, @Values("@arenas") ArenaConfiguration arena) {
+            ConfigCommands.this.getKit(sender, arena);
         }
 
         @Subcommand("%setprize|setprize")
@@ -275,9 +335,24 @@ public class ConfigCommands extends BaseCommand {
                                      @Values("@range:1-2") int index) {
             ConfigCommands.this.setArenaEntrance(player, arena, index);
         }
-    }
 
-    public enum PrizeReceiver {
-        LEADERS, MEMBERS
+        @Subcommand("%cancel|cancel")
+        @CommandPermission("titansbattle.cancel")
+        @Conditions("challenge")
+        @Description("{@@command.description.cancel}")
+        @CommandCompletion("@challenge")
+        public void cancel(CommandSender sender, @Values("@challenge") @NotNull Challenge challenge) {
+            challenge.cancel(sender);
+        }
+
+        @Subcommand("%teleport|teleport")
+        @CommandPermission("titansbattle.teleport")
+        @CommandCompletion("@arenas")
+        @Description("{@@command.description.challenge.teleport}")
+        public void teleportArena(Player player,
+                                  @Values("@arenas") ArenaConfiguration arena,
+                                  @Values("@destinations") Destination destination) {
+            ConfigCommands.this.teleportPlayer(player, arena, destination);
+        }
     }
 }

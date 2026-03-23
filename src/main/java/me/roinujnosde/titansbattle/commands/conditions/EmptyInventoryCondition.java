@@ -1,9 +1,12 @@
 package me.roinujnosde.titansbattle.commands.conditions;
 
-import co.aikar.commands.*;
+import co.aikar.commands.BukkitCommandExecutionContext;
+import co.aikar.commands.BukkitCommandIssuer;
+import co.aikar.commands.ConditionContext;
+import co.aikar.commands.ConditionFailedException;
+import co.aikar.commands.InvalidCommandArgument;
 import me.roinujnosde.titansbattle.TitansBattle;
 import me.roinujnosde.titansbattle.challenges.ArenaConfiguration;
-import me.roinujnosde.titansbattle.commands.conditions.AbstractParameterCondition;
 import me.roinujnosde.titansbattle.types.Kit;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;

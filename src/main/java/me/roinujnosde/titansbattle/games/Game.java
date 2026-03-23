@@ -22,7 +22,7 @@ public abstract class Game extends BaseGame {
 
     protected final DatabaseManager databaseManager;
 
-    public Game(TitansBattle plugin, GameConfiguration config) {
+    protected Game(TitansBattle plugin, GameConfiguration config) {
         super(plugin, config);
         this.databaseManager = plugin.getDatabaseManager();
     }
@@ -104,16 +104,30 @@ public abstract class Game extends BaseGame {
         }
     }
 
+    @Override
     public @NotNull GameConfiguration getConfig() {
         return (GameConfiguration) config;
     }
 
+    protected abstract @NotNull String getGameInfoMessage();
+
     @Override
-    protected void killTasks() {
-        super.killTasks();
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+
+        Game game = (Game) o;
+
+        return Objects.equals(databaseManager, game.databaseManager);
     }
 
-    protected abstract @NotNull String getGameInfoMessage();
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + (databaseManager != null ? databaseManager.hashCode() : 0);
+        return result;
+    }
 
     protected class ArenaAnnouncementTask extends BukkitRunnable {
 
@@ -122,5 +136,4 @@ public abstract class Game extends BaseGame {
             broadcast(getGameInfoMessage(), Game.this);
         }
     }
-
 }

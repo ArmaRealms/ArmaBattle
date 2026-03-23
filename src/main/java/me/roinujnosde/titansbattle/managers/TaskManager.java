@@ -24,18 +24,24 @@
 package me.roinujnosde.titansbattle.managers;
 
 import me.roinujnosde.titansbattle.TitansBattle;
+import me.roinujnosde.titansbattle.types.Event;
 import me.roinujnosde.titansbattle.types.GameConfiguration;
 import me.roinujnosde.titansbattle.types.Prizes;
-import me.roinujnosde.titansbattle.types.Event;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 
 import java.text.MessageFormat;
-import java.util.*;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.Map.Entry;
+import java.util.Optional;
+import java.util.Timer;
+import java.util.TimerTask;
 
 /**
  * @author RoinujNosde
@@ -43,9 +49,8 @@ import java.util.Map.Entry;
 public class TaskManager {
 
     private final TitansBattle plugin = TitansBattle.getInstance();
-
-    private Timer schedulerTimer;
     BukkitTask giveItemsTask;
+    private Timer schedulerTimer;
 
     public void setupScheduler() {
         if (schedulerTimer != null) {
@@ -57,9 +62,9 @@ public class TaskManager {
         schedulerTimer = new Timer("TitansBattle Scheduler", true);
 
         boolean loggedMonthly = false;
-        for (Event event : plugin.getConfigManager().getEvents()) {
-            TimerTask task = createTimerTask(event);
-            if (event.getFrequency() == Event.Frequency.MONTHLY) {
+        for (final Event event : plugin.getConfigManager().getEvents()) {
+            final TimerTask task = createTimerTask(event);
+            if (event.frequency() == Event.Frequency.MONTHLY) {
                 schedulerTimer.schedule(task, event.getDelay());
                 if (!loggedMonthly) {
                     plugin.getLogger().info("Scheduled a monthly event. This event will be repeated only after a restart.");
@@ -67,7 +72,7 @@ public class TaskManager {
                 }
                 continue;
             }
-            schedulerTimer.scheduleAtFixedRate(task, event.getDelay(), event.getFrequency().getPeriod());
+            schedulerTimer.scheduleAtFixedRate(task, event.getDelay(), event.frequency().getPeriod());
         }
     }
 
@@ -79,21 +84,21 @@ public class TaskManager {
         giveItemsTask = new GiveItemsTask().runTaskTimer(plugin, interval, interval);
     }
 
-    private TimerTask createTimerTask(Event event) {
+    @Contract(value = "_ -> new", pure = true)
+    private @NotNull TimerTask createTimerTask(final Event event) {
         return new TimerTask() {
             @Override
             public void run() {
-                Optional<GameConfiguration> config = plugin.getConfigurationDao()
-                        .getConfiguration(event.getGameName(), GameConfiguration.class);
-                if (!config.isPresent()) {
-                    plugin.getLogger().warning(String.format("Game %s not found!", event.getGameName()));
+                final Optional<GameConfiguration> config = plugin.getConfigurationDao()
+                        .getConfiguration(event.gameName(), GameConfiguration.class);
+                if (config.isEmpty()) {
+                    plugin.getLogger().warning(String.format("Game %s not found!", event.gameName()));
                     return;
                 }
-                if (plugin.getGameManager().getCurrentGame().isPresent()) {
-                    plugin.getLogger().info("There is a game running. Skipping event.");
-                    return;
-                }
-                Bukkit.getScheduler().runTask(plugin, () -> plugin.getGameManager().start(config.get()));
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                    plugin.getGameManager().getCurrentGame().ifPresent(game -> game.cancel(Bukkit.getConsoleSender()));
+                    plugin.getGameManager().start(config.get());
+                });
             }
         };
     }
@@ -103,12 +108,12 @@ public class TaskManager {
         @Override
         public void run() {
             if (!Prizes.getPlayersWithItemsToReceive().isEmpty()) {
-                Iterator<Entry<Player, Collection<ItemStack>>> iterator = Prizes.getPlayersWithItemsToReceive()
+                final Iterator<Entry<Player, Collection<ItemStack>>> iterator = Prizes.getPlayersWithItemsToReceive()
                         .entrySet().iterator();
                 while (iterator.hasNext()) {
-                    Entry<Player, Collection<ItemStack>> entry = iterator.next();
-                    Player player = entry.getKey();
-                    Collection<ItemStack> remainingItems = player.getInventory().addItem(entry.getValue()
+                    final Entry<Player, Collection<ItemStack>> entry = iterator.next();
+                    final Player player = entry.getKey();
+                    final Collection<ItemStack> remainingItems = player.getInventory().addItem(entry.getValue()
                             .toArray(new ItemStack[0])).values();
                     if (remainingItems.isEmpty()) {
                         iterator.remove();

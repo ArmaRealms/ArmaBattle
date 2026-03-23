@@ -28,9 +28,9 @@ import me.roinujnosde.titansbattle.BaseGame;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
 
 /**
- *
  * @author RoinujNosde
  */
 public class PlayerExitGameEvent extends Event {
@@ -44,6 +44,10 @@ public class PlayerExitGameEvent extends Event {
         this.game = game;
     }
 
+    public static HandlerList getHandlerList() {
+        return HANDLERS;
+    }
+
     /**
      * @return the Game
      */
@@ -53,18 +57,15 @@ public class PlayerExitGameEvent extends Event {
 
     /**
      * Returns the Player
+     *
      * @return the Player
      */
     public Player getPlayer() {
         return player;
     }
-    
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLERS;
-    }
 
-    public static HandlerList getHandlerList() {
+    @Override
+    public @NotNull HandlerList getHandlers() {
         return HANDLERS;
     }
 }

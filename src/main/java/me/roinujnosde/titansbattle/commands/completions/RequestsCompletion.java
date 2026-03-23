@@ -8,7 +8,6 @@ import me.roinujnosde.titansbattle.types.Warrior;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
-import java.util.stream.Collectors;
 
 public class RequestsCompletion extends AbstractCompletion {
     public RequestsCompletion(TitansBattle plugin) {
@@ -24,6 +23,6 @@ public class RequestsCompletion extends AbstractCompletion {
     public Collection<String> getCompletions(BukkitCommandCompletionContext context) throws InvalidCommandArgument {
         Warrior warrior = getDatabaseManager().getWarrior(context.getIssuer().getUniqueId());
         return getChallengeManager().getRequests().stream().filter(cr -> cr.isInvited(warrior))
-                .map(ChallengeRequest::getChallengerName).collect(Collectors.toList());
+                .map(ChallengeRequest::getChallengerName).toList();
     }
 }

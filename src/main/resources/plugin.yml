@@ -10,6 +10,9 @@ softdepend:
   - "PlaceholderAPI"
   - "Essentials"
   - "Multiverse-Core"
+  - "ViaVersion"
+  - "FancyNpcs"
+  - "Citizens"
 permissions:
   titansbattle.admin:
     description: "Gives access to administrator commands"
@@ -38,6 +41,8 @@ permissions:
       titansbattle.challenge.group: true
       titansbattle.challenge.player: true
       titansbattle.challenge.accept: true
+      titansbattle.broadcast: true
+      titansbattle.status: true
   titansbattle.challenge.accept:
     default: false
   titansbattle.challenge.player:
@@ -68,6 +73,15 @@ permissions:
   titansbattle.command-bypass:
     default: false
     description: Bypasses command restrictions in games
+  titansbattle.teleport-bypass:
+    default: false
+    description: Bypasses teleport restrictions in games
+  titansbattle.inventory-bypass:
+    default: false
+    description: Bypasses inventory restrictions in games
+  titansbattle.playtime-bypass:
+    default: false
+    description: Bypasses playtime restrictions in games
   titansbattle.winners:
     default: false
   titansbattle.setinventory:
@@ -75,4 +89,8 @@ permissions:
   titansbattle.ranking:
     default: false
   titansbattle.setwinner:
+    default: false
+  titansbattle.broadcast:
+    default: false
+  titansbattle.status:
     default: false
