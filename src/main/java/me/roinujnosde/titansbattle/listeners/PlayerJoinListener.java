@@ -77,22 +77,30 @@ public class PlayerJoinListener extends TBListener {
                 return;
             }
 
+            final NpcProvider np = plugin.getNpcProvider();
+            final DisconnectTrackingManager dtm = plugin.getDisconnectTrackingManager();
             final ViaVersionHook vvh = plugin.getViaVersionHook();
             if (vvh != null && vvh.isPlayerVersionBlocked(player, game.getConfig())) {
                 final Warrior warrior = plugin.getDatabaseManager().getWarrior(player);
+                np.getProxyByOwner(playerId).ifPresent(npcHandle -> {
+                    np.despawnProxy(playerId, "incompatible-version");
+                    dtm.clearPlayerReconnected(playerId);
+                });
                 game.eliminate(warrior, "incompatible-version");
                 return;
             }
 
-            final DisconnectTrackingManager dtm = plugin.getDisconnectTrackingManager();
             if (!dtm.canPlayerReturn(playerId)) {
                 final Warrior warrior = plugin.getDatabaseManager().getWarrior(player);
+                np.getProxyByOwner(playerId).ifPresent(npcHandle -> {
+                    np.despawnProxy(playerId, "disconnect-limit-exceeded");
+                    dtm.clearPlayerReconnected(playerId);
+                });
                 game.eliminate(warrior, "disconnect-limit-exceeded");
                 return;
             }
 
             // Check if player has an active NPC proxy
-            final NpcProvider np = plugin.getNpcProvider();
             np.getProxyByOwner(playerId).ifPresent(npcHandle -> {
                 final Location proxyLocation = npcHandle.getLocation();
                 player.teleport(proxyLocation);
