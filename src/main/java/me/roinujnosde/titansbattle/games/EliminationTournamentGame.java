@@ -156,7 +156,7 @@ public class EliminationTournamentGame extends Game {
                 if (thirdPlaceBattle) {
                     thirdPlaceWinners = duelWinners;
                     thirdPlaceBattle = false;
-                    teleport(duelWinners, getConfig().getExit());
+                    teleport(duelWinners, getConfig().getLobby());
                     participants.removeIf(thirdPlaceWinners::contains);
                     if (getConfig().isUseKits()) {
                         thirdPlaceWinners.forEach(Kit::clearInventory);
