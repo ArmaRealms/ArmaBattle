@@ -491,16 +491,14 @@ public class EliminationTournamentGame extends Game {
         final StringBuilder builder = new StringBuilder();
 
         if (getConfig().isGroupMode()) {
-            final Optional<Duel<Group>> firstGroupDuel = getFirstGroupDuel();
-            if (firstGroupDuel.isPresent()) {
-                firstDuel = duelToNameArray(firstGroupDuel.get(), Group::getName);
-            }
+            firstDuel = getFirstGroupDuel()
+                    .map(d -> duelToNameArray(d, Group::getName))
+                    .orElse(firstDuel);
             populateDuelsMessage(builder, groupDuelists, Group::getName);
         } else {
-            final Optional<Duel<Warrior>> firstWarriorDuel = getFirstWarriorDuel();
-            if (firstWarriorDuel.isPresent()) {
-                firstDuel = duelToNameArray(firstWarriorDuel.get(), Warrior::getName);
-            }
+            firstDuel = getFirstWarriorDuel()
+                    .map(d -> duelToNameArray(d, Warrior::getName))
+                    .orElse(firstDuel);
             populateDuelsMessage(builder, playerDuelists, Warrior::getName);
         }
 
