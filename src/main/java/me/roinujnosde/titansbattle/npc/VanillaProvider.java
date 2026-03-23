@@ -23,12 +23,16 @@
  */
 package me.roinujnosde.titansbattle.npc;
 
+import com.destroystokyo.paper.SkinParts;
+import io.papermc.paper.datacomponent.item.ResolvableProfile;
 import me.roinujnosde.titansbattle.TitansBattle;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Mannequin;
 import org.bukkit.entity.Player;
 import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
@@ -66,21 +70,21 @@ public final class VanillaProvider implements NpcProvider {
     public NpcHandle spawnProxy(@NotNull final Player player, @NotNull final Location location) {
         try {
             // Get mob type from configuration
-            final String mobTypeString = plugin.getConfig().getString("battle.npcProxy.vanilla.mobType", "ZOMBIE");
+            final String mobTypeString = plugin.getConfig().getString("battle.npcProxy.vanilla.mobType", "MANNEQUIN");
             EntityType mobType;
 
             try {
                 mobType = EntityType.valueOf(mobTypeString.toUpperCase());
             } catch (final IllegalArgumentException e) {
-                plugin.getLogger().warning("Invalid mob type '" + mobTypeString + "' in config, using ZOMBIE as fallback");
-                mobType = EntityType.ZOMBIE;
+                plugin.getLogger().warning("Invalid mob type '" + mobTypeString + "' in config, using MANNEQUIN as fallback");
+                mobType = EntityType.MANNEQUIN;
             }
 
             // Validate mob type is a living entity
             final Class<? extends Entity> entityClass = mobType.getEntityClass();
             if (entityClass == null || !LivingEntity.class.isAssignableFrom(entityClass)) {
-                plugin.getLogger().warning("Mob type '" + mobTypeString + "' has no associated entity class, using ZOMBIE as fallback");
-                mobType = EntityType.ZOMBIE;
+                plugin.getLogger().warning("Mob type '" + mobTypeString + "' has no associated entity class, using MANNEQUIN as fallback");
+                mobType = EntityType.MANNEQUIN;
             }
 
             // Spawn the mob
@@ -92,12 +96,18 @@ public final class VanillaProvider implements NpcProvider {
             }
 
             // Configure the mob
-            mob.setCustomName(player.getDisplayName());
+            mob.customName(player.displayName());
             mob.setCustomNameVisible(true);
             mob.setRemoveWhenFarAway(false);
             mob.setPersistent(true);
             mob.setInvulnerable(true);
             mob.setAI(false);
+
+            if (mob instanceof final Mannequin mannequin) {
+                mannequin.setDescription(Component.empty());
+                mannequin.setImmovable(true);
+                mannequin.setProfile(ResolvableProfile.resolvableProfile(player.getPlayerProfile()));
+            }
 
             // Mark as TitansBattle proxy
             mob.getPersistentDataContainer().set(proxyKey, PersistentDataType.STRING, player.getUniqueId().toString());
