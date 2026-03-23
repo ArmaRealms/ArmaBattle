@@ -39,7 +39,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * @author RoinujNosde
  */
-public class DisconnectTrackingService {
+public class DisconnectTrackingManager {
 
     private final TitansBattle plugin;
     private final Map<UUID, DisconnectRecord> disconnectRecords = new ConcurrentHashMap<>();
@@ -47,7 +47,7 @@ public class DisconnectTrackingService {
     private final int maxDisconnections;
     private final long maxOfflineTimeMs;
 
-    public DisconnectTrackingService(@NotNull final TitansBattle plugin) {
+    public DisconnectTrackingManager(@NotNull final TitansBattle plugin) {
         this.plugin = plugin;
         // Get configuration values
         this.maxDisconnections = plugin.getConfig().getInt("battle.npcProxy.maxDisconnections", 3);
@@ -192,7 +192,6 @@ public class DisconnectTrackingService {
         // Remove the NPC proxy if it exists
         if (plugin.getNpcProvider().isProxyAlive(playerId)) {
             plugin.getNpcProvider().despawnProxy(playerId, "timeout");
-            plugin.debug("Despawned NPC proxy for timed out player " + playerId);
         }
 
         // Mark player as eliminated due to timeout
@@ -202,7 +201,6 @@ public class DisconnectTrackingService {
             final BaseGame game = plugin.getBaseGameFrom(warrior);
             if (game != null) {
                 game.eliminate(warrior, "timeout");
-                plugin.debug("Eliminated player " + playerId + " due to timeout");
             }
         } catch (final Exception e) {
             plugin.getLogger().warning("Failed to eliminate timed out player " + playerId + ": " + e.getMessage());

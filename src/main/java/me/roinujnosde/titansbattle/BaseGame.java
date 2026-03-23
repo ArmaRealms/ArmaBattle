@@ -150,7 +150,7 @@ public abstract class BaseGame {
             }
         }
         // Clean up disconnect tracking for all participants when game ends
-        plugin.getDisconnectTrackingService().clearAll();
+        plugin.getDisconnectTrackingManager().clearAll();
     }
 
     public abstract void setWinner(@NotNull Warrior warrior) throws CommandNotSupportedException;
@@ -181,16 +181,12 @@ public abstract class BaseGame {
             return;
         }
 
-        final ViaVersionHook viaVersionHook = plugin.getViaVersionHook();
-        if (viaVersionHook != null) {
-            if (viaVersionHook.isPlayerVersionBlocked(player)) {
-                player.sendMessage(getLang("blocked.version"));
-                return;
-            }
-            if (viaVersionHook.isPlayerVersionBlocked(player, getConfig())) {
-                player.sendMessage(getLang("blocked.version"));
-                return;
-            }
+        final ViaVersionHook vvh = plugin.getViaVersionHook();
+        if (vvh != null && vvh.isPlayerVersionBlocked(player, getConfig())) {
+            final String versionInfo = vvh.getPlayerVersion(player);
+            plugin.debug(String.format("Player %s is using a blocked version: %s", player.getName(), versionInfo));
+            player.sendMessage(getLang("blocked.version"));
+            return;
         }
 
         if (!teleport(warrior, getConfig().getLobby())) {
@@ -312,7 +308,7 @@ public abstract class BaseGame {
             if (player != null && shouldCreateNpcProxy()) {
                 try {
                     // Check if player hasn't exceeded disconnect limits
-                    if (!plugin.getDisconnectTrackingService().trackDisconnection(warrior.getUniqueId())) {
+                    if (!plugin.getDisconnectTrackingManager().trackDisconnection(warrior.getUniqueId())) {
                         plugin.debug(String.format("onDisconnect() -> kill player %s (disconnect limit exceeded)", player.getName()));
                         player.setHealth(0);
                         return;
@@ -325,7 +321,7 @@ public abstract class BaseGame {
                         npcProvider.spawnProxy(player, location);
 
                         plugin.debug(String.format("onDisconnect() -> spawned NPC proxy for %s (disconnect #%d)",
-                                player.getName(), plugin.getDisconnectTrackingService().getDisconnectionCount(warrior.getUniqueId())));
+                                player.getName(), plugin.getDisconnectTrackingManager().getDisconnectionCount(warrior.getUniqueId())));
                         return;
                     } else {
                         plugin.debug("NPC provider not available, falling back to normal disconnect behavior");

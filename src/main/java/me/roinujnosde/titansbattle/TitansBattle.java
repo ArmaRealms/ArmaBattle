@@ -23,7 +23,7 @@ package me.roinujnosde.titansbattle;
 
 import me.roinujnosde.titansbattle.challenges.Challenge;
 import me.roinujnosde.titansbattle.challenges.ChallengeRequest;
-import me.roinujnosde.titansbattle.combat.DisconnectTrackingService;
+import me.roinujnosde.titansbattle.combat.DisconnectTrackingManager;
 import me.roinujnosde.titansbattle.dao.ConfigurationDao;
 import me.roinujnosde.titansbattle.games.Game;
 import me.roinujnosde.titansbattle.hooks.discord.DiscordWebhook;
@@ -81,7 +81,7 @@ public final class TitansBattle extends JavaPlugin {
     private ViaVersionHook viaVersionHook;
     private SpectateManager spectateManager;
     private NpcProvider npcProvider;
-    private DisconnectTrackingService disconnectTrackingService;
+    private DisconnectTrackingManager disconnectTrackingManager;
 
     public static TitansBattle getInstance() {
         return instance;
@@ -102,7 +102,7 @@ public final class TitansBattle extends JavaPlugin {
         configurationDao = new ConfigurationDao(getDataFolder());
         spectateManager = new SpectateManager(this);
         npcProvider = NpcProviderResolver.resolve(this);
-        disconnectTrackingService = new DisconnectTrackingService(this);
+        disconnectTrackingManager = new DisconnectTrackingManager(this);
 
         configManager.load();
         languageManager.setup();
@@ -116,7 +116,7 @@ public final class TitansBattle extends JavaPlugin {
         taskManager.setupScheduler();
         placeholderHook = new PlaceholderHook(this);
         if (Bukkit.getPluginManager().isPluginEnabled("ViaVersion")) {
-            viaVersionHook = new ViaVersionHook(this);
+            viaVersionHook = new ViaVersionHook();
         }
         new Metrics(this, 14875);
     }
@@ -125,7 +125,7 @@ public final class TitansBattle extends JavaPlugin {
         final Warrior warrior = getDatabaseManager().getWarrior(player);
 
         final Optional<Game> currentGame = getGameManager().getCurrentGame();
-        if (currentGame.isPresent() && (currentGame.get().isParticipant(warrior))) {
+        if (currentGame.isPresent() && currentGame.get().isParticipant(warrior)) {
             return currentGame.get();
         }
         final List<ChallengeRequest<?>> requests = getChallengeManager().getRequests();
@@ -146,7 +146,7 @@ public final class TitansBattle extends JavaPlugin {
      */
     public @Nullable BaseGame getBaseGameFrom(@NotNull final Warrior warrior) {
         final Optional<Game> currentGame = getGameManager().getCurrentGame();
-        if (currentGame.isPresent() && (currentGame.get().isParticipant(warrior))) {
+        if (currentGame.isPresent() && currentGame.get().isParticipant(warrior)) {
             return currentGame.get();
         }
         final List<ChallengeRequest<?>> requests = getChallengeManager().getRequests();
@@ -170,8 +170,8 @@ public final class TitansBattle extends JavaPlugin {
         if (npcProvider != null) {
             npcProvider.onDisable();
         }
-        if (disconnectTrackingService != null) {
-            disconnectTrackingService.clearAll();
+        if (disconnectTrackingManager != null) {
+            disconnectTrackingManager.clearAll();
         }
         databaseManager.close();
     }
@@ -237,6 +237,7 @@ public final class TitansBattle extends JavaPlugin {
      * @param config a FileConfiguration to access
      * @return the language from the config, with its color codes (&) translated
      */
+    @SuppressWarnings("deprecation")
     public @NotNull String getLang(@NotNull final String path, @Nullable final FileConfiguration config, final Object... args) {
         String language = null;
         if (config != null) {
@@ -343,7 +344,7 @@ public final class TitansBattle extends JavaPlugin {
      * @return the disconnect tracking service
      */
     @NotNull
-    public DisconnectTrackingService getDisconnectTrackingService() {
-        return disconnectTrackingService;
+    public DisconnectTrackingManager getDisconnectTrackingManager() {
+        return disconnectTrackingManager;
     }
 }

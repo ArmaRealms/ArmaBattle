@@ -23,7 +23,6 @@
  */
 package me.roinujnosde.titansbattle.npc;
 
-import me.roinujnosde.titansbattle.TitansBattle;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
@@ -38,10 +37,7 @@ import java.util.UUID;
  */
 public final class CitizensProvider implements NpcProvider {
 
-    private final TitansBattle plugin;
-
-    public CitizensProvider(@NotNull final TitansBattle plugin) {
-        this.plugin = plugin;
+    public CitizensProvider() {
     }
 
     @Override

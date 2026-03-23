@@ -25,7 +25,6 @@ package me.roinujnosde.titansbattle.npc;
 
 import me.roinujnosde.titansbattle.TitansBattle;
 import org.bukkit.Bukkit;
-import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Locale;
@@ -54,22 +53,14 @@ public final class NpcProviderResolver {
 
         // If specific provider is requested, try to use it
         return switch (providerConfig.toLowerCase(Locale.ROOT)) {
-            case "fancynpcs" ->
-                    tryFancyNpcs(plugin).orElseGet(() -> fallbackToVanilla(plugin, "FancyNpcs requested but not available"));
-            case "citizens" ->
-                    tryCitizens(plugin).orElseGet(() -> fallbackToVanilla(plugin, "Citizens requested but not available"));
-            case "vanilla" -> {
+            case "fancynpcs" -> tryFancyNpcs(plugin).orElseGet(() -> {
+                plugin.getLogger().warning("FancyNpcs provider requested but not available, falling back to vanilla provider");
+                return new VanillaProvider(plugin);
+            });
+            default -> {
                 plugin.getLogger().info("Using vanilla mob proxies for NPC proxy system (configured)");
                 yield new VanillaProvider(plugin);
             }
-            default ->
-                // Auto mode: try providers in order of preference
-                    tryFancyNpcs(plugin)
-                            .or(() -> tryCitizens(plugin))
-                            .orElseGet(() -> {
-                                plugin.getLogger().info("Using vanilla mob proxies as fallback for NPC proxy system");
-                                return new VanillaProvider(plugin);
-                            });
         };
     }
 
@@ -84,20 +75,4 @@ public final class NpcProviderResolver {
         return Optional.empty();
     }
 
-    private static Optional<NpcProvider> tryCitizens(@NotNull final TitansBattle plugin) {
-        if (Bukkit.getPluginManager().isPluginEnabled("Citizens")) {
-            final NpcProvider provider = new CitizensProvider(plugin);
-            if (provider.isAvailable()) {
-                plugin.getLogger().info("Using Citizens for NPC proxy system");
-                return Optional.of(provider);
-            }
-        }
-        return Optional.empty();
-    }
-
-    @Contract("_, _ -> new")
-    private static @NotNull NpcProvider fallbackToVanilla(@NotNull final TitansBattle plugin, @NotNull final String reason) {
-        plugin.getLogger().warning(reason + ", falling back to vanilla mob proxies");
-        return new VanillaProvider(plugin);
-    }
 }
