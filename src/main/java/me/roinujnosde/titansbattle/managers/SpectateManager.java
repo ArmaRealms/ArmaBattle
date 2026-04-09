@@ -114,6 +114,10 @@ public class SpectateManager {
         return spectators.contains(player.getUniqueId());
     }
 
+    public boolean isSpectating(final @NotNull UUID uuid) {
+        return spectators.contains(uuid);
+    }
+
     public @NotNull List<Player> getSpectators() {
         final List<Player> spectators = new ArrayList<>();
         for (final UUID uuid : this.spectators) {
@@ -126,10 +130,10 @@ public class SpectateManager {
     }
 
     public void remove(final Player player) {
-        if (!isSpectating(player)) {
-            plugin.debug(String.format("Player %s is not a spectator, cannot remove.", player.getName()));
-            return;
-        }
         spectators.remove(player.getUniqueId());
+    }
+
+    public void remove(final UUID uuid) {
+        spectators.remove(uuid);
     }
 }
