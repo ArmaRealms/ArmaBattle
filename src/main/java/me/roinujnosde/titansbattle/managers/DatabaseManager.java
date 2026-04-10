@@ -475,28 +475,54 @@ public class DatabaseManager {
         final Set<Warrior> warriorsSet = new HashSet<>(getWarriors());
         final List<Winners> winnersList = new ArrayList<>(getWinners());
 
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            for (final Map.Entry<String, GroupData> data : groupMap.entrySet()) {
-                if (data.getValue().isModified()) {
-                    update(data.getKey(), data.getValue());
-                    data.getValue().setModified(false);
-                }
-            }
+        if (!plugin.isEnabled() || plugin.isShuttingDown()) {
+            persistModifiedData(groupMap, warriorsSet, winnersList);
+            return;
+        }
 
-            for (final Warrior warrior : warriorsSet) {
-                if (warrior.isModified()) {
-                    update(warrior);
-                    warrior.setModified(false);
-                }
-            }
+        plugin.runTrackedAsyncTask(() -> persistModifiedData(groupMap, warriorsSet, winnersList));
+    }
 
-            for (final Winners winner : winnersList) {
-                if (winner.isModified()) {
-                    update(winner);
-                    winner.setModified(false);
-                }
+    /**
+     * Persists all in-memory data synchronously, intended for plugin shutdown flow.
+     */
+    public void saveAllSync() {
+        final Map<String, GroupData> groupMap = new HashMap<>(getGroups());
+        final Set<Warrior> warriorsSet = new HashSet<>(getWarriors());
+        final List<Winners> winnersList = new ArrayList<>(getWinners());
+        persistModifiedData(groupMap, warriorsSet, winnersList);
+    }
+
+    /**
+     * Persists modified entities to storage and clears their modified flags.
+     *
+     * @param groupMap groups snapshot
+     * @param warriorsSet warriors snapshot
+     * @param winnersList winners snapshot
+     */
+    private void persistModifiedData(@NotNull final Map<String, GroupData> groupMap,
+                                     @NotNull final Set<Warrior> warriorsSet,
+                                     @NotNull final List<Winners> winnersList) {
+        for (final Map.Entry<String, GroupData> data : groupMap.entrySet()) {
+            if (data.getValue().isModified()) {
+                update(data.getKey(), data.getValue());
+                data.getValue().setModified(false);
             }
-        });
+        }
+
+        for (final Warrior warrior : warriorsSet) {
+            if (warrior.isModified()) {
+                update(warrior);
+                warrior.setModified(false);
+            }
+        }
+
+        for (final Winners winner : winnersList) {
+            if (winner.isModified()) {
+                update(winner);
+                winner.setModified(false);
+            }
+        }
     }
 
     public Winners getLatestWinners() {

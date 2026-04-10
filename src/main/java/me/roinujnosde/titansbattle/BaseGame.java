@@ -113,7 +113,10 @@ public abstract class BaseGame {
         final Integer startingTimes = getConfig().getAnnouncementStartingTimes();
         lobbyTask = new LobbyAnnouncementTask(startingTimes, interval);
         addTask(lobbyTask.runTaskTimer(plugin, 0, interval * 20L));
-        addTask(new LobbyWantingAnnouncementTask((startingTimes + 1L) * interval).runTaskTimerAsynchronously(plugin, 0, 20L));
+        final BukkitTask lobbyWantingTask = new LobbyWantingAnnouncementTask((startingTimes + 1L) * interval)
+                .runTaskTimerAsynchronously(plugin, 0, 20L);
+        addTask(lobbyWantingTask);
+        plugin.registerAsyncTask(lobbyWantingTask);
     }
 
     public void finish(final boolean cancelled) {
@@ -128,7 +131,11 @@ public abstract class BaseGame {
         if (getConfig().isWorldBorder()) {
             getConfig().getBorderCenter().getWorld().getWorldBorder().reset();
         }
-        Bukkit.getScheduler().runTask(plugin, () -> plugin.getDatabaseManager().saveAll());
+        if (plugin.isEnabled() && !plugin.isShuttingDown()) {
+            Bukkit.getScheduler().runTask(plugin, () -> plugin.getDatabaseManager().saveAll());
+        } else {
+            plugin.getDatabaseManager().saveAllSync();
+        }
         if (!cancelled) {
             processWinners();
         }
