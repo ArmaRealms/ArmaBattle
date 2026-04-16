@@ -32,6 +32,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.plugin.IllegalPluginAccessException;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.jetbrains.annotations.NotNull;
@@ -132,7 +133,11 @@ public abstract class BaseGame {
             getConfig().getBorderCenter().getWorld().getWorldBorder().reset();
         }
         if (plugin.isEnabled() && !plugin.isShuttingDown()) {
-            Bukkit.getScheduler().runTask(plugin, () -> plugin.getDatabaseManager().saveAll());
+            try {
+                Bukkit.getScheduler().runTask(plugin, () -> plugin.getDatabaseManager().saveAll());
+            } catch (final IllegalPluginAccessException e) {
+                plugin.getDatabaseManager().saveAllSync();
+            }
         } else {
             plugin.getDatabaseManager().saveAllSync();
         }

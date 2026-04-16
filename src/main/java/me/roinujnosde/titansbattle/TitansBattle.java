@@ -52,6 +52,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.IllegalPluginAccessException;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 import org.jetbrains.annotations.NotNull;
@@ -88,6 +89,7 @@ public final class TitansBattle extends JavaPlugin {
     private NpcProvider npcProvider;
     private DisconnectTrackingManager disconnectTrackingManager;
     private final Set<BukkitTask> asyncTasks = ConcurrentHashMap.newKeySet();
+    private final Object taskLock = new Object();
     private volatile boolean shuttingDown;
 
     public static TitansBattle getInstance() {
@@ -352,7 +354,13 @@ public final class TitansBattle extends JavaPlugin {
      * @param task asynchronous task to track
      */
     public void registerAsyncTask(@NotNull final BukkitTask task) {
-        asyncTasks.add(task);
+        synchronized (taskLock) {
+            if (shuttingDown || !isEnabled()) {
+                task.cancel();
+                return;
+            }
+            asyncTasks.add(task);
+        }
     }
 
     /**
@@ -375,21 +383,44 @@ public final class TitansBattle extends JavaPlugin {
         }
         final AtomicReference<BukkitTask> taskRef = new AtomicReference<>();
         final CountDownLatch taskRegistered = new CountDownLatch(1);
-        final BukkitTask task = Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
-            try {
-                taskRegistered.await();
-                runnable.run();
-            } catch (final InterruptedException e) {
-                Thread.currentThread().interrupt();
-            } finally {
-                final BukkitTask runningTask = taskRef.get();
-                if (runningTask != null) {
-                    asyncTasks.remove(runningTask);
+        final BukkitTask task;
+        try {
+            task = Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
+                try {
+                    taskRegistered.await();
+                } catch (final InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    final BukkitTask runningTask = taskRef.get();
+                    if (runningTask != null) {
+                        asyncTasks.remove(runningTask);
+                    }
+                    return;
                 }
-            }
-        });
+                if (shuttingDown || !isEnabled()) {
+                    return;
+                }
+                try {
+                    runnable.run();
+                } finally {
+                    final BukkitTask runningTask = taskRef.get();
+                    if (runningTask != null) {
+                        asyncTasks.remove(runningTask);
+                    }
+                }
+            });
+        } catch (final IllegalPluginAccessException e) {
+            debug("Skipping async task scheduling: plugin is already disabled", false);
+            return;
+        }
         taskRef.set(task);
-        asyncTasks.add(task);
+        synchronized (taskLock) {
+            if (shuttingDown || !isEnabled()) {
+                task.cancel();
+                taskRegistered.countDown();
+                return;
+            }
+            asyncTasks.add(task);
+        }
         taskRegistered.countDown();
     }
 
@@ -397,8 +428,10 @@ public final class TitansBattle extends JavaPlugin {
      * Cancels every tracked asynchronous task registered by this plugin.
      */
     public void cancelRegisteredAsyncTasks() {
-        asyncTasks.forEach(BukkitTask::cancel);
-        asyncTasks.clear();
+        synchronized (taskLock) {
+            asyncTasks.forEach(BukkitTask::cancel);
+            asyncTasks.clear();
+        }
     }
 
     /**
