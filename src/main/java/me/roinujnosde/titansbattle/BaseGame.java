@@ -500,7 +500,10 @@ public abstract class BaseGame {
     }
 
     protected void killTasks() {
-        tasks.forEach(BukkitTask::cancel);
+        tasks.forEach(task -> {
+            task.cancel();
+            plugin.unregisterAsyncTask(task);
+        });
         tasks.clear();
     }
 
