@@ -355,6 +355,15 @@ public final class TitansBattle extends JavaPlugin {
     }
 
     /**
+     * Stops tracking an asynchronous Bukkit task when it is no longer needed.
+     *
+     * @param task asynchronous task to untrack
+     */
+    public void unregisterAsyncTask(@NotNull final BukkitTask task) {
+        asyncTasks.remove(task);
+    }
+
+    /**
      * Schedules and tracks an asynchronous one-shot task tied to this plugin.
      *
      * @param runnable async action to execute
