@@ -52,7 +52,9 @@ import org.bukkit.ChatColor;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.IllegalPluginAccessException;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitTask;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -60,6 +62,10 @@ import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 
 /**
@@ -82,6 +88,9 @@ public final class TitansBattle extends JavaPlugin {
     private SpectateManager spectateManager;
     private NpcProvider npcProvider;
     private DisconnectTrackingManager disconnectTrackingManager;
+    private final Set<BukkitTask> asyncTasks = ConcurrentHashMap.newKeySet();
+    private final Object taskLock = new Object();
+    private volatile boolean shuttingDown;
 
     public static TitansBattle getInstance() {
         return instance;
@@ -165,6 +174,8 @@ public final class TitansBattle extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        shuttingDown = true;
+        cancelRegisteredAsyncTasks();
         challengeManager.getChallenges().forEach(c -> c.cancel(Bukkit.getConsoleSender()));
         gameManager.getCurrentGame().ifPresent(g -> g.cancel(Bukkit.getConsoleSender()));
         if (npcProvider != null) {
@@ -312,7 +323,7 @@ public final class TitansBattle extends JavaPlugin {
     }
 
     public void sendDiscordMessage(final String message) {
-        Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
+        runTrackedAsyncTask(() -> {
             final String url = getConfig().getString("discord_webhook_url");
             if (url != null && !url.isEmpty()) {
                 final DiscordWebhook webhook = new DiscordWebhook(url);
@@ -326,6 +337,101 @@ public final class TitansBattle extends JavaPlugin {
                 }
             }
         });
+    }
+
+    /**
+     * Returns whether the plugin shutdown routine has already started.
+     *
+     * @return {@code true} when disabling is in progress; otherwise {@code false}
+     */
+    public boolean isShuttingDown() {
+        return shuttingDown;
+    }
+
+    /**
+     * Registers an asynchronous Bukkit task so it can be cancelled during plugin shutdown.
+     *
+     * @param task asynchronous task to track
+     */
+    public void registerAsyncTask(@NotNull final BukkitTask task) {
+        synchronized (taskLock) {
+            if (shuttingDown || !isEnabled()) {
+                task.cancel();
+                return;
+            }
+            asyncTasks.add(task);
+        }
+    }
+
+    /**
+     * Stops tracking an asynchronous Bukkit task when it is no longer needed.
+     *
+     * @param task asynchronous task to untrack
+     */
+    public void unregisterAsyncTask(@NotNull final BukkitTask task) {
+        asyncTasks.remove(task);
+    }
+
+    /**
+     * Schedules and tracks an asynchronous one-shot task tied to this plugin.
+     *
+     * @param runnable async action to execute
+     */
+    public void runTrackedAsyncTask(@NotNull final Runnable runnable) {
+        if (shuttingDown || !isEnabled()) {
+            return;
+        }
+        final AtomicReference<BukkitTask> taskRef = new AtomicReference<>();
+        final CountDownLatch taskRegistered = new CountDownLatch(1);
+        final BukkitTask task;
+        try {
+            task = Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
+                try {
+                    taskRegistered.await();
+                } catch (final InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    final BukkitTask runningTask = taskRef.get();
+                    if (runningTask != null) {
+                        asyncTasks.remove(runningTask);
+                    }
+                    return;
+                }
+                if (shuttingDown || !isEnabled()) {
+                    return;
+                }
+                try {
+                    runnable.run();
+                } finally {
+                    final BukkitTask runningTask = taskRef.get();
+                    if (runningTask != null) {
+                        asyncTasks.remove(runningTask);
+                    }
+                }
+            });
+        } catch (final IllegalPluginAccessException e) {
+            debug("Skipping async task scheduling: plugin is already disabled", false);
+            return;
+        }
+        taskRef.set(task);
+        synchronized (taskLock) {
+            if (shuttingDown || !isEnabled()) {
+                task.cancel();
+                taskRegistered.countDown();
+                return;
+            }
+            asyncTasks.add(task);
+        }
+        taskRegistered.countDown();
+    }
+
+    /**
+     * Cancels every tracked asynchronous task registered by this plugin.
+     */
+    public void cancelRegisteredAsyncTasks() {
+        synchronized (taskLock) {
+            asyncTasks.forEach(BukkitTask::cancel);
+            asyncTasks.clear();
+        }
     }
 
     /**

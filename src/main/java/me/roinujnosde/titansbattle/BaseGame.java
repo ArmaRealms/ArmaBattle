@@ -32,6 +32,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.plugin.IllegalPluginAccessException;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.jetbrains.annotations.NotNull;
@@ -113,7 +114,10 @@ public abstract class BaseGame {
         final Integer startingTimes = getConfig().getAnnouncementStartingTimes();
         lobbyTask = new LobbyAnnouncementTask(startingTimes, interval);
         addTask(lobbyTask.runTaskTimer(plugin, 0, interval * 20L));
-        addTask(new LobbyWantingAnnouncementTask((startingTimes + 1L) * interval).runTaskTimerAsynchronously(plugin, 0, 20L));
+        final BukkitTask lobbyWantingTask = new LobbyWantingAnnouncementTask((startingTimes + 1L) * interval)
+                .runTaskTimerAsynchronously(plugin, 0, 20L);
+        addTask(lobbyWantingTask);
+        plugin.registerAsyncTask(lobbyWantingTask);
     }
 
     public void finish(final boolean cancelled) {
@@ -128,7 +132,15 @@ public abstract class BaseGame {
         if (getConfig().isWorldBorder()) {
             getConfig().getBorderCenter().getWorld().getWorldBorder().reset();
         }
-        Bukkit.getScheduler().runTask(plugin, () -> plugin.getDatabaseManager().saveAll());
+        if (plugin.isEnabled() && !plugin.isShuttingDown()) {
+            try {
+                Bukkit.getScheduler().runTask(plugin, () -> plugin.getDatabaseManager().saveAll());
+            } catch (final IllegalPluginAccessException e) {
+                plugin.getDatabaseManager().saveAllSync();
+            }
+        } else {
+            plugin.getDatabaseManager().saveAllSync();
+        }
         if (!cancelled) {
             processWinners();
         }
@@ -493,7 +505,10 @@ public abstract class BaseGame {
     }
 
     protected void killTasks() {
-        tasks.forEach(BukkitTask::cancel);
+        tasks.forEach(task -> {
+            task.cancel();
+            plugin.unregisterAsyncTask(task);
+        });
         tasks.clear();
     }
 
