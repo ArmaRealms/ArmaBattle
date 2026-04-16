@@ -63,6 +63,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 
@@ -364,9 +365,13 @@ public final class TitansBattle extends JavaPlugin {
             return;
         }
         final AtomicReference<BukkitTask> taskRef = new AtomicReference<>();
+        final CountDownLatch taskRegistered = new CountDownLatch(1);
         final BukkitTask task = Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
             try {
+                taskRegistered.await();
                 runnable.run();
+            } catch (final InterruptedException e) {
+                Thread.currentThread().interrupt();
             } finally {
                 final BukkitTask runningTask = taskRef.get();
                 if (runningTask != null) {
@@ -376,6 +381,7 @@ public final class TitansBattle extends JavaPlugin {
         });
         taskRef.set(task);
         asyncTasks.add(task);
+        taskRegistered.countDown();
     }
 
     /**
