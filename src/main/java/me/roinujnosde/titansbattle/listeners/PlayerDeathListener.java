@@ -49,7 +49,7 @@ public class PlayerDeathListener extends TBListener {
         this.dm = plugin.getDatabaseManager();
     }
 
-    @EventHandler(priority = EventPriority.MONITOR)
+    @EventHandler(priority = EventPriority.HIGHEST)
     public void onDeath(PlayerDeathEvent event) {
         Player victim = event.getEntity();
         Player killer = Helper.getPlayerAttackerOrKiller(victim.getKiller());
