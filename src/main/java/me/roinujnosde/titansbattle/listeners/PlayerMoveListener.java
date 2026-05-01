@@ -30,7 +30,7 @@ public class PlayerMoveListener extends TBListener {
                         && event.getTo().getY() <= game.getConfig().getMinimumYHeight()) {
                     player.setHealth(0);
                 }
-                if (game.isPreparation()) {
+                if (game.isPreparation() && game.getConfig().isCancelMovement()) {
                     event.setCancelled(true);
                 }
             }
