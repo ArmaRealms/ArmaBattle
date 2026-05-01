@@ -184,10 +184,10 @@ public class EliminationTournamentGame extends Game {
                     casualties.stream().filter(p -> isMember(group, p)).forEach(w -> {
                         waitingThirdPlace.add(w);
                         // Teleport alive group members (already respawned) to the lobby
-                        final Player p = w.toOnlinePlayer();
-                        if (p != null && !p.isDead()) {
+                        final Player onlinePlayer = w.toOnlinePlayer();
+                        if (onlinePlayer != null && !onlinePlayer.isDead()) {
                             teleport(w, getConfig().getLobby());
-                            p.sendMessage(getLang("wait_for_third_place_fight"));
+                            onlinePlayer.sendMessage(getLang("wait_for_third_place_fight"));
                         }
                     });
                 } else {
@@ -233,8 +233,7 @@ public class EliminationTournamentGame extends Game {
             return false;
         }
         return participants.stream()
-                .filter(w -> !w.equals(warrior) && isMember(group, w))
-                .count() == 0;
+                .noneMatch(w -> !w.equals(warrior) && isMember(group, w));
     }
 
     @Override
