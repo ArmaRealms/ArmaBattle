@@ -80,6 +80,8 @@ public abstract class BaseGameConfiguration implements ConfigurationSerializable
     protected Double borderDamage = 5.0;
     @Path("cancel-block-interact")
     protected Boolean cancelBlockInteract = true;
+    @Path("cancel-movement")
+    protected Boolean cancelMovement = true;
     @Path("hit.amount")
     protected Integer hitAmount = 100;
     @Path("minimum.playtime")
@@ -297,6 +299,10 @@ public abstract class BaseGameConfiguration implements ConfigurationSerializable
 
     public boolean isCancelBlockInteract() {
         return cancelBlockInteract;
+    }
+
+    public boolean isCancelMovement() {
+        return cancelMovement;
     }
 
     public Integer getHitAmount() {
