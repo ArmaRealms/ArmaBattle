@@ -220,6 +220,11 @@ public class EliminationTournamentGame extends Game {
         if (isLobby() || thirdPlaceBattle || getDuelsCount() != 2) {
             return false;
         }
+        // Only players who actually died (in casualties) should wait for third place.
+        // Kicks and voluntary leaves must not be captured by this logic.
+        if (!casualties.contains(warrior)) {
+            return false;
+        }
         if (!isCurrentDuelist(warrior)) {
             return false;
         }
@@ -237,14 +242,14 @@ public class EliminationTournamentGame extends Game {
     }
 
     @Override
-    protected boolean shouldTeleportToExitOnDeath(@NotNull final Warrior warrior) {
+    protected boolean shouldTeleportToExitOnExit(@NotNull final Warrior warrior) {
         // Players about to wait for third place will respawn at the lobby via onRespawn;
         // no need to teleport their dead body to the exit first.
         return !willWaitForThirdPlace(warrior);
     }
 
     @Override
-    protected boolean shouldFireExitGameEvent(@NotNull final Warrior warrior) {
+    protected boolean shouldFireExitGameEventOnExit(@NotNull final Warrior warrior) {
         // Suppress PlayerExitGameEvent for players that will wait for third place so that
         // other plugins do not consider them as having truly left the event and teleport
         // them out of the game area.
