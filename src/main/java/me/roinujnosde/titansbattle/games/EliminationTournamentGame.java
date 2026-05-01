@@ -181,7 +181,15 @@ public class EliminationTournamentGame extends Game {
                 if (config.isGroupMode()) {
                     final Group group = getGroup(warrior);
                     //noinspection DataFlowIssue
-                    casualties.stream().filter(p -> isMember(group, p)).forEach(waitingThirdPlace::add);
+                    casualties.stream().filter(p -> isMember(group, p)).forEach(w -> {
+                        waitingThirdPlace.add(w);
+                        // Teleport alive group members (already respawned) to the lobby
+                        final Player onlinePlayer = w.toOnlinePlayer();
+                        if (onlinePlayer != null && !onlinePlayer.isDead()) {
+                            teleport(w, getConfig().getLobby());
+                            onlinePlayer.sendMessage(getLang("wait_for_third_place_fight"));
+                        }
+                    });
                 } else {
                     waitingThirdPlace.add(warrior);
                 }
@@ -197,6 +205,55 @@ public class EliminationTournamentGame extends Game {
             return !getGroupParticipants().containsKey(getGroup(warrior));
         }
         return true;
+    }
+
+    /**
+     * Returns true when the warrior dying right now will be placed into {@link #waitingThirdPlace}
+     * after this death, meaning they should stay in the game (respawn at lobby) and not be
+     * treated as having truly left the event.
+     *
+     * <p>For non-group mode: any current duelist dying during the semi-final round (duels count == 2).
+     * For group mode: only the <em>last</em> alive member of the losing group, because we can only
+     * know the group is eliminated when the last member dies.</p>
+     */
+    private boolean willWaitForThirdPlace(@NotNull final Warrior warrior) {
+        if (isLobby() || thirdPlaceBattle || getDuelsCount() != 2) {
+            return false;
+        }
+        // Only players who actually died (in casualties) should wait for third place.
+        // Kicks and voluntary leaves must not be captured by this logic.
+        if (!casualties.contains(warrior)) {
+            return false;
+        }
+        if (!isCurrentDuelist(warrior)) {
+            return false;
+        }
+        if (!getConfig().isGroupMode()) {
+            return true;
+        }
+        // Group mode: only the last remaining member of the losing group triggers the third-place wait.
+        // 'participants' still contains 'warrior' at this point (removal happens later in processPlayerExit).
+        final Group group = getGroup(warrior);
+        if (group == null) {
+            return false;
+        }
+        return participants.stream()
+                .noneMatch(w -> !w.equals(warrior) && isMember(group, w));
+    }
+
+    @Override
+    protected boolean shouldTeleportToExitOnExit(@NotNull final Warrior warrior) {
+        // Players about to wait for third place will respawn at the lobby via onRespawn;
+        // no need to teleport their dead body to the exit first.
+        return !willWaitForThirdPlace(warrior);
+    }
+
+    @Override
+    protected boolean shouldFireExitGameEventOnExit(@NotNull final Warrior warrior) {
+        // Suppress PlayerExitGameEvent for players that will wait for third place so that
+        // other plugins do not consider them as having truly left the event and teleport
+        // them out of the game area.
+        return !willWaitForThirdPlace(warrior);
     }
 
     @Override
@@ -303,6 +360,9 @@ public class EliminationTournamentGame extends Game {
         if (getWaitingThirdPlaceCount() == 2) {
             broadcastKey("battle_for_third_place");
             participants.addAll(waitingThirdPlace);
+            // Re-apply the kit so any items accumulated while waiting are replaced,
+            // ensuring a fair and consistent starting inventory for both contestants.
+            waitingThirdPlace.forEach(this::setKit);
             if (getConfig().isGroupMode()) {
                 generateDuelist(getWaitingThirdPlaceGroups(), groupDuelists);
             } else {

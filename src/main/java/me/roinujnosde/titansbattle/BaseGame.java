@@ -585,9 +585,13 @@ public abstract class BaseGame {
         }
         final Player player = warrior.toOnlinePlayer();
         if (player != null) {
-            teleport(warrior, getConfig().getExit());
-            final PlayerExitGameEvent event = new PlayerExitGameEvent(player, this);
-            Bukkit.getPluginManager().callEvent(event);
+            if (shouldTeleportToExitOnExit(warrior)) {
+                teleport(warrior, getConfig().getExit());
+            }
+            if (shouldFireExitGameEventOnExit(warrior)) {
+                final PlayerExitGameEvent event = new PlayerExitGameEvent(player, this);
+                Bukkit.getPluginManager().callEvent(event);
+            }
         }
         participants.remove(warrior);
         final Group group = getGroup(warrior);
@@ -627,6 +631,27 @@ public abstract class BaseGame {
     }
 
     protected abstract void processRemainingPlayers(@NotNull Warrior warrior);
+
+    /**
+     * Returns whether the player should be teleported to the exit location when exiting the game.
+     * This hook is used by {@code processPlayerExit()} for all supported exit paths, including
+     * elimination/death, leaving, kicks, and non-combat disconnects.
+     * Subclasses can override this to keep certain players in-game (e.g., waiting for third-place fight).
+     */
+    protected boolean shouldTeleportToExitOnExit(@NotNull final Warrior warrior) {
+        return true;
+    }
+
+    /**
+     * Returns whether a {@link PlayerExitGameEvent} should be fired when the player exits the game.
+     * This hook is used by {@code processPlayerExit()} for all supported exit paths, including
+     * elimination/death, leaving, kicks, and non-combat disconnects.
+     * Subclasses can override this to prevent other plugins from acting on players that are still
+     * considered part of the game (e.g., waiting for a third-place fight).
+     */
+    protected boolean shouldFireExitGameEventOnExit(@NotNull final Warrior warrior) {
+        return true;
+    }
 
     public void setKit(@NotNull final Warrior warrior) {
         final Player player = warrior.toOnlinePlayer();
