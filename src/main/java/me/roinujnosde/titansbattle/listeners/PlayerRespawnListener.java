@@ -16,7 +16,7 @@ public class PlayerRespawnListener extends TBListener {
         this.dm = plugin.getDatabaseManager();
     }
 
-    @EventHandler(priority = EventPriority.HIGHEST)
+    @EventHandler(priority = EventPriority.MONITOR)
     public void onRespawn(PlayerRespawnEvent event) {
         plugin.debug("PlayerRespawnEvent for " + event.getPlayer().getName());
         BaseGame game = plugin.getBaseGameFrom(event.getPlayer());
