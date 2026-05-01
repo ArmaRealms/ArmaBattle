@@ -325,14 +325,9 @@ public class Helper {
     }
 
     public static @NotNull String buildStringFrom(@NotNull final Map<Group, Integer> groupIntegerMap) {
-        final StringBuilder sb = new StringBuilder();
-        for (final Map.Entry<Group, Integer> entry : groupIntegerMap.entrySet()) {
-            sb.append(entry.getKey().getId().toUpperCase())
-                    .append("(")
-                    .append(entry.getValue())
-                    .append(") ");
-        }
-        return sb.toString();
+        return buildStringFrom(groupIntegerMap.entrySet().stream()
+                .map(e -> e.getKey().getUniqueName() + "(" + e.getValue() + ")")
+                .toList());
     }
 
     /**
