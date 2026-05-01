@@ -123,7 +123,7 @@ public class FreeForAllGame extends Game {
         String groupsText = "";
         final GroupManager groupManager = plugin.getGroupManager();
         if (groupManager != null && getConfig().isGroupMode()) {
-            groupsText = groupManager.buildStringFrom(getGroupParticipants().keySet());
+            groupsText = Helper.buildStringFrom(getGroupParticipants());
         }
         return MessageFormat.format(getLang("game_info"),
                 getParticipants().size(), getGroupParticipants().size(), groupsText);
