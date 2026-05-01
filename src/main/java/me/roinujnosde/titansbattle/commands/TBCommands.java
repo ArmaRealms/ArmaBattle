@@ -248,7 +248,7 @@ public class TBCommands extends BaseCommand {
 
         if (game.getConfig().isGroupMode()) {
             sender.sendMessage(plugin.getLang("game_status_group", game, Helper.buildStringFrom(game.getGroupParticipants()),
-                    elapsedTime, maxTime, remainingTime));
+                    game.getParticipants().size(), elapsedTime, maxTime, remainingTime));
         } else {
             sender.sendMessage(plugin.getLang("game_status", game, game.getParticipants().size(),
                     elapsedTime, maxTime, remainingTime));
