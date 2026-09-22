@@ -71,6 +71,14 @@ sounds:
 #Date format used on /tb winners command
 date-format: "dd/MM/yyyy"
 
+# Separators for %titansbattle_last_winner_players_<game>%.
+# Two winners: "Alice e Bob"; three winners: "Alice, Bob e Carol".
+# Keep quotes to preserve spaces. Applies to all events.
+placeholders:
+  winner-players:
+    separator: ", "
+    last-separator: " e "
+
 # Time format used for event timers (duration-based, not clock time).
 # Supported tokens:
 # {dd} = days (00+)
