@@ -65,6 +65,7 @@ public class PlayerJoinListenerTest {
 
         verify(npcProvider).isProxyAlive(playerId);
         verify(game).eliminateDisconnected(warrior, "missing-proxy-on-rejoin");
+        verify(game, never()).notifyPlayerReturned(org.mockito.ArgumentMatchers.any());
     }
 
     @Test
@@ -99,10 +100,11 @@ public class PlayerJoinListenerTest {
             new PlayerJoinListener(plugin).onJoin(event);
         }
 
-        final InOrder order = inOrder(player, npcProvider, tracking);
+        final InOrder order = inOrder(player, npcProvider, tracking, game);
         order.verify(player).teleport(location);
         order.verify(npcProvider).despawnProxy(playerId, "owner-rejoined");
         order.verify(tracking).clearPlayerReconnected(playerId);
+        order.verify(game).notifyPlayerReturned(player);
         verify(game, never()).eliminateDisconnected(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyString());
     }
 
@@ -147,5 +149,6 @@ public class PlayerJoinListenerTest {
         verify(player, never()).teleport(org.mockito.ArgumentMatchers.any(Location.class));
         verify(npcProvider, never()).despawnProxy(playerId, "owner-rejoined");
         verify(tracking, never()).clearPlayerReconnected(playerId);
+        verify(game, never()).notifyPlayerReturned(player);
     }
 }

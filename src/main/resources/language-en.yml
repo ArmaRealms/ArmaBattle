@@ -169,3 +169,10 @@ groups-ranking:
   name-title: "Name"
   title: "&b--- TB Groups Ranking ---\n \n# %name-title%n-space [%v-space%v-title |%k-space%k-title |%deaths-space%deaths-title |%defeats-space%defeats-title]"
   line: "&b%position. %name%n-space [%v-space%victories |%k-space%kills |%deaths-space%deaths |%defeats-space%defeats]"
+
+# Disconnect/reconnect notices (sent only to the participants of the affected game)
+disconnect-player-left: "&b» {0} disconnected! Disconnections: {1}/{2}. Time to return: {3}."
+disconnect-player-returned: "&b» {0} returned to the match!"
+disconnect-remaining-protections: "&b» You have {0} protected disconnection(s) left in this match."
+disconnect-timeout-eliminated: "&c» {0} was eliminated because they disconnected and did not return in time."
+disconnect-limit-eliminated: "&c» {0} was eliminated because they exceeded the disconnection limit."

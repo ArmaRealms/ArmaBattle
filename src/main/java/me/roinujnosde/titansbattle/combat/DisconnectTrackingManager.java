@@ -178,6 +178,24 @@ public class DisconnectTrackingManager {
     }
 
     /**
+     * The maximum number of protected disconnections allowed per event.
+     *
+     * @return the configured maximum
+     */
+    public int getMaxDisconnections() {
+        return maxDisconnections;
+    }
+
+    /**
+     * The effective offline protection time, in seconds, players have to return.
+     *
+     * @return the configured offline time in seconds
+     */
+    public long getMaxOfflineTimeSeconds() {
+        return Math.max(0L, maxOfflineTimeMs) / 1000L;
+    }
+
+    /**
      * Schedule a timeout task to remove the NPC after the configured time
      *
      * @param playerId the UUID of the player whose NPC should be removed
@@ -224,7 +242,7 @@ public class DisconnectTrackingManager {
             }
             final Warrior warrior = plugin.getDatabaseManager().getWarrior(playerId);
             if (record.game.isParticipant(warrior)) {
-                record.game.eliminateDisconnected(warrior, "timeout");
+                record.game.eliminateDisconnected(warrior, BaseGame.ELIMINATION_REASON_TIMEOUT);
             }
         } catch (final Exception e) {
             plugin.getLogger().log(Level.SEVERE, "Failed to eliminate timed out player " + playerId, e);

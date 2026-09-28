@@ -153,3 +153,11 @@ groups-ranking:
   name-title: "Grupo"
   title: "&b--- TB Ranking de Grupos ---\n \n# %name-title%n-space [%v-space%v-title |%k-space%k-title |%deaths-space%deaths-title |%defeats-space%defeats-title]"
   line: "&b%position. %name%n-space [%v-space%vitórias |%k-space%abates |%deaths-space%mortes |%defeats-space%derrotas]"
+
+# Avisos de desconexão/reconexão (enviados apenas aos participantes da partida afetada)
+disconnect-player-left: "&b» {0} desconectou! Desconexões: {1}/{2}. Tempo para retornar: {3}."
+disconnect-player-returned: "&b» {0} retornou à partida!"
+disconnect-remaining-protections: "&b» Você possui {0} desconexão(ões) protegida(s) restante(s) nesta partida."
+disconnect-timeout-eliminated: "&c» {0} foi eliminado porque desconectou e não retornou dentro do prazo."
+disconnect-limit-eliminated: "&c» {0} foi eliminado porque excedeu o limite de desconexões."
+
