@@ -3,7 +3,7 @@ package me.roinujnosde.titansbattle.combat;
 import me.roinujnosde.titansbattle.BaseGame;
 import me.roinujnosde.titansbattle.TitansBattle;
 import me.roinujnosde.titansbattle.managers.DatabaseManager;
-import me.roinujnosde.titansbattle.npc.NpcProvider;
+import me.roinujnosde.titansbattle.npc.VanillaProvider;
 import me.roinujnosde.titansbattle.types.Warrior;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -58,7 +58,7 @@ public class DisconnectTrackingManagerTest {
     public void offlineFighterIsEliminatedAfterTimeoutEvenWhenProxyIsMissing() {
         final BaseGame game = mock(BaseGame.class);
         final DatabaseManager database = mock(DatabaseManager.class);
-        final NpcProvider provider = mock(NpcProvider.class);
+        final VanillaProvider provider = mock(VanillaProvider.class);
         final Warrior warrior = mock(Warrior.class);
         when(plugin.getDatabaseManager()).thenReturn(database);
         when(plugin.getNpcProvider()).thenReturn(provider);
