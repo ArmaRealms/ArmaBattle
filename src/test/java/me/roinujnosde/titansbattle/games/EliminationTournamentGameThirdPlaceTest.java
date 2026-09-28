@@ -118,6 +118,26 @@ public class EliminationTournamentGameThirdPlaceTest {
         assertTrue(fixture.game.shouldFireExitGameEventOnExit(fixture.warrior));
     }
 
+    @Test
+    public void disconnectEliminationRemovesFighterAlreadyWaitingForThirdPlace() throws Exception {
+        final Fixture fixture = new Fixture();
+        fixture.startSemiFinals();
+        // The fighter already died in their semi-final and is parked waiting for the third-place
+        // fight; the other semi-final has finished, so the duel count is no longer 2.
+        fixture.setDuels(1);
+        fixture.markCasualty();
+        fixture.markDead();
+        fixture.markWaitingForThirdPlace();
+
+        try (ServerStubs ignored = withServerStubs()) {
+            fixture.game.eliminateDisconnected(fixture.warrior, "timeout");
+        }
+
+        // A disconnect elimination must never leave the fighter counted as waiting for a
+        // third-place fight, otherwise generateDuelists() can pair them into a stalled battle.
+        assertFalse(fixture.game.isParticipant(fixture.warrior));
+    }
+
     /**
      * Eliminating a fighter fires a {@code PlayerQuitEvent} and schedules a delayed cleanup, both of
      * which reach out to the running server. The scheduler is left idle so the deferred third-place
@@ -242,6 +262,11 @@ public class EliminationTournamentGameThirdPlaceTest {
         @SuppressWarnings("unchecked")
         private void markCasualty() throws Exception {
             ((Set<Warrior>) readField("casualties")).add(warrior);
+        }
+
+        @SuppressWarnings("unchecked")
+        private void markWaitingForThirdPlace() throws Exception {
+            ((List<Warrior>) readField("waitingThirdPlace")).add(warrior);
         }
 
         /** A fighter that just lost a semi-final is lying dead on the ground. */

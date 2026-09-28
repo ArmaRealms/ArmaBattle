@@ -140,6 +140,13 @@ public class EliminationTournamentGame extends Game {
 
     @Override
     protected void processRemainingPlayers(@NotNull final Warrior warrior) {
+        // A disconnect elimination must also drop the fighter from the third-place queue. The
+        // deferred cleanup below only runs while getDuelsCount() == 2, so a fighter eliminated
+        // after the semi-final round would otherwise stay eligible and could be paired into a
+        // stalled third-place battle.
+        if (isDisconnectElimination(warrior)) {
+            waitingThirdPlace.remove(warrior);
+        }
         final Player player = warrior.toOnlinePlayer();
         if (player != null && player.isOnline() && player.isDead()) {
             addTask(Bukkit.getScheduler().runTaskLater(plugin, () -> {
