@@ -141,8 +141,10 @@ public class EliminationTournamentGame extends Game {
     @Override
     protected void processRemainingPlayers(@NotNull final Warrior warrior) {
         final Player player = warrior.toOnlinePlayer();
-        if (player != null) {
-            Bukkit.getScheduler().runTaskLater(plugin, () -> player.spigot().respawn(), 1L);
+        if (player != null && player.isOnline() && player.isDead()) {
+            addTask(Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                if (player.isOnline() && player.isDead()) player.spigot().respawn();
+            }, 1L));
         }
 
         if (lost(warrior)) {
@@ -173,11 +175,11 @@ public class EliminationTournamentGame extends Game {
                 }
 
                 //delaying the next duel, so there is time for other players to respawn
-                Bukkit.getScheduler().runTaskLater(plugin, this::startNextDuel, 20L);
+                addTask(Bukkit.getScheduler().runTaskLater(plugin, this::startNextDuel, 20L));
             }
 
             //died during semi-finals, goes for third place
-            if (getDuelsCount() == 2) {
+            if (getDuelsCount() == 2 && player != null && player.isOnline()) {
                 if (config.isGroupMode()) {
                     final Group group = getGroup(warrior);
                     //noinspection DataFlowIssue
@@ -193,7 +195,10 @@ public class EliminationTournamentGame extends Game {
                 } else {
                     waitingThirdPlace.add(warrior);
                 }
-                Bukkit.getScheduler().runTaskLater(plugin, () -> waitingThirdPlace.removeIf(w -> w.toOnlinePlayer() == null), 5L);
+                addTask(Bukkit.getScheduler().runTaskLater(plugin, () -> waitingThirdPlace.removeIf(w -> {
+                    final Player online = w.toOnlinePlayer();
+                    return online == null || !online.isOnline();
+                }), 5L));
             }
         }
 
@@ -222,7 +227,8 @@ public class EliminationTournamentGame extends Game {
         }
         // Only players who actually died (in casualties) should wait for third place.
         // Kicks and voluntary leaves must not be captured by this logic.
-        if (!casualties.contains(warrior)) {
+        final Player player = warrior.toOnlinePlayer();
+        if (!casualties.contains(warrior) || player == null || !player.isOnline() || !player.isDead()) {
             return false;
         }
         if (!isCurrentDuelist(warrior)) {

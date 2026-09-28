@@ -82,33 +82,39 @@ public class PlayerJoinListener extends TBListener {
             final ViaVersionHook vvh = plugin.getViaVersionHook();
             if (vvh != null && vvh.isPlayerVersionBlocked(player, game.getConfig())) {
                 final Warrior warrior = plugin.getDatabaseManager().getWarrior(player);
-                np.getProxyByOwner(playerId).ifPresent(npcHandle -> {
-                    np.despawnProxy(playerId, "incompatible-version");
-                    dtm.clearPlayerReconnected(playerId);
-                });
+                np.despawnProxy(playerId, "incompatible-version");
                 game.eliminate(warrior, "incompatible-version");
                 return;
             }
 
             if (!dtm.canPlayerReturn(playerId)) {
                 final Warrior warrior = plugin.getDatabaseManager().getWarrior(player);
-                np.getProxyByOwner(playerId).ifPresent(npcHandle -> {
-                    np.despawnProxy(playerId, "disconnect-limit-exceeded");
-                    dtm.clearPlayerReconnected(playerId);
-                });
+                np.despawnProxy(playerId, "disconnect-limit-exceeded");
                 game.eliminate(warrior, "disconnect-limit-exceeded");
                 return;
             }
 
-            // Check if player has an active NPC proxy
+            final boolean hadTimeout = dtm.hasPendingTimeout(playerId);
+            // An externally removed proxy must not leave a player in a phantom fight.
+            if (hadTimeout && np.getProxyByOwner(playerId).isEmpty()) {
+                game.eliminate(plugin.getDatabaseManager().getWarrior(player), "missing-proxy-on-rejoin");
+                return;
+            }
             np.getProxyByOwner(playerId).ifPresent(npcHandle -> {
                 final Location proxyLocation = npcHandle.getLocation();
-                player.teleport(proxyLocation);
+                if (!player.teleport(proxyLocation)) {
+                    throw new IllegalStateException("Could not restore player to NPC proxy location");
+                }
                 np.despawnProxy(playerId, "owner-rejoined");
                 dtm.clearPlayerReconnected(playerId);
             });
         } catch (final Exception e) {
             plugin.getLogger().log(Level.WARNING, "Failed to restore NPC proxy for " + playerName, e);
+            final UUID playerId = player.getUniqueId();
+            final BaseGame game = plugin.getBaseGameFrom(player);
+            if (game != null && plugin.getDisconnectTrackingManager().hasPendingTimeout(playerId)) {
+                game.eliminate(plugin.getDatabaseManager().getWarrior(player), "proxy-restoration-failed");
+            }
         }
     }
 

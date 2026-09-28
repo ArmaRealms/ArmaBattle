@@ -27,6 +27,7 @@ import me.roinujnosde.titansbattle.BaseGame;
 import me.roinujnosde.titansbattle.TitansBattle;
 import me.roinujnosde.titansbattle.types.Warrior;
 import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitTask;
 import org.jetbrains.annotations.NotNull;
 
@@ -58,10 +59,11 @@ public class DisconnectTrackingManager {
      * Track a player disconnection
      *
      * @param playerId the UUID of the disconnecting player
+     * @param game the game in which the player disconnected
      * @return true if the player is still allowed to have an NPC proxy, false if they've exceeded the limit
      */
-    public boolean trackDisconnection(@NotNull final UUID playerId) {
-        final DisconnectRecord record = disconnectRecords.computeIfAbsent(playerId, k -> new DisconnectRecord());
+    public boolean trackDisconnection(@NotNull final UUID playerId, @NotNull final BaseGame game) {
+        final DisconnectRecord record = disconnectRecords.computeIfAbsent(playerId, k -> new DisconnectRecord(game));
         record.recordDisconnection();
 
         plugin.debug(String.format("Player %s disconnected %d times (max: %d)",
@@ -73,9 +75,15 @@ public class DisconnectTrackingManager {
             return false;
         }
 
-        // Schedule timeout task for NPC removal
-        scheduleTimeoutTask(playerId);
         return true;
+    }
+
+    /** Start the offline timer only after the proxy has actually been spawned. */
+    public void startOfflineTimeout(@NotNull final UUID playerId) {
+        if (!disconnectRecords.containsKey(playerId)) {
+            throw new IllegalStateException("No disconnection record for " + playerId);
+        }
+        scheduleTimeoutTask(playerId);
     }
 
     /**
@@ -111,6 +119,10 @@ public class DisconnectTrackingManager {
         }
     }
 
+    public boolean hasPendingTimeout(@NotNull final UUID playerId) {
+        return timeoutTasks.containsKey(playerId);
+    }
+
     /**
      * Clear all tracking for a player (used when game ends or player is eliminated)
      *
@@ -125,6 +137,15 @@ public class DisconnectTrackingManager {
         }
 
         plugin.debug("Cleared disconnect tracking for player " + playerId);
+    }
+
+    /** Clear only the timeouts belonging to the game that is ending. */
+    public void clearGame(@NotNull final BaseGame game) {
+        for (final Map.Entry<UUID, DisconnectRecord> entry : disconnectRecords.entrySet()) {
+            if (entry.getValue().game == game) {
+                clearPlayer(entry.getKey());
+            }
+        }
     }
 
     /**
@@ -167,7 +188,7 @@ public class DisconnectTrackingManager {
         }
 
         // Convert milliseconds to ticks (20 ticks per second)
-        final long timeoutTicks = maxOfflineTimeMs / 50L;
+        final long timeoutTicks = Math.max(1L, (Math.max(0L, maxOfflineTimeMs) + 49L) / 50L);
 
         final BukkitTask timeoutTask = Bukkit.getScheduler().runTaskLater(plugin,
                 () -> handlePlayerTimeout(playerId), timeoutTicks);
@@ -185,36 +206,41 @@ public class DisconnectTrackingManager {
      */
     private void handlePlayerTimeout(@NotNull final UUID playerId) {
         plugin.debug("Player " + playerId + " timed out, removing NPC proxy");
-
-        // Remove timeout task reference
-        timeoutTasks.remove(playerId);
-
-        // Remove the NPC proxy if it exists
-        if (plugin.getNpcProvider().isProxyAlive(playerId)) {
-            plugin.getNpcProvider().despawnProxy(playerId, "timeout");
-        }
-
-        // Mark player as eliminated due to timeout
-        // Find the player's game and eliminate them
+        final DisconnectRecord record = disconnectRecords.get(playerId);
+        if (record == null) return;
         try {
+            // A reconnect must not eliminate a player even if a stale task still runs.
+            final Player player = Bukkit.getPlayer(playerId);
+            if (player != null && player.isOnline()) {
+                return;
+            }
+            // Proxy cleanup must not prevent the game from advancing.
+            try {
+                plugin.getNpcProvider().despawnProxy(playerId, "timeout");
+            } catch (final Exception e) {
+                plugin.getLogger().log(java.util.logging.Level.WARNING, "Failed to remove proxy for " + playerId, e);
+            }
             final Warrior warrior = plugin.getDatabaseManager().getWarrior(playerId);
-            final BaseGame game = plugin.getBaseGameFrom(warrior);
-            if (game != null) {
-                game.eliminate(warrior, "timeout");
+            if (record.game.isParticipant(warrior)) {
+                record.game.eliminateDisconnected(warrior, "timeout");
             }
         } catch (final Exception e) {
-            plugin.getLogger().warning("Failed to eliminate timed out player " + playerId + ": " + e.getMessage());
+            plugin.getLogger().log(java.util.logging.Level.SEVERE, "Failed to eliminate timed out player " + playerId, e);
+        } finally {
+            clearPlayer(playerId);
         }
-
-        // Clear tracking for this player
-        clearPlayer(playerId);
     }
 
     /**
      * Record of disconnections for a single player
      */
     private static class DisconnectRecord {
+        private final BaseGame game;
         private int disconnectionCount = 0;
+
+        private DisconnectRecord(final BaseGame game) {
+            this.game = game;
+        }
 
         public void recordDisconnection() {
             this.disconnectionCount++;
