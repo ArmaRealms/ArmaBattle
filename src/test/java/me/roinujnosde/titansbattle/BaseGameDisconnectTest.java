@@ -118,6 +118,43 @@ public class BaseGameDisconnectTest {
         assertEquals(List.of(playerId), toClear);
         assertEquals(List.of(playerId), toRespawn);
         verify(configManager).save();
+        assertTrue(game.isDisconnectElimination(warrior));
+    }
+
+    /**
+     * A fighter that actually dies in the tournament is a real casualty and must stay eligible for
+     * the third-place fight, unlike one removed by the disconnect/reconnect handling.
+     */
+    @Test
+    public void tournamentDeathIsNotTreatedAsDisconnectElimination() {
+        final TitansBattle plugin = mock(TitansBattle.class);
+        final BaseGameConfiguration config = mock(BaseGameConfiguration.class);
+        final ConfigManager configManager = mock(ConfigManager.class);
+        final VanillaProvider npcProvider = mock(VanillaProvider.class);
+        final DisconnectTrackingManager tracking = mock(DisconnectTrackingManager.class);
+        final Warrior warrior = mock(Warrior.class);
+        final Player player = mock(Player.class);
+        final UUID playerId = UUID.randomUUID();
+        when(plugin.getConfigManager()).thenReturn(configManager);
+        when(plugin.getNpcProvider()).thenReturn(npcProvider);
+        when(plugin.getDisconnectTrackingManager()).thenReturn(tracking);
+        when(configManager.getClearInventory()).thenReturn(new ArrayList<>());
+        when(configManager.getRespawn()).thenReturn(new ArrayList<>());
+        when(config.isUseKits()).thenReturn(true);
+        when(warrior.getUniqueId()).thenReturn(playerId);
+        when(warrior.toOnlinePlayer()).thenReturn(player);
+        when(player.isOnline()).thenReturn(false);
+        when(npcProvider.getProxyByOwner(playerId)).thenReturn(Optional.empty());
+        final TestGame game = new TestGame(plugin, config);
+        game.addParticipant(warrior);
+
+        try (MockedStatic<Bukkit> bukkit = mockStatic(Bukkit.class)) {
+            bukkit.when(Bukkit::getPluginManager).thenReturn(mock(PluginManager.class));
+            game.eliminate(warrior, "killed");
+        }
+
+        assertTrue(game.casualties.contains(warrior));
+        assertTrue(!game.isDisconnectElimination(warrior));
     }
 
     @Test
@@ -154,6 +191,35 @@ public class BaseGameDisconnectTest {
         assertEquals(offlinePlayer, defeated.getLastParticipantOffline());
         assertNull(defeated.getLastParticipant());
         verify(groupData).increaseDefeats(config.getName());
+    }
+
+    /**
+     * Warriors loaded from storage wrap an {@link OfflinePlayer} even while their owner is online.
+     * The live {@link Player} must still be handed to listeners of the ordinary online defeat path.
+     */
+    @Test
+    public void onlineDefeatExposesTheLivePlayerThroughTheOfflineWrapper() {
+        final Group group = mock(Group.class);
+        final OfflinePlayer offlinePlayer = mock(OfflinePlayer.class);
+        final Player livePlayer = mock(Player.class);
+        when(offlinePlayer.getPlayer()).thenReturn(livePlayer);
+
+        // BaseGame builds the event from warrior.toPlayer(), which is the OfflinePlayer wrapper.
+        final GroupDefeatedEvent defeated = new GroupDefeatedEvent(group, offlinePlayer);
+
+        assertEquals(offlinePlayer, defeated.getLastParticipantOffline());
+        assertEquals(livePlayer, defeated.getLastParticipant());
+    }
+
+    @Test
+    public void groupDefeatOfAnOnlinePlayerStillExposesThatPlayer() {
+        final Group group = mock(Group.class);
+        final Player livePlayer = mock(Player.class);
+
+        final GroupDefeatedEvent defeated = new GroupDefeatedEvent(group, livePlayer);
+
+        assertEquals(livePlayer, defeated.getLastParticipantOffline());
+        assertEquals(livePlayer, defeated.getLastParticipant());
     }
 
     @Test

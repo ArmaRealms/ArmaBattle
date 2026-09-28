@@ -69,12 +69,15 @@ public class GroupDefeatedEvent extends Event {
     }
 
     /**
-     * Returns the last participant when represented by a live Player object.
+     * Returns the last participant as a live {@link Player}.
+     *
+     * <p>The participant is often held as an {@link OfflinePlayer} wrapper even while its owner is
+     * online, so the live reference is resolved from the wrapper rather than type-checked.</p>
      *
      * @return the Player, or null when the last participant is offline
      */
     public @Nullable Player getLastParticipant() {
-        return lastParticipant instanceof Player player ? player : null;
+        return lastParticipant instanceof Player player ? player : lastParticipant.getPlayer();
     }
 
     /** Returns the last participant, including when they are offline. */

@@ -28,6 +28,7 @@ import me.roinujnosde.titansbattle.TitansBattle;
 import me.roinujnosde.titansbattle.combat.DisconnectTrackingManager;
 import me.roinujnosde.titansbattle.hooks.viaversion.ViaVersionHook;
 import me.roinujnosde.titansbattle.managers.ConfigManager;
+import me.roinujnosde.titansbattle.npc.NpcHandle;
 import me.roinujnosde.titansbattle.npc.NpcProvider;
 import me.roinujnosde.titansbattle.types.Kit;
 import me.roinujnosde.titansbattle.types.Warrior;
@@ -43,6 +44,7 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.logging.Level;
 
@@ -95,12 +97,15 @@ public class PlayerJoinListener extends TBListener {
             }
 
             final boolean hadTimeout = dtm.hasPendingTimeout(playerId);
-            // An externally removed proxy must not leave a player in a phantom fight.
-            if (hadTimeout && !np.isProxyAlive(playerId)) {
+            // A stale handle whose entity was killed externally must not restore the player, and a
+            // fighter that lost its proxy while offline must not resume the fight.
+            final boolean proxyAlive = np.isProxyAlive(playerId);
+            if (hadTimeout && !proxyAlive) {
+                np.despawnProxy(playerId, "missing-proxy-on-rejoin");
                 game.eliminateDisconnected(plugin.getDatabaseManager().getWarrior(player), "missing-proxy-on-rejoin");
                 return;
             }
-            final var npcHandle = np.getProxyByOwner(playerId);
+            final var npcHandle = proxyAlive ? np.getProxyByOwner(playerId) : Optional.<NpcHandle>empty();
             if (npcHandle.isPresent()) {
                 final Location proxyLocation = npcHandle.get().getLocation();
                 if (!player.teleport(proxyLocation)) {

@@ -79,6 +79,11 @@ public abstract class BaseGame {
     protected final HashMap<Warrior, Integer> killsCount = new HashMap<>();
     protected final Set<Warrior> casualties = new HashSet<>();
     protected final Set<Warrior> casualtiesWatching = new HashSet<>();
+    /**
+     * Warriors removed by the disconnect/reconnect handling rather than by dying in the tournament.
+     * These must not be treated as tournament casualties for progression (e.g. third-place fights).
+     */
+    private final Set<Warrior> disconnectEliminations = new HashSet<>();
     private final List<BukkitTask> tasks = new ArrayList<>();
     protected BaseGameConfiguration config;
     protected boolean lobby;
@@ -392,8 +397,17 @@ public abstract class BaseGame {
 
     public void eliminateDisconnected(@NotNull final Warrior warrior, @NotNull final String reason) {
         if (!isParticipant(warrior)) return;
+        disconnectEliminations.add(warrior);
         prepareDisconnectedPlayer(warrior);
         eliminate(warrior, reason);
+    }
+
+    /**
+     * Returns whether this warrior was eliminated by the disconnect/reconnect handling instead of
+     * by dying in the tournament.
+     */
+    public boolean isDisconnectElimination(@NotNull final Warrior warrior) {
+        return disconnectEliminations.contains(warrior);
     }
 
     /**
