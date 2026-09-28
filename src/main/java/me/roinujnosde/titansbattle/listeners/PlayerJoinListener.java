@@ -83,21 +83,21 @@ public class PlayerJoinListener extends TBListener {
             if (vvh != null && vvh.isPlayerVersionBlocked(player, game.getConfig())) {
                 final Warrior warrior = plugin.getDatabaseManager().getWarrior(player);
                 np.despawnProxy(playerId, "incompatible-version");
-                game.eliminate(warrior, "incompatible-version");
+                game.eliminateDisconnected(warrior, "incompatible-version");
                 return;
             }
 
             if (!dtm.canPlayerReturn(playerId)) {
                 final Warrior warrior = plugin.getDatabaseManager().getWarrior(player);
                 np.despawnProxy(playerId, "disconnect-limit-exceeded");
-                game.eliminate(warrior, "disconnect-limit-exceeded");
+                game.eliminateDisconnected(warrior, "disconnect-limit-exceeded");
                 return;
             }
 
             final boolean hadTimeout = dtm.hasPendingTimeout(playerId);
             // An externally removed proxy must not leave a player in a phantom fight.
-            if (hadTimeout && np.getProxyByOwner(playerId).isEmpty()) {
-                game.eliminate(plugin.getDatabaseManager().getWarrior(player), "missing-proxy-on-rejoin");
+            if (hadTimeout && !np.isProxyAlive(playerId)) {
+                game.eliminateDisconnected(plugin.getDatabaseManager().getWarrior(player), "missing-proxy-on-rejoin");
                 return;
             }
             np.getProxyByOwner(playerId).ifPresent(npcHandle -> {
@@ -113,7 +113,7 @@ public class PlayerJoinListener extends TBListener {
             final UUID playerId = player.getUniqueId();
             final BaseGame game = plugin.getBaseGameFrom(player);
             if (game != null && plugin.getDisconnectTrackingManager().hasPendingTimeout(playerId)) {
-                game.eliminate(plugin.getDatabaseManager().getWarrior(player), "proxy-restoration-failed");
+                game.eliminateDisconnected(plugin.getDatabaseManager().getWarrior(player), "proxy-restoration-failed");
             }
         }
     }

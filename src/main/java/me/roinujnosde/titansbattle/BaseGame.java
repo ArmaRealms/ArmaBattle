@@ -127,7 +127,22 @@ public abstract class BaseGame {
         killTasks();
         runCommandsAfterBattle(getParticipants());
         if (getConfig().isUseKits()) {
-            getPlayerParticipantsStream().forEach(Kit::clearInventory);
+            boolean queuedInventoryCleanup = false;
+            for (final Warrior participant : getParticipants()) {
+                final Player player = participant.toOnlinePlayer();
+                if (player != null && player.isOnline()) {
+                    Kit.clearInventory(player);
+                } else {
+                    final List<UUID> toClear = plugin.getConfigManager().getClearInventory();
+                    if (!toClear.contains(participant.getUniqueId())) {
+                        toClear.add(participant.getUniqueId());
+                        queuedInventoryCleanup = true;
+                    }
+                }
+            }
+            if (queuedInventoryCleanup) {
+                plugin.getConfigManager().save();
+            }
         }
         if (getConfig().isWorldBorder()) {
             getConfig().getBorderCenter().getWorld().getWorldBorder().reset();
@@ -738,13 +753,13 @@ public abstract class BaseGame {
 
         for (final String command : commands) {
             for (final Warrior warrior : warriors) {
-                final Player player = warrior.toOnlinePlayer();
-                if (player == null || !player.isOnline()) {
-                    continue;
-                }
                 if (!command.contains("%player%")) { // Runs the command once when %player% is not used
                     CommandManager.dispatchCommand(Bukkit.getConsoleSender(), hook.parse((OfflinePlayer) null, command));
                     break;
+                }
+                final Player player = warrior.toOnlinePlayer();
+                if (player == null || !player.isOnline()) {
+                    continue;
                 }
                 CommandManager.dispatchCommand(Bukkit.getConsoleSender(), hook.parse(warrior, command,
                         "%player%", warrior.getName()));

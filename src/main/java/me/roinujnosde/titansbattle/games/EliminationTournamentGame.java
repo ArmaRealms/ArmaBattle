@@ -179,20 +179,23 @@ public class EliminationTournamentGame extends Game {
             }
 
             //died during semi-finals, goes for third place
-            if (getDuelsCount() == 2 && player != null && player.isOnline()) {
+            if (getDuelsCount() == 2) {
                 if (config.isGroupMode()) {
                     final Group group = getGroup(warrior);
                     //noinspection DataFlowIssue
                     casualties.stream().filter(p -> isMember(group, p)).forEach(w -> {
+                        final Player onlinePlayer = w.toOnlinePlayer();
+                        if (onlinePlayer == null || !onlinePlayer.isOnline()) {
+                            return;
+                        }
                         waitingThirdPlace.add(w);
                         // Teleport alive group members (already respawned) to the lobby
-                        final Player onlinePlayer = w.toOnlinePlayer();
-                        if (onlinePlayer != null && !onlinePlayer.isDead()) {
+                        if (!onlinePlayer.isDead()) {
                             teleport(w, getConfig().getLobby());
                             onlinePlayer.sendMessage(getLang("wait_for_third_place_fight"));
                         }
                     });
-                } else {
+                } else if (player != null && player.isOnline()) {
                     waitingThirdPlace.add(warrior);
                 }
                 addTask(Bukkit.getScheduler().runTaskLater(plugin, () -> waitingThirdPlace.removeIf(w -> {
