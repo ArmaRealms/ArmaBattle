@@ -6,7 +6,7 @@ import me.roinujnosde.titansbattle.managers.DatabaseManager;
 import me.roinujnosde.titansbattle.npc.VanillaProvider;
 import me.roinujnosde.titansbattle.types.Warrior;
 import org.bukkit.Bukkit;
-import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.scheduler.BukkitScheduler;
 import org.bukkit.scheduler.BukkitTask;
 import org.junit.After;
@@ -39,7 +39,10 @@ public class DisconnectTrackingManagerTest {
         plugin = mock(TitansBattle.class);
         scheduler = mock(BukkitScheduler.class);
         scheduledTask = mock(BukkitTask.class);
-        when(plugin.getConfig()).thenReturn(new YamlConfiguration());
+        final FileConfiguration config = mock(FileConfiguration.class);
+        when(config.getInt("battle.npcProxy.maxDisconnections", 3)).thenReturn(3);
+        when(config.getLong("battle.npcProxy.maxOfflineTimeMs", 300000L)).thenReturn(300000L);
+        when(plugin.getConfig()).thenReturn(config);
         bukkit = org.mockito.Mockito.mockStatic(Bukkit.class);
         bukkit.when(Bukkit::getScheduler).thenReturn(scheduler);
         when(scheduler.runTaskLater(eq(plugin), any(Runnable.class), anyLong())).thenAnswer(invocation -> {
@@ -67,7 +70,7 @@ public class DisconnectTrackingManagerTest {
 
         assertTrue(manager.trackDisconnection(playerId, game));
         assertFalse(manager.hasPendingTimeout(playerId));
-        manager.startOfflineTimeout(playerId);
+        assertTrue(manager.startOfflineTimeout(playerId));
         assertTrue(manager.hasPendingTimeout(playerId));
 
         timeout.run();
@@ -81,7 +84,7 @@ public class DisconnectTrackingManagerTest {
     public void successfulRejoinCancelsTheTimerWithoutResettingDisconnectLimit() {
         final BaseGame game = mock(BaseGame.class);
         assertTrue(manager.trackDisconnection(playerId, game));
-        manager.startOfflineTimeout(playerId);
+        assertTrue(manager.startOfflineTimeout(playerId));
 
         manager.clearPlayerReconnected(playerId);
 
@@ -90,5 +93,12 @@ public class DisconnectTrackingManagerTest {
         assertTrue(manager.trackDisconnection(playerId, game));
         assertTrue(manager.trackDisconnection(playerId, game));
         assertFalse(manager.trackDisconnection(playerId, game));
+    }
+
+    @Test
+    public void timeoutCannotStartWithoutDisconnectionRecord() {
+        assertFalse(manager.startOfflineTimeout(playerId));
+        assertFalse(manager.hasPendingTimeout(playerId));
+        verify(scheduler, org.mockito.Mockito.never()).runTaskLater(eq(plugin), any(Runnable.class), anyLong());
     }
 }

@@ -126,23 +126,28 @@ public abstract class BaseGame {
         teleportAll(getConfig().getExit());
         killTasks();
         runCommandsAfterBattle(getParticipants());
-        if (getConfig().isUseKits()) {
-            boolean queuedInventoryCleanup = false;
-            for (final Warrior participant : getParticipants()) {
-                final Player player = participant.toOnlinePlayer();
-                if (player != null && player.isOnline()) {
-                    Kit.clearInventory(player);
-                } else {
+        boolean queuedCleanup = false;
+        for (final Warrior participant : getParticipants()) {
+            final Player player = participant.toOnlinePlayer();
+            if (player == null || !player.isOnline()) {
+                final List<UUID> toRespawn = plugin.getConfigManager().getRespawn();
+                if (!toRespawn.contains(participant.getUniqueId())) {
+                    toRespawn.add(participant.getUniqueId());
+                    queuedCleanup = true;
+                }
+                if (getConfig().isUseKits()) {
                     final List<UUID> toClear = plugin.getConfigManager().getClearInventory();
                     if (!toClear.contains(participant.getUniqueId())) {
                         toClear.add(participant.getUniqueId());
-                        queuedInventoryCleanup = true;
+                        queuedCleanup = true;
                     }
                 }
+            } else if (getConfig().isUseKits()) {
+                Kit.clearInventory(player);
             }
-            if (queuedInventoryCleanup) {
-                plugin.getConfigManager().save();
-            }
+        }
+        if (queuedCleanup) {
+            plugin.getConfigManager().save();
         }
         if (getConfig().isWorldBorder()) {
             getConfig().getBorderCenter().getWorld().getWorldBorder().reset();
@@ -341,7 +346,17 @@ public abstract class BaseGame {
                     if (npcProvider.isAvailable()) {
                         final Location location = player.getLocation();
                         npcProvider.spawnProxy(player, location);
-                        plugin.getDisconnectTrackingManager().startOfflineTimeout(warrior.getUniqueId());
+                        if (!plugin.getDisconnectTrackingManager().startOfflineTimeout(warrior.getUniqueId())) {
+                            // Recover a missing record before abandoning a successfully spawned proxy.
+                            plugin.getLogger().warning("Missing disconnect record for " + warrior.getUniqueId()
+                                    + "; restoring tracking");
+                            if (!plugin.getDisconnectTrackingManager().trackDisconnection(warrior.getUniqueId(), this)
+                                    || !plugin.getDisconnectTrackingManager().startOfflineTimeout(warrior.getUniqueId())) {
+                                plugin.getNpcProvider().despawnProxy(warrior.getUniqueId(), "timeout-scheduling-failed");
+                                eliminateDisconnected(warrior, "timeout-scheduling-failed");
+                                return;
+                            }
+                        }
 
                         plugin.debug(String.format("onDisconnect() -> spawned NPC proxy for %s (disconnect #%d)",
                                 player.getName(), plugin.getDisconnectTrackingManager().getDisconnectionCount(warrior.getUniqueId())));
@@ -623,9 +638,7 @@ public abstract class BaseGame {
             //last participant
             if (getConfig().isGroupMode() && group != null && !getGroupParticipants().containsKey(group)) {
                 broadcastKey("group_defeated", group.getName());
-                if (player != null && player.isOnline()) {
-                    Bukkit.getPluginManager().callEvent(new GroupDefeatedEvent(group, player));
-                }
+                Bukkit.getPluginManager().callEvent(new GroupDefeatedEvent(group, warrior.toPlayer()));
                 group.getData().increaseDefeats(getConfig().getName());
             }
             sendRemainingOpponentsCount();

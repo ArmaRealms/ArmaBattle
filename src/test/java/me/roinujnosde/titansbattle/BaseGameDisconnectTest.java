@@ -1,31 +1,44 @@
 package me.roinujnosde.titansbattle;
 
 import me.roinujnosde.titansbattle.combat.DisconnectTrackingManager;
+import me.roinujnosde.titansbattle.events.GroupDefeatedEvent;
 import me.roinujnosde.titansbattle.hooks.papi.PlaceholderHook;
 import me.roinujnosde.titansbattle.managers.ConfigManager;
 import me.roinujnosde.titansbattle.managers.DatabaseManager;
+import me.roinujnosde.titansbattle.managers.GroupManager;
 import me.roinujnosde.titansbattle.npc.VanillaProvider;
+import me.roinujnosde.titansbattle.types.Group;
+import me.roinujnosde.titansbattle.types.GroupData;
 import me.roinujnosde.titansbattle.types.Warrior;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.ConsoleCommandSender;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.entity.Player;
+import org.bukkit.event.Event;
 import org.bukkit.plugin.PluginManager;
 import org.junit.Test;
 import org.mockito.MockedStatic;
+import org.mockito.ArgumentCaptor;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.logging.Logger;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.times;
 
-public class BaseGameReviewTest {
+public class BaseGameDisconnectTest {
 
     @Test
     public void playerIndependentCommandRunsForOfflineParticipant() {
@@ -55,11 +68,13 @@ public class BaseGameReviewTest {
         final Warrior winner = mock(Warrior.class);
         final UUID winnerId = UUID.randomUUID();
         final List<UUID> toClear = new ArrayList<>();
+        final List<UUID> toRespawn = new ArrayList<>();
         when(plugin.getConfigManager()).thenReturn(configManager);
         when(plugin.getDatabaseManager()).thenReturn(database);
         when(plugin.getNpcProvider()).thenReturn(npcProvider);
         when(plugin.getDisconnectTrackingManager()).thenReturn(tracking);
         when(configManager.getClearInventory()).thenReturn(toClear);
+        when(configManager.getRespawn()).thenReturn(toRespawn);
         when(config.isUseKits()).thenReturn(true);
         when(winner.getUniqueId()).thenReturn(winnerId);
         when(npcProvider.getProxyByOwner(winnerId)).thenReturn(Optional.empty());
@@ -72,6 +87,7 @@ public class BaseGameReviewTest {
         }
 
         assertEquals(List.of(winnerId), toClear);
+        assertEquals(List.of(winnerId), toRespawn);
         verify(configManager).save();
     }
 
@@ -102,6 +118,76 @@ public class BaseGameReviewTest {
         assertEquals(List.of(playerId), toClear);
         assertEquals(List.of(playerId), toRespawn);
         verify(configManager).save();
+    }
+
+    @Test
+    public void offlineLastGroupMemberStillFiresDefeatEvent() {
+        final TitansBattle plugin = mock(TitansBattle.class);
+        final BaseGameConfiguration config = mock(BaseGameConfiguration.class);
+        final Group group = mock(Group.class);
+        final GroupData groupData = mock(GroupData.class);
+        final Warrior warrior = mock(Warrior.class);
+        final OfflinePlayer offlinePlayer = mock(OfflinePlayer.class);
+        final VanillaProvider npcProvider = mock(VanillaProvider.class);
+        final PluginManager pluginManager = mock(PluginManager.class);
+        final UUID playerId = UUID.randomUUID();
+        when(plugin.getGroupManager()).thenReturn(mock(GroupManager.class));
+        when(plugin.getDisconnectTrackingManager()).thenReturn(mock(DisconnectTrackingManager.class));
+        when(plugin.getNpcProvider()).thenReturn(npcProvider);
+        when(config.isGroupMode()).thenReturn(true);
+        when(group.getData()).thenReturn(groupData);
+        when(warrior.getUniqueId()).thenReturn(playerId);
+        when(warrior.toPlayer()).thenReturn(offlinePlayer);
+        when(npcProvider.getProxyByOwner(playerId)).thenReturn(Optional.empty());
+        final TestGame game = new TestGame(plugin, config);
+        game.addParticipant(warrior);
+        game.groups.put(warrior, group);
+
+        try (MockedStatic<Bukkit> bukkit = mockStatic(Bukkit.class)) {
+            bukkit.when(Bukkit::getPluginManager).thenReturn(pluginManager);
+            game.eliminate(warrior, "timeout");
+        }
+
+        final ArgumentCaptor<Event> event = ArgumentCaptor.forClass(Event.class);
+        verify(pluginManager).callEvent(event.capture());
+        final GroupDefeatedEvent defeated = (GroupDefeatedEvent) event.getValue();
+        assertEquals(offlinePlayer, defeated.getLastParticipantOffline());
+        assertNull(defeated.getLastParticipant());
+        verify(groupData).increaseDefeats(config.getName());
+    }
+
+    @Test
+    public void missingDisconnectRecordIsRecoveredAfterProxySpawn() {
+        final TitansBattle plugin = mock(TitansBattle.class);
+        final BaseGameConfiguration config = mock(BaseGameConfiguration.class);
+        final FileConfiguration pluginConfig = mock(FileConfiguration.class);
+        final VanillaProvider npcProvider = mock(VanillaProvider.class);
+        final DisconnectTrackingManager tracking = mock(DisconnectTrackingManager.class);
+        final Warrior warrior = mock(Warrior.class);
+        final Player player = mock(Player.class);
+        final Location location = mock(Location.class);
+        final UUID playerId = UUID.randomUUID();
+        when(plugin.getConfig()).thenReturn(pluginConfig);
+        when(plugin.getLogger()).thenReturn(mock(Logger.class));
+        when(plugin.getNpcProvider()).thenReturn(npcProvider);
+        when(plugin.getDisconnectTrackingManager()).thenReturn(tracking);
+        when(pluginConfig.getStringList("battle.npcProxy.bypass-reasons")).thenReturn(List.of());
+        when(pluginConfig.getBoolean("battle.npcProxy.enabled", true)).thenReturn(true);
+        when(warrior.toOnlinePlayer()).thenReturn(player);
+        when(warrior.getUniqueId()).thenReturn(playerId);
+        when(player.getLocation()).thenReturn(location);
+        when(npcProvider.isAvailable()).thenReturn(true);
+        final TestGame game = new TestGame(plugin, config);
+        game.addParticipant(warrior);
+        when(tracking.trackDisconnection(playerId, game)).thenReturn(true);
+        when(tracking.startOfflineTimeout(playerId)).thenReturn(false, true);
+
+        game.onDisconnect(warrior, null);
+
+        verify(npcProvider).spawnProxy(player, location);
+        verify(tracking, times(2)).startOfflineTimeout(playerId);
+        verify(tracking, times(2)).trackDisconnection(playerId, game);
+        assertTrue(game.isParticipant(warrior));
     }
 
     private static final class TestGame extends BaseGame {
@@ -138,7 +224,7 @@ public class BaseGameReviewTest {
 
         @Override
         public Collection<Warrior> getCurrentFighters() {
-            return List.of();
+            return participants;
         }
 
         @Override

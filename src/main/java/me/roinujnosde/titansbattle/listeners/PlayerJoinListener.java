@@ -100,14 +100,19 @@ public class PlayerJoinListener extends TBListener {
                 game.eliminateDisconnected(plugin.getDatabaseManager().getWarrior(player), "missing-proxy-on-rejoin");
                 return;
             }
-            np.getProxyByOwner(playerId).ifPresent(npcHandle -> {
-                final Location proxyLocation = npcHandle.getLocation();
+            final var npcHandle = np.getProxyByOwner(playerId);
+            if (npcHandle.isPresent()) {
+                final Location proxyLocation = npcHandle.get().getLocation();
                 if (!player.teleport(proxyLocation)) {
-                    throw new IllegalStateException("Could not restore player to NPC proxy location");
+                    plugin.getLogger().warning("Could not restore " + playerName + " to NPC proxy location");
+                    if (hadTimeout) {
+                        game.eliminateDisconnected(plugin.getDatabaseManager().getWarrior(player), "proxy-restoration-failed");
+                    }
+                    return;
                 }
                 np.despawnProxy(playerId, "owner-rejoined");
                 dtm.clearPlayerReconnected(playerId);
-            });
+            }
         } catch (final Exception e) {
             plugin.getLogger().log(Level.WARNING, "Failed to restore NPC proxy for " + playerName, e);
             final UUID playerId = player.getUniqueId();

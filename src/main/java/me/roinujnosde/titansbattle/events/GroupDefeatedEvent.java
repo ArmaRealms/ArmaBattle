@@ -24,10 +24,12 @@
 package me.roinujnosde.titansbattle.events;
 
 import me.roinujnosde.titansbattle.types.Group;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author RoinujNosde
@@ -36,9 +38,13 @@ public class GroupDefeatedEvent extends Event {
 
     private static final HandlerList HANDLERS = new HandlerList();
     private final Group group;
-    private final Player lastParticipant;
+    private final OfflinePlayer lastParticipant;
 
     public GroupDefeatedEvent(Group group, Player lastParticipant) {
+        this(group, (OfflinePlayer) lastParticipant);
+    }
+
+    public GroupDefeatedEvent(Group group, OfflinePlayer lastParticipant) {
         if (lastParticipant == null) {
             throw new IllegalArgumentException("Player cannot be null.");
         }
@@ -63,11 +69,16 @@ public class GroupDefeatedEvent extends Event {
     }
 
     /**
-     * Returns the Last Participant
+     * Returns the last participant when represented by a live Player object.
      *
-     * @return the Last Participant
+     * @return the Player, or null when the last participant is offline
      */
-    public Player getLastParticipant() {
+    public @Nullable Player getLastParticipant() {
+        return lastParticipant instanceof Player player ? player : null;
+    }
+
+    /** Returns the last participant, including when they are offline. */
+    public @NotNull OfflinePlayer getLastParticipantOffline() {
         return lastParticipant;
     }
 

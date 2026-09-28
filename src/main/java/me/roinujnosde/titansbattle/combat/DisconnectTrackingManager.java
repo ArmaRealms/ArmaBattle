@@ -34,6 +34,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
 
 /**
  * Service for tracking player disconnections and managing offline timeouts
@@ -79,11 +80,12 @@ public class DisconnectTrackingManager {
     }
 
     /** Start the offline timer only after the proxy has actually been spawned. */
-    public void startOfflineTimeout(@NotNull final UUID playerId) {
+    public boolean startOfflineTimeout(@NotNull final UUID playerId) {
         if (!disconnectRecords.containsKey(playerId)) {
-            throw new IllegalStateException("No disconnection record for " + playerId);
+            return false;
         }
         scheduleTimeoutTask(playerId);
+        return true;
     }
 
     /**
@@ -218,14 +220,14 @@ public class DisconnectTrackingManager {
             try {
                 plugin.getNpcProvider().despawnProxy(playerId, "timeout");
             } catch (final Exception e) {
-                plugin.getLogger().log(java.util.logging.Level.WARNING, "Failed to remove proxy for " + playerId, e);
+                plugin.getLogger().log(Level.WARNING, "Failed to remove proxy for " + playerId, e);
             }
             final Warrior warrior = plugin.getDatabaseManager().getWarrior(playerId);
             if (record.game.isParticipant(warrior)) {
                 record.game.eliminateDisconnected(warrior, "timeout");
             }
         } catch (final Exception e) {
-            plugin.getLogger().log(java.util.logging.Level.SEVERE, "Failed to eliminate timed out player " + playerId, e);
+            plugin.getLogger().log(Level.SEVERE, "Failed to eliminate timed out player " + playerId, e);
         } finally {
             clearPlayer(playerId);
         }
