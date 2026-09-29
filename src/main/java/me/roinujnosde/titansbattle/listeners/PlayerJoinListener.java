@@ -28,6 +28,7 @@ import me.roinujnosde.titansbattle.TitansBattle;
 import me.roinujnosde.titansbattle.combat.DisconnectTrackingManager;
 import me.roinujnosde.titansbattle.hooks.viaversion.ViaVersionHook;
 import me.roinujnosde.titansbattle.managers.ConfigManager;
+import me.roinujnosde.titansbattle.npc.NpcHandle;
 import me.roinujnosde.titansbattle.npc.NpcProvider;
 import me.roinujnosde.titansbattle.types.Kit;
 import me.roinujnosde.titansbattle.types.Warrior;
@@ -43,6 +44,7 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.logging.Level;
 
@@ -82,33 +84,47 @@ public class PlayerJoinListener extends TBListener {
             final ViaVersionHook vvh = plugin.getViaVersionHook();
             if (vvh != null && vvh.isPlayerVersionBlocked(player, game.getConfig())) {
                 final Warrior warrior = plugin.getDatabaseManager().getWarrior(player);
-                np.getProxyByOwner(playerId).ifPresent(npcHandle -> {
-                    np.despawnProxy(playerId, "incompatible-version");
-                    dtm.clearPlayerReconnected(playerId);
-                });
-                game.eliminate(warrior, "incompatible-version");
+                np.despawnProxy(playerId, "incompatible-version");
+                game.eliminateDisconnected(warrior, "incompatible-version");
                 return;
             }
 
             if (!dtm.canPlayerReturn(playerId)) {
                 final Warrior warrior = plugin.getDatabaseManager().getWarrior(player);
-                np.getProxyByOwner(playerId).ifPresent(npcHandle -> {
-                    np.despawnProxy(playerId, "disconnect-limit-exceeded");
-                    dtm.clearPlayerReconnected(playerId);
-                });
-                game.eliminate(warrior, "disconnect-limit-exceeded");
+                np.despawnProxy(playerId, "disconnect-limit-exceeded");
+                game.eliminateDisconnected(warrior, "disconnect-limit-exceeded");
                 return;
             }
 
-            // Check if player has an active NPC proxy
-            np.getProxyByOwner(playerId).ifPresent(npcHandle -> {
-                final Location proxyLocation = npcHandle.getLocation();
-                player.teleport(proxyLocation);
+            final boolean hadTimeout = dtm.hasPendingTimeout(playerId);
+            // A stale handle whose entity was killed externally must not restore the player, and a
+            // fighter that lost its proxy while offline must not resume the fight.
+            final boolean proxyAlive = np.isProxyAlive(playerId);
+            if (hadTimeout && !proxyAlive) {
+                np.despawnProxy(playerId, "missing-proxy-on-rejoin");
+                game.eliminateDisconnected(plugin.getDatabaseManager().getWarrior(player), "missing-proxy-on-rejoin");
+                return;
+            }
+            final var npcHandle = proxyAlive ? np.getProxyByOwner(playerId) : Optional.<NpcHandle>empty();
+            if (npcHandle.isPresent()) {
+                final Location proxyLocation = npcHandle.get().getLocation();
+                if (!player.teleport(proxyLocation)) {
+                    plugin.getLogger().warning("Could not restore " + playerName + " to NPC proxy location");
+                    if (hadTimeout) {
+                        game.eliminateDisconnected(plugin.getDatabaseManager().getWarrior(player), "proxy-restoration-failed");
+                    }
+                    return;
+                }
                 np.despawnProxy(playerId, "owner-rejoined");
                 dtm.clearPlayerReconnected(playerId);
-            });
+            }
         } catch (final Exception e) {
             plugin.getLogger().log(Level.WARNING, "Failed to restore NPC proxy for " + playerName, e);
+            final UUID playerId = player.getUniqueId();
+            final BaseGame game = plugin.getBaseGameFrom(player);
+            if (game != null && plugin.getDisconnectTrackingManager().hasPendingTimeout(playerId)) {
+                game.eliminateDisconnected(plugin.getDatabaseManager().getWarrior(player), "proxy-restoration-failed");
+            }
         }
     }
 

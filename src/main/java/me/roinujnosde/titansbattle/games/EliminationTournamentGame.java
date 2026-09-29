@@ -140,9 +140,18 @@ public class EliminationTournamentGame extends Game {
 
     @Override
     protected void processRemainingPlayers(@NotNull final Warrior warrior) {
+        // A disconnect elimination must also drop the fighter from the third-place queue. The
+        // deferred cleanup below only runs while getDuelsCount() == 2, so a fighter eliminated
+        // after the semi-final round would otherwise stay eligible and could be paired into a
+        // stalled third-place battle.
+        if (isDisconnectElimination(warrior)) {
+            waitingThirdPlace.remove(warrior);
+        }
         final Player player = warrior.toOnlinePlayer();
-        if (player != null) {
-            Bukkit.getScheduler().runTaskLater(plugin, () -> player.spigot().respawn(), 1L);
+        if (player != null && player.isOnline() && player.isDead()) {
+            addTask(Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                if (player.isOnline() && player.isDead()) player.spigot().respawn();
+            }, 1L));
         }
 
         if (lost(warrior)) {
@@ -173,7 +182,7 @@ public class EliminationTournamentGame extends Game {
                 }
 
                 //delaying the next duel, so there is time for other players to respawn
-                Bukkit.getScheduler().runTaskLater(plugin, this::startNextDuel, 20L);
+                addTask(Bukkit.getScheduler().runTaskLater(plugin, this::startNextDuel, 20L));
             }
 
             //died during semi-finals, goes for third place
@@ -182,18 +191,26 @@ public class EliminationTournamentGame extends Game {
                     final Group group = getGroup(warrior);
                     //noinspection DataFlowIssue
                     casualties.stream().filter(p -> isMember(group, p)).forEach(w -> {
+                        final Player onlinePlayer = w.toOnlinePlayer();
+                        // A rejected reconnect is online but out of the tournament, so it must not
+                        // take a third-place slot that a real casualty would earn.
+                        if (onlinePlayer == null || !onlinePlayer.isOnline() || isDisconnectElimination(w)) {
+                            return;
+                        }
                         waitingThirdPlace.add(w);
                         // Teleport alive group members (already respawned) to the lobby
-                        final Player onlinePlayer = w.toOnlinePlayer();
-                        if (onlinePlayer != null && !onlinePlayer.isDead()) {
+                        if (!onlinePlayer.isDead()) {
                             teleport(w, getConfig().getLobby());
                             onlinePlayer.sendMessage(getLang("wait_for_third_place_fight"));
                         }
                     });
-                } else {
+                } else if (player != null && player.isOnline() && !isDisconnectElimination(warrior)) {
                     waitingThirdPlace.add(warrior);
                 }
-                Bukkit.getScheduler().runTaskLater(plugin, () -> waitingThirdPlace.removeIf(w -> w.toOnlinePlayer() == null), 5L);
+                addTask(Bukkit.getScheduler().runTaskLater(plugin, () -> waitingThirdPlace.removeIf(w -> {
+                    final Player online = w.toOnlinePlayer();
+                    return online == null || !online.isOnline() || isDisconnectElimination(w);
+                }), 5L));
             }
         }
 
@@ -221,8 +238,12 @@ public class EliminationTournamentGame extends Game {
             return false;
         }
         // Only players who actually died (in casualties) should wait for third place.
-        // Kicks and voluntary leaves must not be captured by this logic.
-        if (!casualties.contains(warrior)) {
+        // Kicks, voluntary leaves and rejected reconnects must not be captured by this logic.
+        final Player player = warrior.toOnlinePlayer();
+        if (!casualties.contains(warrior) || isDisconnectElimination(warrior)) {
+            return false;
+        }
+        if (player == null || !player.isOnline() || !player.isDead()) {
             return false;
         }
         if (!isCurrentDuelist(warrior)) {

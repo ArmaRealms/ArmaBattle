@@ -79,6 +79,11 @@ public abstract class BaseGame {
     protected final HashMap<Warrior, Integer> killsCount = new HashMap<>();
     protected final Set<Warrior> casualties = new HashSet<>();
     protected final Set<Warrior> casualtiesWatching = new HashSet<>();
+    /**
+     * Warriors removed by the disconnect/reconnect handling rather than by dying in the tournament.
+     * These must not be treated as tournament casualties for progression (e.g. third-place fights).
+     */
+    private final Set<Warrior> disconnectEliminations = new HashSet<>();
     private final List<BukkitTask> tasks = new ArrayList<>();
     protected BaseGameConfiguration config;
     protected boolean lobby;
@@ -126,8 +131,28 @@ public abstract class BaseGame {
         teleportAll(getConfig().getExit());
         killTasks();
         runCommandsAfterBattle(getParticipants());
-        if (getConfig().isUseKits()) {
-            getPlayerParticipantsStream().forEach(Kit::clearInventory);
+        boolean queuedCleanup = false;
+        for (final Warrior participant : getParticipants()) {
+            final Player player = participant.toOnlinePlayer();
+            if (player == null || !player.isOnline()) {
+                final List<UUID> toRespawn = plugin.getConfigManager().getRespawn();
+                if (!toRespawn.contains(participant.getUniqueId())) {
+                    toRespawn.add(participant.getUniqueId());
+                    queuedCleanup = true;
+                }
+                if (getConfig().isUseKits()) {
+                    final List<UUID> toClear = plugin.getConfigManager().getClearInventory();
+                    if (!toClear.contains(participant.getUniqueId())) {
+                        toClear.add(participant.getUniqueId());
+                        queuedCleanup = true;
+                    }
+                }
+            } else if (getConfig().isUseKits()) {
+                Kit.clearInventory(player);
+            }
+        }
+        if (queuedCleanup) {
+            plugin.getConfigManager().save();
         }
         if (getConfig().isWorldBorder()) {
             getConfig().getBorderCenter().getWorld().getWorldBorder().reset();
@@ -150,19 +175,14 @@ public abstract class BaseGame {
      * Clean up NPC proxies for all participants
      */
     private void cleanupNpcProxies(@NotNull final String reason) {
-        if (!plugin.getNpcProvider().isAvailable()) {
-            return;
-        }
-
         for (final Warrior participant : participants) {
             final UUID playerId = participant.getUniqueId();
-            if (plugin.getNpcProvider().isProxyAlive(playerId)) {
+            if (plugin.getNpcProvider().getProxyByOwner(playerId).isPresent()) {
                 plugin.debug("Cleaning up NPC proxy for " + participant.getName() + " (reason: " + reason + ")");
                 plugin.getNpcProvider().despawnProxy(playerId, reason);
             }
         }
-        // Clean up disconnect tracking for all participants when game ends
-        plugin.getDisconnectTrackingManager().clearAll();
+        plugin.getDisconnectTrackingManager().clearGame(this);
     }
 
     public abstract void setWinner(@NotNull Warrior warrior) throws CommandNotSupportedException;
@@ -320,9 +340,9 @@ public abstract class BaseGame {
             if (player != null && shouldCreateNpcProxy()) {
                 try {
                     // Check if player hasn't exceeded disconnect limits
-                    if (!plugin.getDisconnectTrackingManager().trackDisconnection(warrior.getUniqueId())) {
+                    if (!plugin.getDisconnectTrackingManager().trackDisconnection(warrior.getUniqueId(), this)) {
                         plugin.debug(String.format("onDisconnect() -> kill player %s (disconnect limit exceeded)", player.getName()));
-                        player.setHealth(0);
+                        eliminateDisconnected(warrior, "disconnect-limit-exceeded");
                         return;
                     }
 
@@ -331,6 +351,17 @@ public abstract class BaseGame {
                     if (npcProvider.isAvailable()) {
                         final Location location = player.getLocation();
                         npcProvider.spawnProxy(player, location);
+                        if (!plugin.getDisconnectTrackingManager().startOfflineTimeout(warrior.getUniqueId())) {
+                            // Recover a missing record before abandoning a successfully spawned proxy.
+                            plugin.getLogger().warning("Missing disconnect record for " + warrior.getUniqueId()
+                                    + "; restoring tracking");
+                            if (!plugin.getDisconnectTrackingManager().trackDisconnection(warrior.getUniqueId(), this)
+                                    || !plugin.getDisconnectTrackingManager().startOfflineTimeout(warrior.getUniqueId())) {
+                                plugin.getNpcProvider().despawnProxy(warrior.getUniqueId(), "timeout-scheduling-failed");
+                                eliminateDisconnected(warrior, "timeout-scheduling-failed");
+                                return;
+                            }
+                        }
 
                         plugin.debug(String.format("onDisconnect() -> spawned NPC proxy for %s (disconnect #%d)",
                                 player.getName(), plugin.getDisconnectTrackingManager().getDisconnectionCount(warrior.getUniqueId())));
@@ -340,28 +371,43 @@ public abstract class BaseGame {
                     }
                 } catch (final Exception e) {
                     plugin.getLogger().warning("Failed to create NPC proxy for " + player.getName() + ": " + e.getMessage());
-                    plugin.debug("onDisconnect() -> kill player " + player.getName() + " (NPC proxy failed)");
+                    plugin.getNpcProvider().despawnProxy(warrior.getUniqueId(), "spawn-failed");
                 }
             }
 
-            // Fallback behavior: kill the player if NPC proxy creation failed or is disabled
-            if (player != null) {
-                plugin.debug(String.format("onDisconnect() -> kill player %s", player.getName()));
-                player.setHealth(0);
-            }
+            // A health change during PlayerQuitEvent may not produce a death event.
+            eliminateDisconnected(warrior, "disconnect-without-proxy");
             return;
         }
 
+        // Normal disconnect processing for non-combat situations
+        prepareDisconnectedPlayer(warrior);
+        casualties.add(warrior);
+        casualtiesWatching.add(warrior); //adding to this Collection, so they are not teleported on respawn
+        processPlayerExit(warrior);
+    }
+
+    private void prepareDisconnectedPlayer(@NotNull final Warrior warrior) {
         if (getConfig().isUseKits()) {
             plugin.getConfigManager().getClearInventory().add(warrior.getUniqueId());
         }
-
-        // Normal disconnect processing for non-combat situations
-        casualties.add(warrior);
-        casualtiesWatching.add(warrior); //adding to this Collection, so they are not teleported on respawn
         plugin.getConfigManager().getRespawn().add(warrior.getUniqueId());
         plugin.getConfigManager().save();
-        processPlayerExit(warrior);
+    }
+
+    public void eliminateDisconnected(@NotNull final Warrior warrior, @NotNull final String reason) {
+        if (!isParticipant(warrior)) return;
+        disconnectEliminations.add(warrior);
+        prepareDisconnectedPlayer(warrior);
+        eliminate(warrior, reason);
+    }
+
+    /**
+     * Returns whether this warrior was eliminated by the disconnect/reconnect handling instead of
+     * by dying in the tournament.
+     */
+    public boolean isDisconnectElimination(@NotNull final Warrior warrior) {
+        return disconnectEliminations.contains(warrior);
     }
 
     /**
@@ -407,7 +453,7 @@ public abstract class BaseGame {
 
     @NotNull
     protected Stream<Player> getPlayerParticipantsStream() {
-        return getParticipants().stream().map(Warrior::toOnlinePlayer).filter(Objects::nonNull);
+        return getParticipants().stream().map(Warrior::toOnlinePlayer).filter(Objects::nonNull).filter(Player::isOnline);
     }
 
     public Map<Group, Integer> getGroupParticipants() {
@@ -493,7 +539,7 @@ public abstract class BaseGame {
 
     protected boolean teleport(@Nullable final Warrior warrior, @NotNull final Location destination) {
         final Player player = warrior != null ? warrior.toOnlinePlayer() : null;
-        if (player == null) {
+        if (player == null || !player.isOnline()) {
             return false;
         }
         SoundUtils.playSound(TELEPORT, plugin.getConfig(), player);
@@ -583,8 +629,13 @@ public abstract class BaseGame {
         if (!isParticipant(warrior)) {
             return;
         }
+        final UUID playerId = warrior.getUniqueId();
+        plugin.getDisconnectTrackingManager().clearPlayer(playerId);
+        if (plugin.getNpcProvider().getProxyByOwner(playerId).isPresent()) {
+            plugin.getNpcProvider().despawnProxy(playerId, "player-eliminated");
+        }
         final Player player = warrior.toOnlinePlayer();
-        if (player != null) {
+        if (player != null && player.isOnline()) {
             if (shouldTeleportToExitOnExit(warrior)) {
                 teleport(warrior, getConfig().getExit());
             }
@@ -601,7 +652,7 @@ public abstract class BaseGame {
             //last participant
             if (getConfig().isGroupMode() && group != null && !getGroupParticipants().containsKey(group)) {
                 broadcastKey("group_defeated", group.getName());
-                Bukkit.getPluginManager().callEvent(new GroupDefeatedEvent(group, warrior.toOnlinePlayer()));
+                Bukkit.getPluginManager().callEvent(new GroupDefeatedEvent(group, warrior.toPlayer()));
                 group.getData().increaseDefeats(getConfig().getName());
             }
             sendRemainingOpponentsCount();
@@ -729,13 +780,13 @@ public abstract class BaseGame {
 
         for (final String command : commands) {
             for (final Warrior warrior : warriors) {
-                final Player player = warrior.toOnlinePlayer();
-                if (player == null) {
-                    continue;
-                }
                 if (!command.contains("%player%")) { // Runs the command once when %player% is not used
                     CommandManager.dispatchCommand(Bukkit.getConsoleSender(), hook.parse((OfflinePlayer) null, command));
                     break;
+                }
+                final Player player = warrior.toOnlinePlayer();
+                if (player == null || !player.isOnline()) {
+                    continue;
                 }
                 CommandManager.dispatchCommand(Bukkit.getConsoleSender(), hook.parse(warrior, command,
                         "%player%", warrior.getName()));
