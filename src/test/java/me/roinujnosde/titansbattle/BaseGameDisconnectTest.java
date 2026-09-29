@@ -22,7 +22,9 @@ import org.junit.Test;
 import org.mockito.MockedStatic;
 import org.mockito.ArgumentCaptor;
 
+import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -32,8 +34,12 @@ import java.util.logging.Logger;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.times;
@@ -227,6 +233,7 @@ public class BaseGameDisconnectTest {
         final TitansBattle plugin = mock(TitansBattle.class);
         final BaseGameConfiguration config = mock(BaseGameConfiguration.class);
         final FileConfiguration pluginConfig = mock(FileConfiguration.class);
+        final ConfigManager configManager = mock(ConfigManager.class);
         final VanillaProvider npcProvider = mock(VanillaProvider.class);
         final DisconnectTrackingManager tracking = mock(DisconnectTrackingManager.class);
         final Warrior warrior = mock(Warrior.class);
@@ -234,6 +241,8 @@ public class BaseGameDisconnectTest {
         final Location location = mock(Location.class);
         final UUID playerId = UUID.randomUUID();
         when(plugin.getConfig()).thenReturn(pluginConfig);
+        when(plugin.getConfigManager()).thenReturn(configManager);
+        when(configManager.getTimeFormat()).thenReturn("{mm}:{ss}");
         when(plugin.getLogger()).thenReturn(mock(Logger.class));
         when(plugin.getNpcProvider()).thenReturn(npcProvider);
         when(plugin.getDisconnectTrackingManager()).thenReturn(tracking);
@@ -254,6 +263,233 @@ public class BaseGameDisconnectTest {
         verify(tracking, times(2)).startOfflineTimeout(playerId);
         verify(tracking, times(2)).trackDisconnection(playerId, game);
         assertTrue(game.isParticipant(warrior));
+    }
+
+    @Test
+    public void protectedDisconnectNotifiesParticipantsWithEffectiveValues() {
+        final TitansBattle plugin = mock(TitansBattle.class);
+        final BaseGameConfiguration config = mock(BaseGameConfiguration.class);
+        final FileConfiguration pluginConfig = mock(FileConfiguration.class);
+        final ConfigManager configManager = mock(ConfigManager.class);
+        final VanillaProvider npcProvider = mock(VanillaProvider.class);
+        final DisconnectTrackingManager tracking = mock(DisconnectTrackingManager.class);
+        final Warrior warrior = mock(Warrior.class);
+        final Warrior other = mock(Warrior.class);
+        final Player player = mock(Player.class);
+        final Location location = mock(Location.class);
+        final UUID playerId = UUID.randomUUID();
+        when(plugin.getConfig()).thenReturn(pluginConfig);
+        when(plugin.getConfigManager()).thenReturn(configManager);
+        when(plugin.getNpcProvider()).thenReturn(npcProvider);
+        when(plugin.getDisconnectTrackingManager()).thenReturn(tracking);
+        stubNoticeLanguage(plugin);
+        when(pluginConfig.getStringList("battle.npcProxy.bypass-reasons")).thenReturn(List.of());
+        when(pluginConfig.getBoolean("battle.npcProxy.enabled", true)).thenReturn(true);
+        when(configManager.getTimeFormat()).thenReturn("{mm}:{ss}");
+        when(warrior.toOnlinePlayer()).thenReturn(player);
+        when(warrior.getName()).thenReturn("Alice");
+        when(warrior.getUniqueId()).thenReturn(playerId);
+        when(player.getLocation()).thenReturn(location);
+        when(npcProvider.isAvailable()).thenReturn(true);
+        when(tracking.trackDisconnection(eq(playerId), any())).thenReturn(true);
+        when(tracking.startOfflineTimeout(playerId)).thenReturn(true);
+        when(tracking.getDisconnectionCount(playerId)).thenReturn(2);
+        when(tracking.getMaxDisconnections()).thenReturn(3);
+        when(tracking.getMaxOfflineTimeSeconds()).thenReturn(300L);
+        final TestGame game = new TestGame(plugin, config);
+        game.addParticipant(warrior);
+        game.addParticipant(other);
+
+        game.onDisconnect(warrior, null);
+
+        verify(warrior).sendMessage("Alice:2/3:05:00");
+        verify(other).sendMessage("Alice:2/3:05:00");
+    }
+
+    @Test
+    public void playerLeftNoticeIsNotSentWhenTheDisconnectIsNotProtected() {
+        final TitansBattle plugin = mock(TitansBattle.class);
+        final BaseGameConfiguration config = mock(BaseGameConfiguration.class);
+        final FileConfiguration pluginConfig = mock(FileConfiguration.class);
+        final ConfigManager configManager = mock(ConfigManager.class);
+        final VanillaProvider npcProvider = mock(VanillaProvider.class);
+        final DisconnectTrackingManager tracking = mock(DisconnectTrackingManager.class);
+        final Warrior warrior = mock(Warrior.class);
+        final Player player = mock(Player.class);
+        final UUID playerId = UUID.randomUUID();
+        when(plugin.getConfig()).thenReturn(pluginConfig);
+        when(plugin.getConfigManager()).thenReturn(configManager);
+        when(plugin.getNpcProvider()).thenReturn(npcProvider);
+        when(plugin.getDisconnectTrackingManager()).thenReturn(tracking);
+        stubNoticeLanguage(plugin);
+        when(pluginConfig.getStringList("battle.npcProxy.bypass-reasons")).thenReturn(List.of());
+        when(pluginConfig.getBoolean("battle.npcProxy.enabled", true)).thenReturn(false);
+        when(configManager.getRespawn()).thenReturn(new ArrayList<>());
+        when(configManager.getClearInventory()).thenReturn(new ArrayList<>());
+        when(warrior.toOnlinePlayer()).thenReturn(player);
+        when(warrior.getUniqueId()).thenReturn(playerId);
+        when(player.isOnline()).thenReturn(false);
+        when(npcProvider.getProxyByOwner(playerId)).thenReturn(Optional.empty());
+        final TestGame game = new TestGame(plugin, config);
+        game.addParticipant(warrior);
+
+        game.onDisconnect(warrior, null);
+
+        verify(warrior, never()).sendMessage(org.mockito.ArgumentMatchers.anyString());
+    }
+
+    @Test
+    public void timeoutEliminationIsAnnouncedExactlyOnce() {
+        final Fixture fixture = new Fixture();
+
+        fixture.game.eliminateDisconnected(fixture.warrior, BaseGame.ELIMINATION_REASON_TIMEOUT);
+
+        verify(fixture.other, times(1)).sendMessage("timeout:duelist");
+        verify(fixture.other, never()).sendMessage("limit:duelist");
+        verify(fixture.other, never()).sendMessage("returned:duelist");
+    }
+
+    @Test
+    public void disconnectLimitEliminationIsAnnouncedWithoutAProtectedReturnTime() {
+        final Fixture fixture = new Fixture();
+
+        fixture.game.eliminateDisconnected(fixture.warrior, BaseGame.ELIMINATION_REASON_DISCONNECT_LIMIT_EXCEEDED);
+
+        verify(fixture.other).sendMessage("limit:duelist");
+        verify(fixture.other, never()).sendMessage("timeout:duelist");
+    }
+
+    /**
+     * A stale timeout task must not announce an elimination after the player already returned or was
+     * removed from the game, and nobody outside the game may be notified.
+     */
+    @Test
+    public void eliminationIsNotAnnouncedForNonParticipants() {
+        final Fixture fixture = new Fixture();
+        final Warrior outsider = mock(Warrior.class);
+
+        fixture.game.eliminateDisconnected(outsider, BaseGame.ELIMINATION_REASON_TIMEOUT);
+
+        verify(fixture.warrior, never()).sendMessage(org.mockito.ArgumentMatchers.anyString());
+        verify(fixture.other, never()).sendMessage(org.mockito.ArgumentMatchers.anyString());
+        verify(outsider, never()).sendMessage(org.mockito.ArgumentMatchers.anyString());
+    }
+
+    @Test
+    public void returnAnnouncesToTheGameAndPrivatelyInformsOnlyTheReturningPlayer() {
+        final TitansBattle plugin = mock(TitansBattle.class);
+        final BaseGameConfiguration config = mock(BaseGameConfiguration.class);
+        final DisconnectTrackingManager tracking = mock(DisconnectTrackingManager.class);
+        final Warrior warrior = mock(Warrior.class);
+        final Warrior other = mock(Warrior.class);
+        final Player player = mock(Player.class);
+        final UUID playerId = UUID.randomUUID();
+        when(plugin.getDisconnectTrackingManager()).thenReturn(tracking);
+        stubNoticeLanguage(plugin);
+        when(tracking.getMaxDisconnections()).thenReturn(3);
+        when(tracking.getDisconnectionCount(playerId)).thenReturn(2);
+        when(player.getName()).thenReturn("Alice");
+        when(player.getUniqueId()).thenReturn(playerId);
+        final TestGame game = new TestGame(plugin, config);
+        game.addParticipant(warrior);
+        game.addParticipant(other);
+
+        game.notifyPlayerReturned(player);
+
+        verify(warrior).sendMessage("returned:Alice");
+        verify(other).sendMessage("returned:Alice");
+        verify(player).sendMessage("remaining:1");
+        verify(warrior, never()).sendMessage("remaining:1");
+        verify(other, never()).sendMessage("remaining:1");
+    }
+
+    @Test
+    public void remainingProtectionsAreNeverNegative() {
+        final TitansBattle plugin = mock(TitansBattle.class);
+        final BaseGameConfiguration config = mock(BaseGameConfiguration.class);
+        final DisconnectTrackingManager tracking = mock(DisconnectTrackingManager.class);
+        final Player player = mock(Player.class);
+        final UUID playerId = UUID.randomUUID();
+        when(plugin.getDisconnectTrackingManager()).thenReturn(tracking);
+        stubNoticeLanguage(plugin);
+        when(tracking.getMaxDisconnections()).thenReturn(3);
+        when(tracking.getDisconnectionCount(playerId)).thenReturn(5);
+        when(player.getUniqueId()).thenReturn(playerId);
+        final TestGame game = new TestGame(plugin, config);
+
+        game.notifyPlayerReturned(player);
+
+        verify(player).sendMessage("remaining:0");
+    }
+
+    /**
+     * Makes the mocked plugin resolve the disconnect notices with the placeholders of the real
+     * language files, so the tests can assert the values that reach the players.
+     */
+    private static void stubNoticeLanguage(final TitansBattle plugin) {
+        when(plugin.getLang(anyString(), any(BaseGame.class), any(Object[].class))).thenAnswer(invocation -> {
+            final Object[] arguments = invocation.getArguments();
+            final String path = (String) arguments[0];
+            final Object[] values;
+            if (arguments.length > 2 && arguments[2] instanceof Object[]) {
+                values = (Object[]) arguments[2];
+            } else {
+                values = Arrays.copyOfRange(arguments, Math.min(2, arguments.length), arguments.length);
+            }
+            final String template;
+            switch (path) {
+                case "disconnect-player-left":
+                    template = "{0}:{1}/{2}:{3}";
+                    break;
+                case "disconnect-player-returned":
+                    template = "returned:{0}";
+                    break;
+                case "disconnect-remaining-protections":
+                    template = "remaining:{0}";
+                    break;
+                case "disconnect-timeout-eliminated":
+                    template = "timeout:{0}";
+                    break;
+                case "disconnect-limit-eliminated":
+                    template = "limit:{0}";
+                    break;
+                default:
+                    template = path;
+            }
+            return MessageFormat.format(template, values);
+        });
+    }
+
+    /**
+     * Shared stubs for the elimination notices: a game with the disconnecting fighter and one other
+     * participant, and a mocked language that formats the values like the real one does.
+     */
+    private static final class Fixture {
+
+        private final TitansBattle plugin = mock(TitansBattle.class);
+        private final BaseGameConfiguration config = mock(BaseGameConfiguration.class);
+        private final ConfigManager configManager = mock(ConfigManager.class);
+        private final VanillaProvider npcProvider = mock(VanillaProvider.class);
+        private final DisconnectTrackingManager tracking = mock(DisconnectTrackingManager.class);
+        private final Warrior warrior = mock(Warrior.class);
+        private final Warrior other = mock(Warrior.class);
+        private final UUID playerId = UUID.randomUUID();
+        private final TestGame game;
+
+        private Fixture() {
+            when(plugin.getConfigManager()).thenReturn(configManager);
+            when(plugin.getNpcProvider()).thenReturn(npcProvider);
+            when(plugin.getDisconnectTrackingManager()).thenReturn(tracking);
+            stubNoticeLanguage(plugin);
+            when(configManager.getRespawn()).thenReturn(new ArrayList<>());
+            when(configManager.getClearInventory()).thenReturn(new ArrayList<>());
+            when(warrior.getName()).thenReturn("duelist");
+            when(warrior.getUniqueId()).thenReturn(playerId);
+            when(npcProvider.getProxyByOwner(playerId)).thenReturn(Optional.empty());
+            this.game = new TestGame(plugin, config);
+            this.game.addParticipant(warrior);
+            this.game.addParticipant(other);
+        }
     }
 
     private static final class TestGame extends BaseGame {

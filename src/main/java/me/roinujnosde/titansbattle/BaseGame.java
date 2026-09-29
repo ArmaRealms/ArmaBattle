@@ -1,6 +1,7 @@
 package me.roinujnosde.titansbattle;
 
 import me.roinujnosde.titansbattle.BaseGameConfiguration.Prize;
+import me.roinujnosde.titansbattle.combat.DisconnectTrackingManager;
 import me.roinujnosde.titansbattle.events.GameFinishEvent;
 import me.roinujnosde.titansbattle.events.GameStartEvent;
 import me.roinujnosde.titansbattle.events.GroupDefeatedEvent;
@@ -18,6 +19,7 @@ import me.roinujnosde.titansbattle.npc.NpcProvider;
 import me.roinujnosde.titansbattle.types.Group;
 import me.roinujnosde.titansbattle.types.Kit;
 import me.roinujnosde.titansbattle.types.Warrior;
+import me.roinujnosde.titansbattle.utils.Helper;
 import me.roinujnosde.titansbattle.utils.MessageUtils;
 import me.roinujnosde.titansbattle.utils.SoundUtils;
 import org.bukkit.Bukkit;
@@ -65,6 +67,11 @@ import static org.bukkit.ChatColor.RED;
 import static org.bukkit.ChatColor.YELLOW;
 
 public abstract class BaseGame {
+
+    /** Elimination reason used when a protected disconnect expires without a return. */
+    public static final String ELIMINATION_REASON_TIMEOUT = "timeout";
+    /** Elimination reason used when a player exceeds the protected disconnect limit. */
+    public static final String ELIMINATION_REASON_DISCONNECT_LIMIT_EXCEEDED = "disconnect-limit-exceeded";
 
     private static final double DEFAULT_MAX_HEALTH = 20.0D;
     private static final float DEFAULT_EXHAUSTION = 0.0F;
@@ -342,7 +349,7 @@ public abstract class BaseGame {
                     // Check if player hasn't exceeded disconnect limits
                     if (!plugin.getDisconnectTrackingManager().trackDisconnection(warrior.getUniqueId(), this)) {
                         plugin.debug(String.format("onDisconnect() -> kill player %s (disconnect limit exceeded)", player.getName()));
-                        eliminateDisconnected(warrior, "disconnect-limit-exceeded");
+                        eliminateDisconnected(warrior, ELIMINATION_REASON_DISCONNECT_LIMIT_EXCEEDED);
                         return;
                     }
 
@@ -365,6 +372,7 @@ public abstract class BaseGame {
 
                         plugin.debug(String.format("onDisconnect() -> spawned NPC proxy for %s (disconnect #%d)",
                                 player.getName(), plugin.getDisconnectTrackingManager().getDisconnectionCount(warrior.getUniqueId())));
+                        notifyDisconnectProtected(warrior);
                         return;
                     } else {
                         plugin.debug("NPC provider not available, falling back to normal disconnect behavior");
@@ -399,7 +407,51 @@ public abstract class BaseGame {
         if (!isParticipant(warrior)) return;
         disconnectEliminations.add(warrior);
         prepareDisconnectedPlayer(warrior);
+        notifyDisconnectElimination(warrior, reason);
         eliminate(warrior, reason);
+    }
+
+    /**
+     * Announces the configurable notice for the disconnect eliminations that have one. The remaining
+     * reasons are internal recovery paths and must stay silent to avoid duplicating a notice or
+     * announcing an elimination the player never suffered.
+     *
+     * @param warrior the eliminated warrior
+     * @param reason  the reason reported to {@link #eliminateDisconnected(Warrior, String)}
+     */
+    private void notifyDisconnectElimination(@NotNull final Warrior warrior, @NotNull final String reason) {
+        if (ELIMINATION_REASON_TIMEOUT.equals(reason)) {
+            broadcastKey("disconnect-timeout-eliminated", warrior.getName());
+        } else if (ELIMINATION_REASON_DISCONNECT_LIMIT_EXCEEDED.equals(reason)) {
+            broadcastKey("disconnect-limit-eliminated", warrior.getName());
+        }
+    }
+
+    /**
+     * Notifies the participants of this game that a fighter disconnected and may still return,
+     * using the effective values of the disconnect tracking.
+     *
+     * @param warrior the warrior that disconnected
+     */
+    public void notifyDisconnectProtected(@NotNull final Warrior warrior) {
+        final DisconnectTrackingManager tracking = plugin.getDisconnectTrackingManager();
+        broadcastKey("disconnect-player-left", warrior.getName(),
+                tracking.getDisconnectionCount(warrior.getUniqueId()), tracking.getMaxDisconnections(),
+                Helper.formatTime(tracking.getMaxOfflineTimeSeconds(), plugin.getConfigManager().getTimeFormat()));
+    }
+
+    /**
+     * Announces to the participants of this game that a player returned, and privately tells the
+     * returning player how many protected disconnections they still have.
+     *
+     * @param player the player that reconnected
+     */
+    public void notifyPlayerReturned(@NotNull final Player player) {
+        broadcastKey("disconnect-player-returned", player.getName());
+        final DisconnectTrackingManager tracking = plugin.getDisconnectTrackingManager();
+        final int remaining = Math.max(0, tracking.getMaxDisconnections()
+                - tracking.getDisconnectionCount(player.getUniqueId()));
+        player.sendMessage(getLang("disconnect-remaining-protections", remaining));
     }
 
     /**

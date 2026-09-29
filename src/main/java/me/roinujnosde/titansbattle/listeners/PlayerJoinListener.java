@@ -92,7 +92,7 @@ public class PlayerJoinListener extends TBListener {
             if (!dtm.canPlayerReturn(playerId)) {
                 final Warrior warrior = plugin.getDatabaseManager().getWarrior(player);
                 np.despawnProxy(playerId, "disconnect-limit-exceeded");
-                game.eliminateDisconnected(warrior, "disconnect-limit-exceeded");
+                game.eliminateDisconnected(warrior, BaseGame.ELIMINATION_REASON_DISCONNECT_LIMIT_EXCEEDED);
                 return;
             }
 
@@ -117,6 +117,7 @@ public class PlayerJoinListener extends TBListener {
                 }
                 np.despawnProxy(playerId, "owner-rejoined");
                 dtm.clearPlayerReconnected(playerId);
+                game.notifyPlayerReturned(player);
             }
         } catch (final Exception e) {
             plugin.getLogger().log(Level.WARNING, "Failed to restore NPC proxy for " + playerName, e);
