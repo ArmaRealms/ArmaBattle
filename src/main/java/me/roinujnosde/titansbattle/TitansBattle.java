@@ -40,8 +40,7 @@ import me.roinujnosde.titansbattle.managers.ListenerManager;
 import me.roinujnosde.titansbattle.managers.SimpleClansGroupManager;
 import me.roinujnosde.titansbattle.managers.SpectateManager;
 import me.roinujnosde.titansbattle.managers.TaskManager;
-import me.roinujnosde.titansbattle.npc.NpcProvider;
-import me.roinujnosde.titansbattle.npc.NpcProviderResolver;
+import me.roinujnosde.titansbattle.npc.NpcProxyManager;
 import me.roinujnosde.titansbattle.types.GameConfiguration;
 import me.roinujnosde.titansbattle.types.Kit;
 import me.roinujnosde.titansbattle.types.Prizes;
@@ -86,7 +85,7 @@ public final class TitansBattle extends JavaPlugin {
     private PlaceholderHook placeholderHook;
     private ViaVersionHook viaVersionHook;
     private SpectateManager spectateManager;
-    private NpcProvider npcProvider;
+    private NpcProxyManager npcProxyManager;
     private DisconnectTrackingManager disconnectTrackingManager;
     private final Set<BukkitTask> asyncTasks = ConcurrentHashMap.newKeySet();
     private final Object taskLock = new Object();
@@ -110,7 +109,7 @@ public final class TitansBattle extends JavaPlugin {
         listenerManager = new ListenerManager(this);
         configurationDao = new ConfigurationDao(getDataFolder());
         spectateManager = new SpectateManager(this);
-        npcProvider = NpcProviderResolver.resolve(this);
+        npcProxyManager = new NpcProxyManager(this);
         disconnectTrackingManager = new DisconnectTrackingManager(this);
 
         configManager.load();
@@ -178,8 +177,8 @@ public final class TitansBattle extends JavaPlugin {
         cancelRegisteredAsyncTasks();
         challengeManager.getChallenges().forEach(c -> c.cancel(Bukkit.getConsoleSender()));
         gameManager.getCurrentGame().ifPresent(g -> g.cancel(Bukkit.getConsoleSender()));
-        if (npcProvider != null) {
-            npcProvider.onDisable();
+        if (npcProxyManager != null) {
+            npcProxyManager.onDisable();
         }
         if (disconnectTrackingManager != null) {
             disconnectTrackingManager.clearAll();
@@ -303,10 +302,33 @@ public final class TitansBattle extends JavaPlugin {
 
     private void setupConfig() {
         saveDefaultConfig();
+        migrateLegacyNpcProxyConfig();
         // loads the config and copies default values
         getConfig().options().copyDefaults(true);
         // saves it back (to add new values)
         saveConfig();
+    }
+
+    /**
+     * Copies the removed {@code battle.npcProxy} settings to the {@code disconnect-protection}
+     * section, so existing installations keep their configured values after the refactor. The
+     * section is only rewritten when present in the file itself, ignoring the embedded defaults.
+     */
+    private void migrateLegacyNpcProxyConfig() {
+        final FileConfiguration config = getConfig();
+        if (!config.contains("battle.npcProxy", true) || config.contains("disconnect-protection", true)) {
+            return;
+        }
+        config.set("disconnect-protection.enabled", config.getBoolean("battle.npcProxy.enabled", true));
+        config.set("disconnect-protection.maxDisconnections",
+                config.getInt("battle.npcProxy.maxDisconnections", 3));
+        config.set("disconnect-protection.maxOfflineTimeMs",
+                config.getLong("battle.npcProxy.maxOfflineTimeMs", 300000L));
+        config.set("disconnect-protection.mobType",
+                config.getString("battle.npcProxy.vanilla.mobType", "MANNEQUIN"));
+        config.set("disconnect-protection.bypass-reasons",
+                config.getStringList("battle.npcProxy.bypass-reasons"));
+        config.set("battle.npcProxy", null);
     }
 
     private void registerSerializationClasses() {
@@ -435,13 +457,13 @@ public final class TitansBattle extends JavaPlugin {
     }
 
     /**
-     * Get the NPC provider for creating proxy NPCs
+     * Get the manager of the vanilla npc proxies used for disconnected players
      *
-     * @return the NPC provider
+     * @return the npc proxy manager
      */
     @NotNull
-    public NpcProvider getNpcProvider() {
-        return npcProvider;
+    public NpcProxyManager getNpcProxyManager() {
+        return npcProxyManager;
     }
 
     /**

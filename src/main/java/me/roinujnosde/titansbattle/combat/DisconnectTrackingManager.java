@@ -52,8 +52,8 @@ public class DisconnectTrackingManager {
     public DisconnectTrackingManager(@NotNull final TitansBattle plugin) {
         this.plugin = plugin;
         // Get configuration values
-        this.maxDisconnections = plugin.getConfig().getInt("battle.npcProxy.maxDisconnections", 3);
-        this.maxOfflineTimeMs = plugin.getConfig().getLong("battle.npcProxy.maxOfflineTimeMs", 300000L); // 5 minutes default
+        this.maxDisconnections = plugin.getConfig().getInt("disconnect-protection.maxDisconnections", 3);
+        this.maxOfflineTimeMs = plugin.getConfig().getLong("disconnect-protection.maxOfflineTimeMs", 300000L); // 5 minutes default
     }
 
     /**
@@ -236,7 +236,7 @@ public class DisconnectTrackingManager {
             }
             // Proxy cleanup must not prevent the game from advancing.
             try {
-                plugin.getNpcProvider().despawnProxy(playerId, "timeout");
+                plugin.getNpcProxyManager().despawnProxy(playerId, "timeout");
             } catch (final Exception e) {
                 plugin.getLogger().log(Level.WARNING, "Failed to remove proxy for " + playerId, e);
             }

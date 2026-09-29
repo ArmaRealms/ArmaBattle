@@ -28,8 +28,7 @@ import me.roinujnosde.titansbattle.TitansBattle;
 import me.roinujnosde.titansbattle.combat.DisconnectTrackingManager;
 import me.roinujnosde.titansbattle.hooks.viaversion.ViaVersionHook;
 import me.roinujnosde.titansbattle.managers.ConfigManager;
-import me.roinujnosde.titansbattle.npc.NpcHandle;
-import me.roinujnosde.titansbattle.npc.NpcProvider;
+import me.roinujnosde.titansbattle.npc.NpcProxyManager;
 import me.roinujnosde.titansbattle.types.Kit;
 import me.roinujnosde.titansbattle.types.Warrior;
 import me.roinujnosde.titansbattle.utils.Helper;
@@ -37,6 +36,7 @@ import me.roinujnosde.titansbattle.utils.MessageUtils;
 import me.roinujnosde.titansbattle.utils.SoundUtils;
 import org.bukkit.Location;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -79,7 +79,7 @@ public class PlayerJoinListener extends TBListener {
                 return;
             }
 
-            final NpcProvider np = plugin.getNpcProvider();
+            final NpcProxyManager np = plugin.getNpcProxyManager();
             final DisconnectTrackingManager dtm = plugin.getDisconnectTrackingManager();
             final ViaVersionHook vvh = plugin.getViaVersionHook();
             if (vvh != null && vvh.isPlayerVersionBlocked(player, game.getConfig())) {
@@ -105,7 +105,7 @@ public class PlayerJoinListener extends TBListener {
                 game.eliminateDisconnected(plugin.getDatabaseManager().getWarrior(player), "missing-proxy-on-rejoin");
                 return;
             }
-            final var npcHandle = proxyAlive ? np.getProxyByOwner(playerId) : Optional.<NpcHandle>empty();
+            final var npcHandle = proxyAlive ? np.getProxyByOwner(playerId) : Optional.<LivingEntity>empty();
             if (npcHandle.isPresent()) {
                 final Location proxyLocation = npcHandle.get().getLocation();
                 if (!player.teleport(proxyLocation)) {
