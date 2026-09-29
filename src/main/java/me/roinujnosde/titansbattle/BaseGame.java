@@ -15,7 +15,6 @@ import me.roinujnosde.titansbattle.hooks.viaversion.ViaVersionHook;
 import me.roinujnosde.titansbattle.managers.CommandManager;
 import me.roinujnosde.titansbattle.managers.GameManager;
 import me.roinujnosde.titansbattle.managers.GroupManager;
-import me.roinujnosde.titansbattle.npc.NpcProvider;
 import me.roinujnosde.titansbattle.types.Group;
 import me.roinujnosde.titansbattle.types.Kit;
 import me.roinujnosde.titansbattle.types.Warrior;
@@ -184,9 +183,9 @@ public abstract class BaseGame {
     private void cleanupNpcProxies(@NotNull final String reason) {
         for (final Warrior participant : participants) {
             final UUID playerId = participant.getUniqueId();
-            if (plugin.getNpcProvider().getProxyByOwner(playerId).isPresent()) {
+            if (plugin.getNpcProxyManager().getProxyByOwner(playerId).isPresent()) {
                 plugin.debug("Cleaning up NPC proxy for " + participant.getName() + " (reason: " + reason + ")");
-                plugin.getNpcProvider().despawnProxy(playerId, reason);
+                plugin.getNpcProxyManager().despawnProxy(playerId, reason);
             }
         }
         plugin.getDisconnectTrackingManager().clearGame(this);
@@ -328,7 +327,7 @@ public abstract class BaseGame {
         // check if the quit message contains the char sequence to bypass NPC proxy creation
         final String quitMessage = rawQuitMessage == null ? "" : ChatColor.stripColor(rawQuitMessage).trim().toLowerCase();
 
-        final List<String> bypassReasons = plugin.getConfig().getStringList("battle.npcProxy.bypass-reasons");
+        final List<String> bypassReasons = plugin.getConfig().getStringList("disconnect-protection.bypass-reasons");
 
         final boolean noProxyNPCReason = bypassReasons.stream()
                 .filter(Objects::nonNull)
@@ -354,32 +353,27 @@ public abstract class BaseGame {
                     }
 
                     // Create NPC proxy instead of killing the player
-                    final NpcProvider npcProvider = plugin.getNpcProvider();
-                    if (npcProvider.isAvailable()) {
-                        final Location location = player.getLocation();
-                        npcProvider.spawnProxy(player, location);
-                        if (!plugin.getDisconnectTrackingManager().startOfflineTimeout(warrior.getUniqueId())) {
-                            // Recover a missing record before abandoning a successfully spawned proxy.
-                            plugin.getLogger().warning("Missing disconnect record for " + warrior.getUniqueId()
-                                    + "; restoring tracking");
-                            if (!plugin.getDisconnectTrackingManager().trackDisconnection(warrior.getUniqueId(), this)
-                                    || !plugin.getDisconnectTrackingManager().startOfflineTimeout(warrior.getUniqueId())) {
-                                plugin.getNpcProvider().despawnProxy(warrior.getUniqueId(), "timeout-scheduling-failed");
-                                eliminateDisconnected(warrior, "timeout-scheduling-failed");
-                                return;
-                            }
+                    final Location location = player.getLocation();
+                    plugin.getNpcProxyManager().spawnProxy(player, location);
+                    if (!plugin.getDisconnectTrackingManager().startOfflineTimeout(warrior.getUniqueId())) {
+                        // Recover a missing record before abandoning a successfully spawned proxy.
+                        plugin.getLogger().warning("Missing disconnect record for " + warrior.getUniqueId()
+                                + "; restoring tracking");
+                        if (!plugin.getDisconnectTrackingManager().trackDisconnection(warrior.getUniqueId(), this)
+                                || !plugin.getDisconnectTrackingManager().startOfflineTimeout(warrior.getUniqueId())) {
+                            plugin.getNpcProxyManager().despawnProxy(warrior.getUniqueId(), "timeout-scheduling-failed");
+                            eliminateDisconnected(warrior, "timeout-scheduling-failed");
+                            return;
                         }
-
-                        plugin.debug(String.format("onDisconnect() -> spawned NPC proxy for %s (disconnect #%d)",
-                                player.getName(), plugin.getDisconnectTrackingManager().getDisconnectionCount(warrior.getUniqueId())));
-                        notifyDisconnectProtected(warrior);
-                        return;
-                    } else {
-                        plugin.debug("NPC provider not available, falling back to normal disconnect behavior");
                     }
+
+                    plugin.debug(String.format("onDisconnect() -> spawned NPC proxy for %s (disconnect #%d)",
+                            player.getName(), plugin.getDisconnectTrackingManager().getDisconnectionCount(warrior.getUniqueId())));
+                    notifyDisconnectProtected(warrior);
+                    return;
                 } catch (final Exception e) {
                     plugin.getLogger().warning("Failed to create NPC proxy for " + player.getName() + ": " + e.getMessage());
-                    plugin.getNpcProvider().despawnProxy(warrior.getUniqueId(), "spawn-failed");
+                    plugin.getNpcProxyManager().despawnProxy(warrior.getUniqueId(), "spawn-failed");
                 }
             }
 
@@ -466,7 +460,7 @@ public abstract class BaseGame {
      * Check if NPC proxy should be created based on configuration
      */
     private boolean shouldCreateNpcProxy() {
-        return plugin.getConfig().getBoolean("battle.npcProxy.enabled", true);
+        return plugin.getConfig().getBoolean("disconnect-protection.enabled", true);
     }
 
     public void onLeave(@NotNull final Warrior warrior) {
@@ -683,8 +677,8 @@ public abstract class BaseGame {
         }
         final UUID playerId = warrior.getUniqueId();
         plugin.getDisconnectTrackingManager().clearPlayer(playerId);
-        if (plugin.getNpcProvider().getProxyByOwner(playerId).isPresent()) {
-            plugin.getNpcProvider().despawnProxy(playerId, "player-eliminated");
+        if (plugin.getNpcProxyManager().getProxyByOwner(playerId).isPresent()) {
+            plugin.getNpcProxyManager().despawnProxy(playerId, "player-eliminated");
         }
         final Player player = warrior.toOnlinePlayer();
         if (player != null && player.isOnline()) {

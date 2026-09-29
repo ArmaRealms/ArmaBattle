@@ -3,7 +3,7 @@ package me.roinujnosde.titansbattle.combat;
 import me.roinujnosde.titansbattle.BaseGame;
 import me.roinujnosde.titansbattle.TitansBattle;
 import me.roinujnosde.titansbattle.managers.DatabaseManager;
-import me.roinujnosde.titansbattle.npc.VanillaProvider;
+import me.roinujnosde.titansbattle.npc.NpcProxyManager;
 import me.roinujnosde.titansbattle.types.Warrior;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -40,8 +40,8 @@ public class DisconnectTrackingManagerTest {
         scheduler = mock(BukkitScheduler.class);
         scheduledTask = mock(BukkitTask.class);
         final FileConfiguration config = mock(FileConfiguration.class);
-        when(config.getInt("battle.npcProxy.maxDisconnections", 3)).thenReturn(3);
-        when(config.getLong("battle.npcProxy.maxOfflineTimeMs", 300000L)).thenReturn(300000L);
+        when(config.getInt("disconnect-protection.maxDisconnections", 3)).thenReturn(3);
+        when(config.getLong("disconnect-protection.maxOfflineTimeMs", 300000L)).thenReturn(300000L);
         when(plugin.getConfig()).thenReturn(config);
         bukkit = org.mockito.Mockito.mockStatic(Bukkit.class);
         bukkit.when(Bukkit::getScheduler).thenReturn(scheduler);
@@ -61,10 +61,10 @@ public class DisconnectTrackingManagerTest {
     public void offlineFighterIsEliminatedAfterTimeoutEvenWhenProxyIsMissing() {
         final BaseGame game = mock(BaseGame.class);
         final DatabaseManager database = mock(DatabaseManager.class);
-        final VanillaProvider provider = mock(VanillaProvider.class);
+        final NpcProxyManager provider = mock(NpcProxyManager.class);
         final Warrior warrior = mock(Warrior.class);
         when(plugin.getDatabaseManager()).thenReturn(database);
-        when(plugin.getNpcProvider()).thenReturn(provider);
+        when(plugin.getNpcProxyManager()).thenReturn(provider);
         when(database.getWarrior(playerId)).thenReturn(warrior);
         when(game.isParticipant(warrior)).thenReturn(true);
 
