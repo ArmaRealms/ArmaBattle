@@ -63,6 +63,7 @@ public class SpectateManager {
         player.setCollidable(false);
         player.setFallDistance(0f);
         player.setAllowFlight(true);
+        player.setFlying(true);
         player.sendMessage(plugin.getLang("spectator-enter"));
         plugin.debug(String.format("Player %s has entered spectator mode and was teleported to the watchroom.", player.getName()));
     }
@@ -94,6 +95,7 @@ public class SpectateManager {
         player.setMetadata("vanished", new FixedMetadataValue(plugin, false));
         player.setGameMode(GameMode.SURVIVAL);
         player.setCollidable(true);
+        player.setFlying(false);
         player.setAllowFlight(false);
         player.removePotionEffect(PotionEffectType.INVISIBILITY);
         player.sendMessage(plugin.getLang("spectator-exit"));
