@@ -62,8 +62,7 @@ public class SpectateManager {
         player.setGameMode(GameMode.ADVENTURE);
         player.setCollidable(false);
         player.setFallDistance(0f);
-        player.setAllowFlight(true);
-        player.setFlying(true);
+        enableSpectatorFlight(player);
         player.sendMessage(plugin.getLang("spectator-enter"));
         plugin.debug(String.format("Player %s has entered spectator mode and was teleported to the watchroom.", player.getName()));
     }
@@ -95,11 +94,20 @@ public class SpectateManager {
         player.setMetadata("vanished", new FixedMetadataValue(plugin, false));
         player.setGameMode(GameMode.SURVIVAL);
         player.setCollidable(true);
-        player.setFlying(false);
-        player.setAllowFlight(false);
+        disableSpectatorFlight(player);
         player.removePotionEffect(PotionEffectType.INVISIBILITY);
         player.sendMessage(plugin.getLang("spectator-exit"));
         plugin.debug(String.format("Player %s has exited spectator mode and was teleported to the exit location.", player.getName()));
+    }
+
+    static void enableSpectatorFlight(@NotNull final Player player) {
+        player.setAllowFlight(true);
+        player.setFlying(true);
+    }
+
+    static void disableSpectatorFlight(@NotNull final Player player) {
+        player.setFlying(false);
+        player.setAllowFlight(false);
     }
 
     public void removeAllSpectators() {
