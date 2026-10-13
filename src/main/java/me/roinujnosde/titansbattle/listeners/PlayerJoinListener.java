@@ -84,6 +84,8 @@ public class PlayerJoinListener extends TBListener {
             final ViaVersionHook vvh = plugin.getViaVersionHook();
             if (vvh != null && vvh.isPlayerVersionBlocked(player, game.getConfig())) {
                 final Warrior warrior = plugin.getDatabaseManager().getWarrior(player);
+                plugin.debug("[DisconnectProtection] Rejoin rejected for " + playerName
+                        + " (" + playerId + "); incompatible-version", false);
                 np.despawnProxy(playerId, "incompatible-version");
                 game.eliminateDisconnected(warrior, "incompatible-version");
                 return;
@@ -91,6 +93,8 @@ public class PlayerJoinListener extends TBListener {
 
             if (!dtm.canPlayerReturn(playerId)) {
                 final Warrior warrior = plugin.getDatabaseManager().getWarrior(player);
+                plugin.debug("[DisconnectProtection] Rejoin rejected for " + playerName
+                        + " (" + playerId + "); disconnect limit exceeded", false);
                 np.despawnProxy(playerId, "disconnect-limit-exceeded");
                 game.eliminateDisconnected(warrior, BaseGame.ELIMINATION_REASON_DISCONNECT_LIMIT_EXCEEDED);
                 return;
@@ -101,6 +105,8 @@ public class PlayerJoinListener extends TBListener {
             // fighter that lost its proxy while offline must not resume the fight.
             final boolean proxyAlive = np.isProxyAlive(playerId);
             if (hadTimeout && !proxyAlive) {
+                plugin.debug("[DisconnectProtection] Rejoin rejected for " + playerName
+                        + " (" + playerId + "); proxy missing or dead", false);
                 np.despawnProxy(playerId, "missing-proxy-on-rejoin");
                 game.eliminateDisconnected(plugin.getDatabaseManager().getWarrior(player), "missing-proxy-on-rejoin");
                 return;
@@ -117,6 +123,8 @@ public class PlayerJoinListener extends TBListener {
                 }
                 np.despawnProxy(playerId, "owner-rejoined");
                 dtm.clearPlayerReconnected(playerId);
+                plugin.debug("[DisconnectProtection] Restored " + playerName
+                        + " (" + playerId + ") to event at NPC location", false);
                 game.notifyPlayerReturned(player);
             }
         } catch (final Exception e) {
