@@ -321,9 +321,9 @@ public final class TitansBattle extends JavaPlugin {
         }
         config.set("disconnect-protection.enabled", config.getBoolean("battle.npcProxy.enabled", true));
         config.set("disconnect-protection.maxDisconnections",
-                config.getInt("battle.npcProxy.maxDisconnections", 3));
+                config.getInt("battle.npcProxy.maxDisconnections", 1));
         config.set("disconnect-protection.maxOfflineTimeMs",
-                config.getLong("battle.npcProxy.maxOfflineTimeMs", 300000L));
+                config.getLong("battle.npcProxy.maxOfflineTimeMs", 60000L));
         config.set("disconnect-protection.mobType",
                 config.getString("battle.npcProxy.vanilla.mobType", "MANNEQUIN"));
         config.set("disconnect-protection.bypass-reasons",
