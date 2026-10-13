@@ -382,6 +382,9 @@ public abstract class BaseGame {
             return;
         }
 
+        plugin.debug(String.format(
+                "[DisconnectProtection] Player %s (%s) left event without protection (lobby=%s, bypass=%s)",
+                warrior.getName(), warrior.getUniqueId(), isLobby(), noProxyNPCReason), false);
         // Normal disconnect processing for non-combat situations
         prepareDisconnectedPlayer(warrior);
         casualties.add(warrior);
@@ -400,6 +403,9 @@ public abstract class BaseGame {
     public void eliminateDisconnected(@NotNull final Warrior warrior, @NotNull final String reason) {
         if (!isParticipant(warrior)) return;
         disconnectEliminations.add(warrior);
+        plugin.debug(String.format(
+                "[DisconnectProtection] Eliminating player %s (%s) from event; reason=%s",
+                warrior.getName(), warrior.getUniqueId(), reason), false);
         prepareDisconnectedPlayer(warrior);
         notifyDisconnectElimination(warrior, reason);
         eliminate(warrior, reason);

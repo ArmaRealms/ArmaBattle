@@ -162,9 +162,9 @@ scheduler:
 disconnect-protection:
   enabled: true
   # Maximum times a player can disconnect during the same event
-  maxDisconnections: 3
-  # Maximum time a player can stay offline (5 minutes)
-  maxOfflineTimeMs: 300_000
+  maxDisconnections: 1
+  # Maximum time a player can stay offline (60 seconds)
+  maxOfflineTimeMs: 60_000
   # Entity type for vanilla proxy mobs
   mobType: MANNEQUIN
   # Reason for not spawning a proxy NPC

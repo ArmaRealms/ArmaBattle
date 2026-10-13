@@ -52,8 +52,8 @@ public class DisconnectTrackingManager {
     public DisconnectTrackingManager(@NotNull final TitansBattle plugin) {
         this.plugin = plugin;
         // Get configuration values
-        this.maxDisconnections = plugin.getConfig().getInt("disconnect-protection.maxDisconnections", 3);
-        this.maxOfflineTimeMs = plugin.getConfig().getLong("disconnect-protection.maxOfflineTimeMs", 300000L); // 5 minutes default
+        this.maxDisconnections = plugin.getConfig().getInt("disconnect-protection.maxDisconnections", 1);
+        this.maxOfflineTimeMs = plugin.getConfig().getLong("disconnect-protection.maxOfflineTimeMs", 60000L); // 60 seconds default
     }
 
     /**
@@ -67,21 +67,24 @@ public class DisconnectTrackingManager {
         final DisconnectRecord record = disconnectRecords.computeIfAbsent(playerId, k -> new DisconnectRecord(game));
         record.recordDisconnection();
 
-        plugin.debug(String.format("Player %s disconnected %d times (max: %d)",
-                playerId, record.getDisconnectionCount(), maxDisconnections));
-
-        if (record.getDisconnectionCount() > maxDisconnections) {
-            plugin.debug(String.format("Player %s exceeded max disconnections (%d), no NPC proxy will be created",
-                    playerId, maxDisconnections));
+        final int attempts = record.getDisconnectionCount();
+        if (attempts > maxDisconnections) {
+            plugin.getLogger().warning(String.format(
+                    "[DisconnectProtection] Player %s exceeded disconnect limit (%d/%d); eliminating from event",
+                    playerId, attempts, maxDisconnections));
             return false;
         }
 
+        plugin.debug(String.format(
+                "[DisconnectProtection] Player %s disconnected (%d/%d); protection granted",
+                playerId, attempts, maxDisconnections), false);
         return true;
     }
 
     /** Start the offline timer only after the proxy has actually been spawned. */
     public boolean startOfflineTimeout(@NotNull final UUID playerId) {
         if (!disconnectRecords.containsKey(playerId)) {
+            plugin.getLogger().warning("[DisconnectProtection] Cannot start timeout without a record for " + playerId);
             return false;
         }
         scheduleTimeoutTask(playerId);
@@ -113,11 +116,19 @@ public class DisconnectTrackingManager {
      * @param playerId the UUID of the player
      */
     public void clearPlayerReconnected(@NotNull final UUID playerId) {
-        // Cancel any pending timeout task
+        // Invalidate any already-queued callback, even if cancelling its task is too late.
+        final DisconnectRecord record = disconnectRecords.get(playerId);
+        if (record != null) {
+            record.invalidateTimeout();
+        }
         final BukkitTask timeoutTask = timeoutTasks.remove(playerId);
-        if (timeoutTask != null && !timeoutTask.isCancelled()) {
-            timeoutTask.cancel();
-            plugin.debug("Cancelled timeout task for reconnected player " + playerId);
+        if (timeoutTask != null) {
+            if (!timeoutTask.isCancelled()) {
+                timeoutTask.cancel();
+            }
+            plugin.debug(String.format(
+                    "[DisconnectProtection] Player %s reconnected; timer cancelled; used %d/%d protections",
+                    playerId, record == null ? 0 : record.getDisconnectionCount(), maxDisconnections), false);
         }
     }
 
@@ -207,16 +218,21 @@ public class DisconnectTrackingManager {
             existingTask.cancel();
         }
 
-        // Convert milliseconds to ticks (20 ticks per second)
+        final DisconnectRecord record = disconnectRecords.get(playerId);
+        if (record == null) {
+            throw new IllegalStateException("No disconnect record for " + playerId);
+        }
+        final long generation = record.nextTimeoutGeneration();
+
+        // Convert milliseconds to ticks (20 ticks per second).
         final long timeoutTicks = Math.max(1L, (Math.max(0L, maxOfflineTimeMs) + 49L) / 50L);
-
         final BukkitTask timeoutTask = Bukkit.getScheduler().runTaskLater(plugin,
-                () -> handlePlayerTimeout(playerId), timeoutTicks);
-
+                () -> handlePlayerTimeout(playerId, record, generation), timeoutTicks);
         timeoutTasks.put(playerId, timeoutTask);
 
-        plugin.debug(String.format("Scheduled timeout task for player %s in %d ms (%d ticks)",
-                playerId, maxOfflineTimeMs, timeoutTicks));
+        plugin.debug(String.format(
+                "[DisconnectProtection] Player %s has %d ms (%d ticks) to reconnect",
+                playerId, maxOfflineTimeMs, timeoutTicks), false);
     }
 
     /**
@@ -224,16 +240,26 @@ public class DisconnectTrackingManager {
      *
      * @param playerId the UUID of the player who timed out
      */
-    private void handlePlayerTimeout(@NotNull final UUID playerId) {
-        plugin.debug("Player " + playerId + " timed out, removing NPC proxy");
-        final DisconnectRecord record = disconnectRecords.get(playerId);
-        if (record == null) return;
+    private void handlePlayerTimeout(@NotNull final UUID playerId,
+                                     @NotNull final DisconnectRecord record, final long generation) {
+        // Ignore cancelled timers, older disconnects and records from games that have ended.
+        if (disconnectRecords.get(playerId) != record || record.timeoutGeneration != generation) {
+            plugin.debug("[DisconnectProtection] Ignored stale timeout for " + playerId);
+            return;
+        }
+        // A reconnect must not eliminate the player or reset their used protection count.
+        final Player player = Bukkit.getPlayer(playerId);
+        if (player != null && player.isOnline()) {
+            plugin.getLogger().warning("[DisconnectProtection] Timeout fired for online player "
+                    + playerId + "; preserving disconnect count");
+            clearPlayerReconnected(playerId);
+            return;
+        }
+
+        plugin.debug(String.format(
+                "[DisconnectProtection] Player %s exceeded offline timeout (%d ms); eliminating from event",
+                playerId, maxOfflineTimeMs), false);
         try {
-            // A reconnect must not eliminate a player even if a stale task still runs.
-            final Player player = Bukkit.getPlayer(playerId);
-            if (player != null && player.isOnline()) {
-                return;
-            }
             // Proxy cleanup must not prevent the game from advancing.
             try {
                 plugin.getNpcProxyManager().despawnProxy(playerId, "timeout");
@@ -247,7 +273,9 @@ public class DisconnectTrackingManager {
         } catch (final Exception e) {
             plugin.getLogger().log(Level.SEVERE, "Failed to eliminate timed out player " + playerId, e);
         } finally {
-            clearPlayer(playerId);
+            if (disconnectRecords.get(playerId) == record && record.timeoutGeneration == generation) {
+                clearPlayer(playerId);
+            }
         }
     }
 
@@ -257,6 +285,15 @@ public class DisconnectTrackingManager {
     private static class DisconnectRecord {
         private final BaseGame game;
         private int disconnectionCount = 0;
+        private long timeoutGeneration = 0;
+
+        private long nextTimeoutGeneration() {
+            return ++timeoutGeneration;
+        }
+
+        private void invalidateTimeout() {
+            timeoutGeneration++;
+        }
 
         private DisconnectRecord(final BaseGame game) {
             this.game = game;
