@@ -72,6 +72,8 @@ import java.util.logging.Level;
  */
 public final class TitansBattle extends JavaPlugin {
 
+    private static final String DISCONNECT_DEBUG_PREFIX = "[DisconnectProtection] ";
+
     private static TitansBattle instance;
     private GameManager gameManager;
     private ConfigManager configManager;
@@ -298,6 +300,31 @@ public final class TitansBattle extends JavaPlugin {
 
     public void debug(final String message) {
         debug(message, true);
+    }
+
+    /**
+     * Logs disconnect protection diagnostics only when the plugin's debug setting is enabled.
+     * The subsystem prefix is applied here so all call sites use the same format.
+     *
+     * @param message diagnostic message without a prefix
+     */
+    public void debugDisconnect(@NotNull final String message) {
+        debugDisconnect(Level.INFO, message, null);
+    }
+
+    /**
+     * Logs a disconnect protection failure with its cause only while debugging is enabled.
+     *
+     * @param level severity for the diagnostic
+     * @param message diagnostic message without a prefix
+     * @param cause optional exception
+     */
+    public void debugDisconnect(@NotNull final Level level, @NotNull final String message,
+                                @Nullable final Throwable cause) {
+        if (!getConfigManager().isDebug()) {
+            return;
+        }
+        getLogger().log(level, DISCONNECT_DEBUG_PREFIX + message, cause);
     }
 
     private void setupConfig() {
