@@ -342,14 +342,17 @@ public abstract class BaseGame {
                     return quitMessage.length() >= 3 && reason.contains(quitMessage);
                 });
 
-        // Check if player is in combat and should have an NPC proxy created
+        // Do not query active fighters while still in lobby.
+        final boolean lobbyPhase = isLobby();
+        final boolean activeFighter = !lobbyPhase && getCurrentFighters().contains(warrior);
+        final boolean protectionEnabled = shouldCreateNpcProxy();
         plugin.debugDisconnect(String.format(
                 "Disconnect decision for %s (%s); lobby=%s, activeFighter=%s, bypassReason=%s, enabled=%s",
-                warrior.getName(), warrior.getUniqueId(), isLobby(), getCurrentFighters().contains(warrior),
-                noProxyNPCReason, shouldCreateNpcProxy()));
-        if (!isLobby() && getCurrentFighters().contains(warrior) && !noProxyNPCReason) {
+                warrior.getName(), warrior.getUniqueId(), lobbyPhase, activeFighter,
+                noProxyNPCReason, protectionEnabled));
+        if (activeFighter && !noProxyNPCReason) {
             final Player player = warrior.toOnlinePlayer();
-            if (player != null && shouldCreateNpcProxy()) {
+            if (player != null && protectionEnabled) {
                 try {
                     plugin.debugDisconnect("Attempting protected disconnect for " + player.getName()
                             + " (" + warrior.getUniqueId() + ")");
@@ -396,15 +399,14 @@ public abstract class BaseGame {
             // A health change during PlayerQuitEvent may not produce a death event.
             plugin.debugDisconnect("Player " + warrior.getUniqueId()
                     + " cannot be protected (onlinePlayerPresent=" + (player != null)
-                    + ", enabled=" + shouldCreateNpcProxy() + "); eliminating without proxy");
+                    + ", enabled=" + protectionEnabled + "); eliminating without proxy");
             eliminateDisconnected(warrior, "disconnect-without-proxy");
             return;
         }
 
         plugin.debugDisconnect(String.format(
                 "Player %s (%s) left event without protection (lobby=%s, bypass=%s, activeFighter=%s)",
-                warrior.getName(), warrior.getUniqueId(), isLobby(), noProxyNPCReason,
-                getCurrentFighters().contains(warrior)));
+                warrior.getName(), warrior.getUniqueId(), lobbyPhase, noProxyNPCReason, activeFighter));
         // Normal disconnect processing for non-combat situations
         prepareDisconnectedPlayer(warrior);
         casualties.add(warrior);
