@@ -50,6 +50,8 @@ public class PlayerQuitListener extends TBListener {
         final Player player = event.getPlayer();
         final BaseGame game = plugin.getBaseGameFrom(player);
         if (game != null) {
+            plugin.debugDisconnect("Received PlayerQuitEvent for participant " + player.getName()
+                    + " (" + player.getUniqueId() + "); evaluating disconnect protection");
             game.onDisconnect(dm.getWarrior(player), event.getQuitMessage());
         }
         sendQuitMessage(player);
