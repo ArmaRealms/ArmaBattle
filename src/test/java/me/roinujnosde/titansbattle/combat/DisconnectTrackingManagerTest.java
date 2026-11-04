@@ -22,6 +22,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -133,6 +134,31 @@ public class DisconnectTrackingManagerTest {
         assertFalse(manager.hasPendingTimeout(playerId));
         assertEquals(1, manager.getDisconnectionCount(playerId));
         assertFalse(manager.trackDisconnection(playerId, game));
+    }
+
+    @Test
+    public void disconnectLimitDecisionIsTracedWithPlayerAndAttempt() {
+        final BaseGame game = mock(BaseGame.class);
+
+        assertTrue(manager.trackDisconnection(playerId, game));
+        assertFalse(manager.trackDisconnection(playerId, game));
+
+        verify(plugin).debugDisconnect("Protection granted for player " + playerId + " (1/1)");
+        verify(plugin).debugDisconnect("Disconnect limit exceeded for player " + playerId
+                + " (2/1); protection denied");
+    }
+
+    @Test
+    public void cancelledTimeoutIsTracedAsStale() {
+        final BaseGame game = mock(BaseGame.class);
+        assertTrue(manager.trackDisconnection(playerId, game));
+        assertTrue(manager.startOfflineTimeout(playerId));
+        final Runnable cancelledTimeout = timeout;
+
+        manager.clearPlayerReconnected(playerId);
+        cancelledTimeout.run();
+
+        verify(plugin).debugDisconnect(contains("Ignored stale timeout for player " + playerId));
     }
 
     @Test

@@ -76,16 +76,22 @@ public class PlayerJoinListener extends TBListener {
             final UUID playerId = player.getUniqueId();
             final BaseGame game = plugin.getBaseGameFrom(player);
             if (game == null) {
+                if (plugin.getDisconnectTrackingManager().hasPendingTimeout(playerId)) {
+                    plugin.debugDisconnect("Rejoin of " + playerName + " (" + playerId
+                            + ") has pending timeout but no active event; skipping proxy restoration");
+                }
                 return;
             }
 
+            plugin.debugDisconnect("Checking disconnect protection on rejoin for " + playerName
+                    + " (" + playerId + ")");
             final NpcProxyManager np = plugin.getNpcProxyManager();
             final DisconnectTrackingManager dtm = plugin.getDisconnectTrackingManager();
             final ViaVersionHook vvh = plugin.getViaVersionHook();
             if (vvh != null && vvh.isPlayerVersionBlocked(player, game.getConfig())) {
                 final Warrior warrior = plugin.getDatabaseManager().getWarrior(player);
-                plugin.debug("[DisconnectProtection] Rejoin rejected for " + playerName
-                        + " (" + playerId + "); incompatible-version", false);
+                plugin.debugDisconnect("Rejoin rejected for " + playerName
+                        + " (" + playerId + "); reason=incompatible-version");
                 np.despawnProxy(playerId, "incompatible-version");
                 game.eliminateDisconnected(warrior, "incompatible-version");
                 return;
@@ -93,8 +99,8 @@ public class PlayerJoinListener extends TBListener {
 
             if (!dtm.canPlayerReturn(playerId)) {
                 final Warrior warrior = plugin.getDatabaseManager().getWarrior(player);
-                plugin.debug("[DisconnectProtection] Rejoin rejected for " + playerName
-                        + " (" + playerId + "); disconnect limit exceeded", false);
+                plugin.debugDisconnect("Rejoin rejected for " + playerName
+                        + " (" + playerId + "); reason=disconnect-limit-exceeded");
                 np.despawnProxy(playerId, "disconnect-limit-exceeded");
                 game.eliminateDisconnected(warrior, BaseGame.ELIMINATION_REASON_DISCONNECT_LIMIT_EXCEEDED);
                 return;
@@ -104,18 +110,26 @@ public class PlayerJoinListener extends TBListener {
             // A stale handle whose entity was killed externally must not restore the player, and a
             // fighter that lost its proxy while offline must not resume the fight.
             final boolean proxyAlive = np.isProxyAlive(playerId);
+            plugin.debugDisconnect("Rejoin state for " + playerName + " (" + playerId
+                    + "); pendingTimeout=" + hadTimeout + ", proxyAlive=" + proxyAlive);
             if (hadTimeout && !proxyAlive) {
-                plugin.debug("[DisconnectProtection] Rejoin rejected for " + playerName
-                        + " (" + playerId + "); proxy missing or dead", false);
+                plugin.debugDisconnect("Rejoin rejected for " + playerName
+                        + " (" + playerId + "); reason=proxy-missing-or-dead");
                 np.despawnProxy(playerId, "missing-proxy-on-rejoin");
                 game.eliminateDisconnected(plugin.getDatabaseManager().getWarrior(player), "missing-proxy-on-rejoin");
+                return;
+            }
+            if (!hadTimeout && !proxyAlive) {
+                plugin.debugDisconnect("No pending disconnect protection for " + playerName
+                        + " (" + playerId + "); normal join");
                 return;
             }
             final var npcHandle = proxyAlive ? np.getProxyByOwner(playerId) : Optional.<LivingEntity>empty();
             if (npcHandle.isPresent()) {
                 final Location proxyLocation = npcHandle.get().getLocation();
                 if (!player.teleport(proxyLocation)) {
-                    plugin.getLogger().warning("Could not restore " + playerName + " to NPC proxy location");
+                    plugin.debugDisconnect("Could not teleport " + playerName + " (" + playerId
+                            + ") to disconnect proxy location; pendingTimeout=" + hadTimeout);
                     if (hadTimeout) {
                         game.eliminateDisconnected(plugin.getDatabaseManager().getWarrior(player), "proxy-restoration-failed");
                     }
@@ -123,15 +137,21 @@ public class PlayerJoinListener extends TBListener {
                 }
                 np.despawnProxy(playerId, "owner-rejoined");
                 dtm.clearPlayerReconnected(playerId);
-                plugin.debug("[DisconnectProtection] Restored " + playerName
-                        + " (" + playerId + ") to event at NPC location", false);
+                plugin.debugDisconnect("Restored " + playerName
+                        + " (" + playerId + ") to event at proxy location; timer cancelled");
                 game.notifyPlayerReturned(player);
+            } else {
+                plugin.debugDisconnect("Proxy reported alive but no handle is available for "
+                        + playerName + " (" + playerId + "); restoration skipped");
             }
         } catch (final Exception e) {
-            plugin.getLogger().log(Level.WARNING, "Failed to restore NPC proxy for " + playerName, e);
+            plugin.debugDisconnect(Level.WARNING, "Failed to restore disconnect proxy for "
+                    + playerName + " (" + player.getUniqueId() + ")", e);
             final UUID playerId = player.getUniqueId();
             final BaseGame game = plugin.getBaseGameFrom(player);
             if (game != null && plugin.getDisconnectTrackingManager().hasPendingTimeout(playerId)) {
+                plugin.debugDisconnect("Eliminating " + playerName + " (" + playerId
+                        + ") after proxy restoration exception with pending timeout");
                 game.eliminateDisconnected(plugin.getDatabaseManager().getWarrior(player), "proxy-restoration-failed");
             }
         }

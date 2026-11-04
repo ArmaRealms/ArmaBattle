@@ -41,6 +41,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.logging.Level;
 
 /**
  * Manages the vanilla Minecraft entity proxies that stand in for disconnected players.
@@ -87,12 +88,13 @@ public final class NpcProxyManager {
             configureProxy(mob, player);
             proxies.put(player.getUniqueId(), mob);
 
-            plugin.getLogger().info("Spawned vanilla mob proxy (" + mobType + ") for player "
-                    + player.getName() + " at " + location);
+            plugin.debugDisconnect("Spawned vanilla proxy (" + mobType + ") for player "
+                    + player.getName() + " (" + player.getUniqueId() + "); entity="
+                    + mob.getUniqueId() + ", location=" + location);
             return mob;
         } catch (final Exception e) {
-            plugin.getLogger().severe("Failed to spawn vanilla mob proxy for player "
-                    + player.getName() + ": " + e.getMessage());
+            plugin.debugDisconnect(Level.SEVERE, "Failed to spawn vanilla proxy for player "
+                    + player.getName() + " (" + player.getUniqueId() + ")", e);
             throw new RuntimeException("Failed to spawn vanilla mob proxy", e);
         }
     }
@@ -102,14 +104,14 @@ public final class NpcProxyManager {
             final EntityType mobType = EntityType.valueOf(mobTypeString.toUpperCase(Locale.ROOT));
             final Class<? extends Entity> entityClass = mobType.getEntityClass();
             if (entityClass == null || !LivingEntity.class.isAssignableFrom(entityClass)) {
-                plugin.getLogger().warning("Mob type '" + mobTypeString
-                        + "' has no living entity class, using " + DEFAULT_MOB_TYPE + " as fallback");
+                plugin.debugDisconnect("Configured proxy type '" + mobTypeString
+                        + "' has no living entity class; falling back to " + DEFAULT_MOB_TYPE);
                 return EntityType.MANNEQUIN;
             }
             return mobType;
         } catch (final IllegalArgumentException e) {
-            plugin.getLogger().warning("Invalid mob type '" + mobTypeString + "' in config, using "
-                    + DEFAULT_MOB_TYPE + " as fallback");
+            plugin.debugDisconnect("Invalid proxy type '" + mobTypeString + "' in config; falling back to "
+                    + DEFAULT_MOB_TYPE);
             return EntityType.MANNEQUIN;
         }
     }
@@ -163,17 +165,19 @@ public final class NpcProxyManager {
     public void despawnProxy(@NotNull final UUID ownerPlayerId, @NotNull final String reason) {
         final LivingEntity proxy = proxies.remove(ownerPlayerId);
         if (proxy == null) {
+            plugin.debugDisconnect("Proxy despawn requested for " + ownerPlayerId
+                    + " (reason=" + reason + "); no tracked proxy found");
             return;
         }
         try {
             if (!proxy.isDead()) {
                 proxy.remove();
             }
-            plugin.getLogger().info("Despawned vanilla mob proxy for player " + ownerPlayerId
-                    + " (reason: " + reason + ")");
+            plugin.debugDisconnect("Despawned vanilla proxy for player " + ownerPlayerId
+                    + "; reason=" + reason);
         } catch (final Exception e) {
-            plugin.getLogger().warning("Failed to despawn vanilla mob proxy for player "
-                    + ownerPlayerId + ": " + e.getMessage());
+            plugin.debugDisconnect(Level.WARNING, "Failed to despawn vanilla proxy for player "
+                    + ownerPlayerId + "; reason=" + reason, e);
         }
     }
 
@@ -191,6 +195,7 @@ public final class NpcProxyManager {
      * Clean up all proxies when the plugin is disabled.
      */
     public void onDisable() {
+        plugin.debugDisconnect("Plugin disabling; removing tracked proxies=" + proxies.size());
         for (final UUID ownerId : proxies.keySet().toArray(new UUID[0])) {
             despawnProxy(ownerId, "plugin-disable");
         }
