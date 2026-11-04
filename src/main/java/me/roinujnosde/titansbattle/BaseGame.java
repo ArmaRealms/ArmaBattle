@@ -184,7 +184,8 @@ public abstract class BaseGame {
         for (final Warrior participant : participants) {
             final UUID playerId = participant.getUniqueId();
             if (plugin.getNpcProxyManager().getProxyByOwner(playerId).isPresent()) {
-                plugin.debug("Cleaning up NPC proxy for " + participant.getName() + " (reason: " + reason + ")");
+                plugin.debugDisconnect("Cleaning up NPC proxy for " + participant.getName()
+                        + "; reason=" + reason);
                 plugin.getNpcProxyManager().despawnProxy(playerId, reason);
             }
         }
@@ -321,6 +322,7 @@ public abstract class BaseGame {
 
     public void onDisconnect(@NotNull final Warrior warrior, @Nullable final String rawQuitMessage) {
         if (!isParticipant(warrior)) {
+            plugin.debugDisconnect("Ignoring disconnect for nonparticipant " + warrior.getUniqueId());
             return;
         }
 
@@ -341,50 +343,68 @@ public abstract class BaseGame {
                 });
 
         // Check if player is in combat and should have an NPC proxy created
+        plugin.debugDisconnect(String.format(
+                "Disconnect decision for %s (%s); lobby=%s, activeFighter=%s, bypassReason=%s, enabled=%s",
+                warrior.getName(), warrior.getUniqueId(), isLobby(), getCurrentFighters().contains(warrior),
+                noProxyNPCReason, shouldCreateNpcProxy()));
         if (!isLobby() && getCurrentFighters().contains(warrior) && !noProxyNPCReason) {
             final Player player = warrior.toOnlinePlayer();
             if (player != null && shouldCreateNpcProxy()) {
                 try {
+                    plugin.debugDisconnect("Attempting protected disconnect for " + player.getName()
+                            + " (" + warrior.getUniqueId() + ")");
                     // Check if player hasn't exceeded disconnect limits
                     if (!plugin.getDisconnectTrackingManager().trackDisconnection(warrior.getUniqueId(), this)) {
-                        plugin.debug(String.format("onDisconnect() -> kill player %s (disconnect limit exceeded)", player.getName()));
+                        plugin.debugDisconnect("Protection denied for " + player.getName()
+                                + "; disconnect limit exceeded; eliminating participant");
                         eliminateDisconnected(warrior, ELIMINATION_REASON_DISCONNECT_LIMIT_EXCEEDED);
                         return;
                     }
 
                     // Create NPC proxy instead of killing the player
                     final Location location = player.getLocation();
+                    plugin.debugDisconnect("Spawning disconnect proxy for " + player.getName()
+                            + " at " + location);
                     plugin.getNpcProxyManager().spawnProxy(player, location);
                     if (!plugin.getDisconnectTrackingManager().startOfflineTimeout(warrior.getUniqueId())) {
                         // Recover a missing record before abandoning a successfully spawned proxy.
-                        plugin.getLogger().warning("Missing disconnect record for " + warrior.getUniqueId()
-                                + "; restoring tracking");
+                        plugin.debugDisconnect("Missing disconnect record for " + warrior.getUniqueId()
+                                + " after proxy spawn; retrying tracking and timeout scheduling");
                         if (!plugin.getDisconnectTrackingManager().trackDisconnection(warrior.getUniqueId(), this)
                                 || !plugin.getDisconnectTrackingManager().startOfflineTimeout(warrior.getUniqueId())) {
+                            plugin.debugDisconnect("Failed to schedule protected timeout for "
+                                    + warrior.getUniqueId() + "; removing proxy and eliminating participant");
                             plugin.getNpcProxyManager().despawnProxy(warrior.getUniqueId(), "timeout-scheduling-failed");
                             eliminateDisconnected(warrior, "timeout-scheduling-failed");
                             return;
                         }
                     }
 
-                    plugin.debug(String.format("onDisconnect() -> spawned NPC proxy for %s (disconnect #%d)",
-                            player.getName(), plugin.getDisconnectTrackingManager().getDisconnectionCount(warrior.getUniqueId())));
+                    plugin.debugDisconnect(String.format(
+                            "Protected disconnect active for %s (%s); attempt=%d, offline timer started",
+                            player.getName(), warrior.getUniqueId(),
+                            plugin.getDisconnectTrackingManager().getDisconnectionCount(warrior.getUniqueId())));
                     notifyDisconnectProtected(warrior);
                     return;
                 } catch (final Exception e) {
-                    plugin.getLogger().warning("Failed to create NPC proxy for " + player.getName() + ": " + e.getMessage());
+                    plugin.debugDisconnect(Level.WARNING, "Failed to create disconnect proxy for "
+                            + player.getName() + " (" + warrior.getUniqueId() + ")", e);
                     plugin.getNpcProxyManager().despawnProxy(warrior.getUniqueId(), "spawn-failed");
                 }
             }
 
             // A health change during PlayerQuitEvent may not produce a death event.
+            plugin.debugDisconnect("Player " + warrior.getUniqueId()
+                    + " cannot be protected (onlinePlayerPresent=" + (player != null)
+                    + ", enabled=" + shouldCreateNpcProxy() + "); eliminating without proxy");
             eliminateDisconnected(warrior, "disconnect-without-proxy");
             return;
         }
 
-        plugin.debug(String.format(
-                "[DisconnectProtection] Player %s (%s) left event without protection (lobby=%s, bypass=%s)",
-                warrior.getName(), warrior.getUniqueId(), isLobby(), noProxyNPCReason), false);
+        plugin.debugDisconnect(String.format(
+                "Player %s (%s) left event without protection (lobby=%s, bypass=%s, activeFighter=%s)",
+                warrior.getName(), warrior.getUniqueId(), isLobby(), noProxyNPCReason,
+                getCurrentFighters().contains(warrior)));
         // Normal disconnect processing for non-combat situations
         prepareDisconnectedPlayer(warrior);
         casualties.add(warrior);
@@ -401,11 +421,15 @@ public abstract class BaseGame {
     }
 
     public void eliminateDisconnected(@NotNull final Warrior warrior, @NotNull final String reason) {
-        if (!isParticipant(warrior)) return;
+        if (!isParticipant(warrior)) {
+            plugin.debugDisconnect("Skipping disconnect elimination for nonparticipant "
+                    + warrior.getUniqueId() + "; reason=" + reason);
+            return;
+        }
         disconnectEliminations.add(warrior);
-        plugin.debug(String.format(
-                "[DisconnectProtection] Eliminating player %s (%s) from event; reason=%s",
-                warrior.getName(), warrior.getUniqueId(), reason), false);
+        plugin.debugDisconnect(String.format(
+                "Eliminating disconnected player %s (%s) from event; reason=%s",
+                warrior.getName(), warrior.getUniqueId(), reason));
         prepareDisconnectedPlayer(warrior);
         notifyDisconnectElimination(warrior, reason);
         eliminate(warrior, reason);
@@ -438,6 +462,8 @@ public abstract class BaseGame {
         broadcastKey("disconnect-player-left", warrior.getName(),
                 tracking.getDisconnectionCount(warrior.getUniqueId()), tracking.getMaxDisconnections(),
                 Helper.formatTime(tracking.getMaxOfflineTimeSeconds(), plugin.getConfigManager().getTimeFormat()));
+        plugin.debugDisconnect("Announced protected disconnect for " + warrior.getUniqueId()
+                + " to event participants");
     }
 
     /**
@@ -452,6 +478,8 @@ public abstract class BaseGame {
         final int remaining = Math.max(0, tracking.getMaxDisconnections()
                 - tracking.getDisconnectionCount(player.getUniqueId()));
         player.sendMessage(getLang("disconnect-remaining-protections", remaining));
+        plugin.debugDisconnect("Announced successful return for " + player.getUniqueId()
+                + " to event participants; protectionsRemaining=" + remaining);
     }
 
     /**
