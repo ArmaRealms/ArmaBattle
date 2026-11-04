@@ -68,23 +68,27 @@ public class DisconnectTrackingManager {
         record.recordDisconnection();
 
         final int attempts = record.getDisconnectionCount();
+        plugin.debugDisconnect(String.format(
+                "Recorded disconnect for player %s; attempt=%d/%d",
+                playerId, attempts, maxDisconnections));
         if (attempts > maxDisconnections) {
-            plugin.getLogger().warning(String.format(
-                    "[DisconnectProtection] Player %s exceeded disconnect limit (%d/%d); eliminating from event",
+            plugin.debugDisconnect(String.format(
+                    "Disconnect limit exceeded for player %s (%d/%d); protection denied",
                     playerId, attempts, maxDisconnections));
             return false;
         }
 
-        plugin.debug(String.format(
-                "[DisconnectProtection] Player %s disconnected (%d/%d); protection granted",
-                playerId, attempts, maxDisconnections), false);
+        plugin.debugDisconnect(String.format(
+                "Protection granted for player %s (%d/%d)",
+                playerId, attempts, maxDisconnections));
         return true;
     }
 
     /** Start the offline timer only after the proxy has actually been spawned. */
     public boolean startOfflineTimeout(@NotNull final UUID playerId) {
         if (!disconnectRecords.containsKey(playerId)) {
-            plugin.getLogger().warning("[DisconnectProtection] Cannot start timeout without a record for " + playerId);
+            plugin.debugDisconnect("Offline timeout not started for player " + playerId
+                    + ": missing disconnect record");
             return false;
         }
         scheduleTimeoutTask(playerId);
@@ -100,11 +104,14 @@ public class DisconnectTrackingManager {
     public boolean canPlayerReturn(@NotNull final UUID playerId) {
         final DisconnectRecord record = disconnectRecords.get(playerId);
         if (record == null) {
+            plugin.debugDisconnect("Return check for player " + playerId
+                    + ": no disconnect record; allowed");
             return true; // Player never disconnected
         }
 
         final boolean canReturn = record.getDisconnectionCount() <= maxDisconnections;
-        plugin.debug(String.format("Player %s return check: %s (disconnections: %d, max: %d)",
+        plugin.debugDisconnect(String.format(
+                "Return check for player %s: allowed=%s, disconnections=%d/%d",
                 playerId, canReturn, record.getDisconnectionCount(), maxDisconnections));
 
         return canReturn;
@@ -126,10 +133,10 @@ public class DisconnectTrackingManager {
             if (!timeoutTask.isCancelled()) {
                 timeoutTask.cancel();
             }
-            plugin.debug(String.format(
-                    "[DisconnectProtection] Player %s reconnected; timer cancelled; used %d/%d protections",
-                    playerId, record == null ? 0 : record.getDisconnectionCount(), maxDisconnections), false);
         }
+        plugin.debugDisconnect(String.format(
+                "Player %s reconnected; timeoutCancelled=%s; protectionsUsed=%d/%d",
+                playerId, timeoutTask != null, record == null ? 0 : record.getDisconnectionCount(), maxDisconnections));
     }
 
     public boolean hasPendingTimeout(@NotNull final UUID playerId) {
@@ -142,23 +149,28 @@ public class DisconnectTrackingManager {
      * @param playerId the UUID of the player
      */
     public void clearPlayer(@NotNull final UUID playerId) {
-        disconnectRecords.remove(playerId);
+        final DisconnectRecord removed = disconnectRecords.remove(playerId);
 
         final BukkitTask timeoutTask = timeoutTasks.remove(playerId);
         if (timeoutTask != null && !timeoutTask.isCancelled()) {
             timeoutTask.cancel();
         }
 
-        plugin.debug("Cleared disconnect tracking for player " + playerId);
+        plugin.debugDisconnect(String.format(
+                "Cleared tracking for player %s; recordPresent=%s; pendingTimeout=%s",
+                playerId, removed != null, timeoutTask != null));
     }
 
     /** Clear only the timeouts belonging to the game that is ending. */
     public void clearGame(@NotNull final BaseGame game) {
+        int cleared = 0;
         for (final Map.Entry<UUID, DisconnectRecord> entry : disconnectRecords.entrySet()) {
             if (entry.getValue().game == game) {
                 clearPlayer(entry.getKey());
+                cleared++;
             }
         }
+        plugin.debugDisconnect("Finished event cleanup; cleared disconnect records=" + cleared);
     }
 
     /**
@@ -174,7 +186,7 @@ public class DisconnectTrackingManager {
 
         disconnectRecords.clear();
         timeoutTasks.clear();
-        plugin.debug("Cleared all disconnect tracking");
+        plugin.debugDisconnect("Plugin shutdown cleanup; cleared all disconnect tracking and timeouts");
     }
 
     /**
@@ -216,6 +228,7 @@ public class DisconnectTrackingManager {
         final BukkitTask existingTask = timeoutTasks.get(playerId);
         if (existingTask != null && !existingTask.isCancelled()) {
             existingTask.cancel();
+            plugin.debugDisconnect("Replaced existing offline timeout for player " + playerId);
         }
 
         final DisconnectRecord record = disconnectRecords.get(playerId);
@@ -230,9 +243,9 @@ public class DisconnectTrackingManager {
                 () -> handlePlayerTimeout(playerId, record, generation), timeoutTicks);
         timeoutTasks.put(playerId, timeoutTask);
 
-        plugin.debug(String.format(
-                "[DisconnectProtection] Player %s has %d ms (%d ticks) to reconnect",
-                playerId, maxOfflineTimeMs, timeoutTicks), false);
+        plugin.debugDisconnect(String.format(
+                "Offline timeout scheduled for player %s; durationMs=%d, ticks=%d, generation=%d",
+                playerId, maxOfflineTimeMs, timeoutTicks, generation));
     }
 
     /**
@@ -244,34 +257,40 @@ public class DisconnectTrackingManager {
                                      @NotNull final DisconnectRecord record, final long generation) {
         // Ignore cancelled timers, older disconnects and records from games that have ended.
         if (disconnectRecords.get(playerId) != record || record.timeoutGeneration != generation) {
-            plugin.debug("[DisconnectProtection] Ignored stale timeout for " + playerId);
+            plugin.debugDisconnect(String.format(
+                    "Ignored stale timeout for player %s; expectedGeneration=%d, currentGeneration=%d, recordActive=%s",
+                    playerId, generation, record.timeoutGeneration, disconnectRecords.get(playerId) == record));
             return;
         }
         // A reconnect must not eliminate the player or reset their used protection count.
         final Player player = Bukkit.getPlayer(playerId);
         if (player != null && player.isOnline()) {
-            plugin.getLogger().warning("[DisconnectProtection] Timeout fired for online player "
-                    + playerId + "; preserving disconnect count");
+            plugin.debugDisconnect("Timeout fired for online player " + playerId
+                    + "; cancelling timer without resetting disconnect count");
             clearPlayerReconnected(playerId);
             return;
         }
 
-        plugin.debug(String.format(
-                "[DisconnectProtection] Player %s exceeded offline timeout (%d ms); eliminating from event",
-                playerId, maxOfflineTimeMs), false);
+        plugin.debugDisconnect(String.format(
+                "Offline timeout fired for player %s after %d ms; checking elimination",
+                playerId, maxOfflineTimeMs));
         try {
             // Proxy cleanup must not prevent the game from advancing.
             try {
                 plugin.getNpcProxyManager().despawnProxy(playerId, "timeout");
             } catch (final Exception e) {
-                plugin.getLogger().log(Level.WARNING, "Failed to remove proxy for " + playerId, e);
+                plugin.debugDisconnect(Level.WARNING, "Failed to remove proxy for player " + playerId, e);
             }
             final Warrior warrior = plugin.getDatabaseManager().getWarrior(playerId);
             if (record.game.isParticipant(warrior)) {
+                plugin.debugDisconnect("Player " + playerId + " is still a participant; eliminating on timeout");
                 record.game.eliminateDisconnected(warrior, BaseGame.ELIMINATION_REASON_TIMEOUT);
+            } else {
+                plugin.debugDisconnect("Ignoring timeout elimination for player " + playerId
+                        + ": no longer an event participant");
             }
         } catch (final Exception e) {
-            plugin.getLogger().log(Level.SEVERE, "Failed to eliminate timed out player " + playerId, e);
+            plugin.debugDisconnect(Level.SEVERE, "Failed to eliminate timed out player " + playerId, e);
         } finally {
             if (disconnectRecords.get(playerId) == record && record.timeoutGeneration == generation) {
                 clearPlayer(playerId);
