@@ -3,20 +3,28 @@ package me.roinujnosde.titansbattle;
 import me.roinujnosde.titansbattle.combat.DisconnectTrackingManager;
 import me.roinujnosde.titansbattle.events.GroupDefeatedEvent;
 import me.roinujnosde.titansbattle.hooks.papi.PlaceholderHook;
+import me.roinujnosde.titansbattle.listeners.PlayerJoinListener;
 import me.roinujnosde.titansbattle.managers.ConfigManager;
 import me.roinujnosde.titansbattle.managers.DatabaseManager;
 import me.roinujnosde.titansbattle.managers.GroupManager;
 import me.roinujnosde.titansbattle.npc.NpcProxyManager;
 import me.roinujnosde.titansbattle.types.Group;
 import me.roinujnosde.titansbattle.types.GroupData;
+import me.roinujnosde.titansbattle.types.Kit;
 import me.roinujnosde.titansbattle.types.Warrior;
+import me.roinujnosde.titansbattle.utils.Helper;
+import me.roinujnosde.titansbattle.utils.SoundUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.plugin.PluginManager;
 import org.junit.Test;
 import org.mockito.MockedStatic;
@@ -29,14 +37,17 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
@@ -82,6 +93,7 @@ public class BaseGameDisconnectTest {
         when(configManager.getClearInventory()).thenReturn(toClear);
         when(configManager.getRespawn()).thenReturn(toRespawn);
         when(config.isUseKits()).thenReturn(true);
+        when(config.getKit()).thenReturn(mock(Kit.class));
         when(winner.getUniqueId()).thenReturn(winnerId);
         when(npcProvider.getProxyByOwner(winnerId)).thenReturn(Optional.empty());
         final TestGame game = new TestGame(plugin, config);
@@ -98,7 +110,82 @@ public class BaseGameDisconnectTest {
     }
 
     @Test
-    public void eliminatingDisconnectedPlayerQueuesKitAndRespawnCleanup() {
+    public void deadProxyRejoinRemovesKitBeforeWorldInventorySwitch() {
+        final Fixture fixture = new Fixture();
+        final DatabaseManager database = mock(DatabaseManager.class);
+        final Player player = mock(Player.class);
+        final PlayerInventory inventory = mock(PlayerInventory.class);
+        final PlayerJoinEvent event = mock(PlayerJoinEvent.class);
+        final Location eventExit = mock(Location.class);
+        final ItemStack kitItem = mock(ItemStack.class);
+        final ItemStack arenaPersonalItem = mock(ItemStack.class);
+        final ItemStack exitPersonalItem = mock(ItemStack.class);
+        final ItemStack[] arenaInventory = {kitItem, arenaPersonalItem};
+        final ItemStack[] exitInventory = {exitPersonalItem, null};
+        final AtomicReference<ItemStack[]> activeInventory = new AtomicReference<>(arenaInventory);
+        final AtomicReference<ItemStack[]> savedArenaInventory = new AtomicReference<>();
+
+        when(fixture.plugin.getDatabaseManager()).thenReturn(database);
+        when(database.getWarrior(player)).thenReturn(fixture.warrior);
+        when(fixture.plugin.getBaseGameFrom(player)).thenAnswer(invocation ->
+                fixture.game.isParticipant(fixture.warrior) ? fixture.game : null);
+        when(fixture.warrior.toOnlinePlayer()).thenReturn(player);
+        when(player.isOnline()).thenReturn(true);
+        when(player.getUniqueId()).thenReturn(fixture.playerId);
+        when(player.getInventory()).thenReturn(inventory);
+        when(event.getPlayer()).thenReturn(player);
+        when(fixture.tracking.canPlayerReturn(fixture.playerId)).thenReturn(true);
+        when(fixture.tracking.hasPendingTimeout(fixture.playerId)).thenReturn(true);
+        when(fixture.config.isUseKits()).thenReturn(true);
+        when(fixture.config.getKit()).thenReturn(mock(Kit.class));
+        when(fixture.config.getExit()).thenReturn(eventExit);
+        when(fixture.configManager.getGeneralExit()).thenReturn(mock(Location.class));
+        when(kitItem.getType()).thenReturn(Material.DIAMOND);
+        when(inventory.getSize()).thenReturn(arenaInventory.length);
+        when(inventory.getItem(anyInt())).thenAnswer(invocation ->
+                activeInventory.get()[invocation.getArgument(0, Integer.class)]);
+        doAnswer(invocation -> {
+            activeInventory.get()[invocation.getArgument(0, Integer.class)] = invocation.getArgument(1);
+            return null;
+        }).when(inventory).setItem(anyInt(), any());
+        when(player.teleport(eventExit)).thenAnswer(invocation -> {
+            savedArenaInventory.set(arenaInventory.clone());
+            activeInventory.set(exitInventory);
+            return true;
+        });
+
+        try (MockedStatic<Bukkit> bukkit = mockStatic(Bukkit.class);
+             MockedStatic<Helper> ignored = mockStatic(Helper.class);
+             MockedStatic<SoundUtils> sound = mockStatic(SoundUtils.class);
+             MockedStatic<Kit> tags = mockStatic(Kit.class, invocation -> {
+                 if (invocation.getMethod().getName().equals("isKitItem")) {
+                     return invocation.getArgument(0) == kitItem;
+                 }
+                 return invocation.callRealMethod();
+             })) {
+            bukkit.when(Bukkit::getPluginManager).thenReturn(mock(PluginManager.class));
+            new PlayerJoinListener(fixture.plugin).onJoin(event);
+        }
+
+        verify(player).teleport(eventExit);
+        assertNull("The arena inventory still contained the kit when saved", savedArenaInventory.get()[0]);
+        assertEquals(arenaPersonalItem, savedArenaInventory.get()[1]);
+        assertEquals(exitPersonalItem, exitInventory[0]);
+        assertTrue(fixture.configManager.getClearInventory().isEmpty());
+        assertTrue(fixture.configManager.getRespawn().isEmpty());
+    }
+
+    @Test
+    public void repeatedDisconnectEliminationQueuesKitAndRespawnCleanupOnlyOnce() {
+        assertDisconnectCleanup(mock(Kit.class), true);
+    }
+
+    @Test
+    public void disconnectWithNoConfiguredKitOnlyQueuesRespawn() {
+        assertDisconnectCleanup(null, false);
+    }
+
+    private void assertDisconnectCleanup(final Kit kit, final boolean expectClear) {
         final TitansBattle plugin = mock(TitansBattle.class);
         final BaseGameConfiguration config = mock(BaseGameConfiguration.class);
         final ConfigManager configManager = mock(ConfigManager.class);
@@ -114,16 +201,19 @@ public class BaseGameDisconnectTest {
         when(configManager.getClearInventory()).thenReturn(toClear);
         when(configManager.getRespawn()).thenReturn(toRespawn);
         when(config.isUseKits()).thenReturn(true);
+        when(config.getKit()).thenReturn(kit);
         when(warrior.getUniqueId()).thenReturn(playerId);
         when(npcProvider.getProxyByOwner(playerId)).thenReturn(Optional.empty());
         final TestGame game = new TestGame(plugin, config);
         game.addParticipant(warrior);
 
         game.eliminateDisconnected(warrior, "missing-proxy-on-rejoin");
+        game.addParticipant(warrior);
+        game.eliminateDisconnected(warrior, "disconnect-without-proxy");
 
-        assertEquals(List.of(playerId), toClear);
+        assertEquals(expectClear ? List.of(playerId) : List.of(), toClear);
         assertEquals(List.of(playerId), toRespawn);
-        verify(configManager).save();
+        verify(configManager, times(2)).save();
         assertTrue(game.isDisconnectElimination(warrior));
     }
 

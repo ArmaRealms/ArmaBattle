@@ -168,7 +168,8 @@ public class EliminationTournamentGame extends Game {
                     teleport(duelWinners, getConfig().getLobby());
                     participants.removeIf(thirdPlaceWinners::contains);
                     if (getConfig().isUseKits()) {
-                        thirdPlaceWinners.forEach(Kit::clearInventory);
+                        thirdPlaceWinners.forEach(winner -> Kit.clearInventory(plugin, winner.toOnlinePlayer(),
+                                "third-place-finish event=" + getConfig().getName()));
                     }
                 } else if (getDuelsCount() == 1) {
                     firstPlaceWinners = duelWinners;
@@ -360,7 +361,7 @@ public class EliminationTournamentGame extends Game {
         players.forEach(player -> {
             player.sendMessage(getLang("kicked_to_adjust_duels"));
             if (getConfig().isUseKits()) {
-                Kit.clearInventory(player);
+                Kit.clearInventory(plugin, player, "adjust-duels event=" + getConfig().getName());
             }
         });
     }
@@ -520,7 +521,8 @@ public class EliminationTournamentGame extends Game {
         final Group firstGroup = getAnyGroup(firstPlaceWinners);
         //we must clear the inventory before adding the casualties, otherwise the already dead would lose their items again
         if (getConfig().isUseKits()) {
-            firstPlaceWinners.forEach(Kit::clearInventory);
+            firstPlaceWinners.forEach(winner -> Kit.clearInventory(plugin, winner.toOnlinePlayer(),
+                    "tournament-winner event=" + getConfig().getName()));
         }
 
         if (getConfig().isGroupMode() && firstGroup != null) {
