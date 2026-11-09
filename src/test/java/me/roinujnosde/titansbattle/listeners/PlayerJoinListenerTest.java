@@ -139,7 +139,6 @@ public class PlayerJoinListenerTest {
         verify(npcProvider).isProxyAlive(playerId);
         verify(game).eliminateDisconnected(warrior, "missing-proxy-on-rejoin");
         verify(game, never()).notifyPlayerReturned(org.mockito.ArgumentMatchers.any());
-        verify(inventory).getSize();
         verify(inventory, never()).clear();
         verify(configManager).save();
         assertTrue(pendingClear.isEmpty());

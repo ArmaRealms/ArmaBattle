@@ -115,6 +115,7 @@ public class PlayerJoinListener extends TBListener {
                 plugin.debugDisconnect("Rejoin rejected for " + playerName
                         + " (" + playerId + "); reason=proxy-missing-or-dead");
                 np.despawnProxy(playerId, "missing-proxy-on-rejoin");
+                Kit.removeKitItems(plugin, player, "missing-proxy-on-rejoin");
                 game.eliminateDisconnected(plugin.getDatabaseManager().getWarrior(player), "missing-proxy-on-rejoin");
                 return;
             }
