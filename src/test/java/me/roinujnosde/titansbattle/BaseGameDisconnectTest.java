@@ -9,6 +9,7 @@ import me.roinujnosde.titansbattle.managers.GroupManager;
 import me.roinujnosde.titansbattle.npc.NpcProxyManager;
 import me.roinujnosde.titansbattle.types.Group;
 import me.roinujnosde.titansbattle.types.GroupData;
+import me.roinujnosde.titansbattle.types.Kit;
 import me.roinujnosde.titansbattle.types.Warrior;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -82,6 +83,7 @@ public class BaseGameDisconnectTest {
         when(configManager.getClearInventory()).thenReturn(toClear);
         when(configManager.getRespawn()).thenReturn(toRespawn);
         when(config.isUseKits()).thenReturn(true);
+        when(config.getKit()).thenReturn(mock(Kit.class));
         when(winner.getUniqueId()).thenReturn(winnerId);
         when(npcProvider.getProxyByOwner(winnerId)).thenReturn(Optional.empty());
         final TestGame game = new TestGame(plugin, config);
@@ -98,7 +100,16 @@ public class BaseGameDisconnectTest {
     }
 
     @Test
-    public void eliminatingDisconnectedPlayerQueuesKitAndRespawnCleanup() {
+    public void repeatedDisconnectEliminationQueuesKitAndRespawnCleanupOnlyOnce() {
+        assertDisconnectCleanup(mock(Kit.class), true);
+    }
+
+    @Test
+    public void disconnectWithNoConfiguredKitOnlyQueuesRespawn() {
+        assertDisconnectCleanup(null, false);
+    }
+
+    private void assertDisconnectCleanup(final Kit kit, final boolean expectClear) {
         final TitansBattle plugin = mock(TitansBattle.class);
         final BaseGameConfiguration config = mock(BaseGameConfiguration.class);
         final ConfigManager configManager = mock(ConfigManager.class);
@@ -114,16 +125,19 @@ public class BaseGameDisconnectTest {
         when(configManager.getClearInventory()).thenReturn(toClear);
         when(configManager.getRespawn()).thenReturn(toRespawn);
         when(config.isUseKits()).thenReturn(true);
+        when(config.getKit()).thenReturn(kit);
         when(warrior.getUniqueId()).thenReturn(playerId);
         when(npcProvider.getProxyByOwner(playerId)).thenReturn(Optional.empty());
         final TestGame game = new TestGame(plugin, config);
         game.addParticipant(warrior);
 
         game.eliminateDisconnected(warrior, "missing-proxy-on-rejoin");
+        game.addParticipant(warrior);
+        game.eliminateDisconnected(warrior, "disconnect-without-proxy");
 
-        assertEquals(List.of(playerId), toClear);
+        assertEquals(expectClear ? List.of(playerId) : List.of(), toClear);
         assertEquals(List.of(playerId), toRespawn);
-        verify(configManager).save();
+        verify(configManager, times(2)).save();
         assertTrue(game.isDisconnectElimination(warrior));
     }
 

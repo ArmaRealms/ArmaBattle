@@ -2,6 +2,7 @@ package me.roinujnosde.titansbattle.types;
 
 import de.tr7zw.changeme.nbtapi.NBT;
 import de.tr7zw.changeme.nbtapi.iface.ReadWriteItemNBT;
+import me.roinujnosde.titansbattle.TitansBattle;
 import org.bukkit.Material;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.configuration.serialization.SerializableAs;
@@ -11,6 +12,7 @@ import org.bukkit.inventory.PlayerInventory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Arrays;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.function.Consumer;
@@ -89,13 +91,47 @@ public class Kit implements ConfigurationSerializable {
     }
 
     public static void clearInventory(@Nullable final Player player) {
+        clearInventory(TitansBattle.getInstance(), player, "direct-clear");
+    }
+
+    public static void clearInventory(@Nullable final TitansBattle plugin, @Nullable final Player player,
+                                      @NotNull final String reason) {
         if (player == null) return;
 
-        player.getInventory().clear();
-        player.getInventory().setHelmet(null);
-        player.getInventory().setChestplate(null);
-        player.getInventory().setLeggings(null);
-        player.getInventory().setBoots(null);
+        final PlayerInventory inventory = player.getInventory();
+        logInventoryClear(plugin, player, inventory, reason);
+        inventory.clear();
+        inventory.setHelmet(null);
+        inventory.setChestplate(null);
+        inventory.setLeggings(null);
+        inventory.setBoots(null);
+    }
+
+    public static void logInventoryClear(@Nullable final TitansBattle plugin, @NotNull final Player player,
+                                         @NotNull final PlayerInventory inventory, @NotNull final String reason) {
+        if (plugin == null || !plugin.getConfigManager().isDebug()) return;
+
+        final var items = Arrays.stream(inventory.getContents())
+                .filter(item -> item != null && item.getType() != Material.AIR)
+                .map(item -> item.getType().name() + "x" + item.getAmount())
+                .toList();
+        plugin.debug("[inventory] action=clear player=%s uuid=%s reason=%s contents=%s"
+                .formatted(player.getName(), player.getUniqueId(), reason, items));
+    }
+
+    public static void removeKitItems(@NotNull final TitansBattle plugin, @NotNull final Player player,
+                                      @NotNull final String reason) {
+        final PlayerInventory inventory = player.getInventory();
+        final int size = inventory.getSize();
+        for (int slot = 0; slot < size; slot++) {
+            final ItemStack item = inventory.getItem(slot);
+            if (item == null || !isKitItem(item)) {
+                continue;
+            }
+            plugin.debug("[inventory] action=remove-kit-item player=%s uuid=%s reason=%s slot=%d material=%s stackAmount=%d"
+                    .formatted(player.getName(), player.getUniqueId(), reason, slot, item.getType(), item.getAmount()));
+            inventory.setItem(slot, null);
+        }
     }
 
     public static void applyNBTTag(@NotNull final ItemStack item) {

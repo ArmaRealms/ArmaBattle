@@ -75,7 +75,7 @@ public abstract class Game extends BaseGame {
         }
         Player player = Objects.requireNonNull(warrior.toOnlinePlayer());
         if (getConfig().isUseKits()) {
-            Kit.clearInventory(player);
+            Kit.clearInventory(plugin, player, "kick-event event=" + getConfig().getName());
         }
         SoundUtils.playSound(LEAVE_GAME, plugin.getConfig(), player);
         player.sendMessage(getLang("you_have_been_kicked"));

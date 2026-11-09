@@ -25,6 +25,7 @@ import org.bukkit.Material;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.PlayerInventory;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
@@ -69,10 +70,12 @@ public class ConfigCommands extends BaseCommand {
     }
 
     private void getKit(@NotNull Player sender, @NotNull BaseGameConfiguration config) {
-        sender.getInventory().clear();
+        PlayerInventory inventory = sender.getInventory();
+        Kit.logInventoryClear(plugin, sender, inventory, "admin-get-kit event=" + config.getName());
+        inventory.clear();
         Kit kit = config.getKit();
         if (kit != null) {
-            sender.getInventory().setContents(kit.getContentsWithoutNBT());
+            inventory.setContents(kit.getContentsWithoutNBT());
         }
     }
 

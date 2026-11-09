@@ -64,8 +64,7 @@ public class PlayerJoinListener extends TBListener {
     public void onJoin(final @NotNull PlayerJoinEvent event) {
         final Player player = event.getPlayer();
         handleNpcProxyRestoration(player);
-        teleportToExit(player);
-        clearInventory(player);
+        processPendingExit(player);
         sendJoinMessage(player);
     }
 
@@ -182,29 +181,39 @@ public class PlayerJoinListener extends TBListener {
         }
     }
 
-    private void clearInventory(final @NotNull Player player) {
+    private void processPendingExit(final @NotNull Player player) {
         final List<UUID> toClear = cm.getClearInventory();
+        final List<UUID> toRespawn = cm.getRespawn();
         final UUID playerId = player.getUniqueId();
-        if (toClear.contains(playerId)) {
-            Kit.clearInventory(player);
-            toClear.remove(playerId);
-            cm.save();
+        final boolean pendingClear = toClear.contains(playerId);
+        final boolean pendingExit = toRespawn.contains(playerId);
+        if (!pendingClear && !pendingExit) {
+            return;
         }
+
+        if (plugin.getBaseGameFrom(player) == null) {
+            // A teleport listener can restore the player's personal inventory.
+            Kit.removeKitItems(plugin, player, "login-pending-clear");
+            if (pendingExit) {
+                teleportToExit(player);
+            }
+        } else {
+            plugin.debug("[inventory] action=discard-pending-exit player=%s uuid=%s reason=active-event"
+                    .formatted(player.getName(), playerId));
+        }
+        toClear.removeIf(playerId::equals);
+        toRespawn.removeIf(playerId::equals);
+        cm.save();
     }
 
     private void teleportToExit(final @NotNull Player player) {
-        final UUID playerId = player.getUniqueId();
-        if (!cm.getRespawn().contains(playerId)) {
-            return;
-        }
-        if (cm.getGeneralExit() != null) {
+        final Location exit = cm.getGeneralExit();
+        if (exit != null) {
             SoundUtils.playSound(SoundUtils.Type.TELEPORT, plugin.getConfig(), player);
-            player.teleport(cm.getGeneralExit());
+            player.teleport(exit);
         } else {
             final String playerName = player.getName();
             plugin.getLogger().warning(String.format("GENERAL_EXIT is not set, it was not possible to teleport %s", playerName));
         }
-        cm.getRespawn().remove(playerId);
-        cm.save();
     }
 }

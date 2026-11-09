@@ -72,7 +72,11 @@ public class PlayerDeathListener extends TBListener {
         if (game.shouldKeepInventoryOnDeath(warrior)) {
             event.setKeepInventory(true);
         }
-        if (game.shouldClearDropsOnDeath(warrior)) {
+        final boolean clearDrops = game.shouldClearDropsOnDeath(warrior);
+        plugin.debug("[inventory] action=death player=%s uuid=%s event=%s keepInventory=%s clearDrops=%s dropStacks=%d"
+                .formatted(victim.getName(), victim.getUniqueId(), game.getConfig().getName(),
+                        event.getKeepInventory(), clearDrops, event.getDrops().size()));
+        if (clearDrops) {
             event.getDrops().clear();
             event.setDroppedExp(0);
         }

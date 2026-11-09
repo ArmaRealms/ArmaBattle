@@ -77,7 +77,8 @@ public class FreeForAllGame extends Game {
         final String gameName = getConfig().getName();
         final Winners today = databaseManager.getTodaysWinners();
         if (getConfig().isUseKits()) {
-            winners.forEach(Kit::clearInventory);
+            winners.forEach(winner -> Kit.clearInventory(plugin, winner.toOnlinePlayer(),
+                    "free-for-all-winner event=" + gameName));
         }
         if (winnerGroup != null) {
             Bukkit.getPluginManager().callEvent(new GroupWinEvent(winnerGroup));

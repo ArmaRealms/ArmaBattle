@@ -146,15 +146,9 @@ public abstract class BaseGame {
                     toRespawn.add(participant.getUniqueId());
                     queuedCleanup = true;
                 }
-                if (getConfig().isUseKits()) {
-                    final List<UUID> toClear = plugin.getConfigManager().getClearInventory();
-                    if (!toClear.contains(participant.getUniqueId())) {
-                        toClear.add(participant.getUniqueId());
-                        queuedCleanup = true;
-                    }
-                }
+                queuedCleanup |= queueInventoryClear(participant, "game-finish-offline");
             } else if (getConfig().isUseKits()) {
-                Kit.clearInventory(player);
+                Kit.clearInventory(plugin, player, "game-finish event=" + getConfig().getName());
             }
         }
         if (queuedCleanup) {
@@ -387,6 +381,8 @@ public abstract class BaseGame {
                             "Protected disconnect active for %s (%s); attempt=%d, offline timer started",
                             player.getName(), warrior.getUniqueId(),
                             plugin.getDisconnectTrackingManager().getDisconnectionCount(warrior.getUniqueId())));
+                    plugin.debug("[inventory] action=keep player=%s uuid=%s reason=disconnect-with-proxy event=%s"
+                            .formatted(player.getName(), warrior.getUniqueId(), getConfig().getName()));
                     notifyDisconnectProtected(warrior);
                     return;
                 } catch (final Exception e) {
@@ -408,18 +404,38 @@ public abstract class BaseGame {
                 "Player %s (%s) left event without protection (lobby=%s, bypass=%s, activeFighter=%s)",
                 warrior.getName(), warrior.getUniqueId(), lobbyPhase, noProxyNPCReason, activeFighter));
         // Normal disconnect processing for non-combat situations
-        prepareDisconnectedPlayer(warrior);
+        prepareDisconnectedPlayer(warrior, "disconnect");
         casualties.add(warrior);
         casualtiesWatching.add(warrior); //adding to this Collection, so they are not teleported on respawn
         processPlayerExit(warrior);
     }
 
-    private void prepareDisconnectedPlayer(@NotNull final Warrior warrior) {
+    private void prepareDisconnectedPlayer(@NotNull final Warrior warrior, @NotNull final String reason) {
         if (getConfig().isUseKits()) {
-            plugin.getConfigManager().getClearInventory().add(warrior.getUniqueId());
+            queueInventoryClear(warrior, reason);
+        } else {
+            plugin.debug("[inventory] action=keep player=%s uuid=%s reason=%s event=%s useKits=false"
+                    .formatted(warrior.getName(), warrior.getUniqueId(), reason, getConfig().getName()));
         }
-        plugin.getConfigManager().getRespawn().add(warrior.getUniqueId());
+        final List<UUID> toRespawn = plugin.getConfigManager().getRespawn();
+        if (!toRespawn.contains(warrior.getUniqueId())) {
+            toRespawn.add(warrior.getUniqueId());
+        }
         plugin.getConfigManager().save();
+    }
+
+    private boolean queueInventoryClear(@NotNull final Warrior warrior, @NotNull final String reason) {
+        if (!getConfig().isUseKits() || getConfig().getKit() == null) {
+            return false;
+        }
+        final List<UUID> toClear = plugin.getConfigManager().getClearInventory();
+        if (toClear.contains(warrior.getUniqueId())) {
+            return false;
+        }
+        toClear.add(warrior.getUniqueId());
+        plugin.debug("[inventory] action=queue-clear player=%s uuid=%s reason=%s event=%s"
+                .formatted(warrior.getName(), warrior.getUniqueId(), reason, getConfig().getName()));
+        return true;
     }
 
     public void eliminateDisconnected(@NotNull final Warrior warrior, @NotNull final String reason) {
@@ -432,7 +448,7 @@ public abstract class BaseGame {
         plugin.debugDisconnect(String.format(
                 "Eliminating disconnected player %s (%s) from event; reason=%s",
                 warrior.getName(), warrior.getUniqueId(), reason));
-        prepareDisconnectedPlayer(warrior);
+        prepareDisconnectedPlayer(warrior, reason);
         notifyDisconnectElimination(warrior, reason);
         eliminate(warrior, reason);
     }
@@ -504,7 +520,7 @@ public abstract class BaseGame {
             return;
         }
         if (getConfig().isUseKits()) {
-            Kit.clearInventory(warrior.toOnlinePlayer());
+            Kit.clearInventory(plugin, warrior.toOnlinePlayer(), "leave-event event=" + getConfig().getName());
         }
         final Player player = Objects.requireNonNull(warrior.toOnlinePlayer());
         if (!isLobby() && getCurrentFighters().contains(warrior)) {
@@ -790,7 +806,7 @@ public abstract class BaseGame {
         final Player player = warrior.toOnlinePlayer();
         final Kit kit = getConfig().getKit();
         if (getConfig().isUseKits() && kit != null && player != null) {
-            Kit.clearInventory(player);
+            Kit.clearInventory(plugin, player, "apply-kit event=" + getConfig().getName());
             kit.set(player);
         }
     }
