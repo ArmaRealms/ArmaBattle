@@ -222,3 +222,4 @@ buildNumber.properties
 /.settings/
 
 # End of https://www.toptal.com/developers/gitignore/api/eclipse,maven,java,intellij+all
+.DS_Store
