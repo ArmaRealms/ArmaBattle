@@ -1,11 +1,11 @@
 package me.roinujnosde.titansbattle.listeners;
 
+import io.papermc.paper.event.entity.EntityKnockbackEvent;
 import me.roinujnosde.titansbattle.TitansBattle;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.entity.EntityCombustEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.event.entity.EntityKnockbackEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.jetbrains.annotations.NotNull;
 

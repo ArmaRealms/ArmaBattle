@@ -1,15 +1,20 @@
 package me.roinujnosde.titansbattle.listeners;
 
+import io.papermc.paper.event.entity.EntityKnockbackEvent;
+import io.papermc.paper.event.entity.EntityPushedByEntityAttackEvent;
 import me.roinujnosde.titansbattle.TitansBattle;
 import me.roinujnosde.titansbattle.npc.NpcProxyManager;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityCombustEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.event.entity.EntityKnockbackEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
+import org.bukkit.util.Vector;
 import org.junit.Before;
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -54,15 +59,40 @@ public class NpcProxyListenerTest {
     }
 
     @Test
-    public void cancelsKnockbackOnProxy() {
+    public void cancelsAttackKnockbackOnProxy() {
         final Player proxy = mock(Player.class);
-        final EntityKnockbackEvent event = mock(EntityKnockbackEvent.class);
-        when(event.getEntity()).thenReturn(proxy);
+        final EntityKnockbackEvent event = new EntityPushedByEntityAttackEvent(
+                proxy, EntityKnockbackEvent.Cause.ENTITY_ATTACK, mock(Player.class), new Vector(1, 0, 0));
         when(proxyManager.isProxy(proxy)).thenReturn(true);
 
         listener.onKnockback(event);
 
-        verify(event).setCancelled(true);
+        assertTrue(event.isCancelled());
+    }
+
+    @Test
+    public void cancelsNonAttackKnockbackOnProxy() {
+        final Player proxy = mock(Player.class);
+        final EntityKnockbackEvent event = new EntityKnockbackEvent(
+                proxy, EntityKnockbackEvent.Cause.PUSH, new Vector(1, 0, 0));
+        when(proxyManager.isProxy(proxy)).thenReturn(true);
+
+        listener.onKnockback(event);
+
+        assertTrue(event.isCancelled());
+    }
+
+    @Test
+    public void leavesNonProxyKnockbackUnchanged() {
+        final Player player = mock(Player.class);
+        final Vector knockback = new Vector(1, 0, 0);
+        final EntityKnockbackEvent event = new EntityKnockbackEvent(
+                player, EntityKnockbackEvent.Cause.PUSH, knockback.clone());
+
+        listener.onKnockback(event);
+
+        assertFalse(event.isCancelled());
+        assertEquals(knockback, event.getKnockback());
     }
 
     @Test
