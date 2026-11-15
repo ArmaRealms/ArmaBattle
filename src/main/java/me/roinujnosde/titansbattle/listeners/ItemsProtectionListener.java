@@ -47,6 +47,9 @@ public class ItemsProtectionListener extends TBListener {
     public void on(CraftItemEvent event) {
         CraftingInventory inventory = event.getInventory();
         ItemStack result = inventory.getResult();
+        if (result == null) {
+            return;
+        }
 
         for (ItemStack item : inventory.getMatrix()) {
             if (item != null && Kit.isKitItem(item)) {
